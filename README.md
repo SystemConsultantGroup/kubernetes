@@ -46,6 +46,8 @@ platform/
 | `scg.sh` DNS-01 | Cloudflare API Token |
 | `scg.skku.ac.kr` DNS-01 | RFC2136 `115.145.172.17:53`, `cert-manager-key`, `HMACSHA256` |
 
+DNS zone 이전 전에는 인증서를 발급하지 않습니다. 이전 후 `platform/cert-manager/resources/kustomization.yaml`에 `certificates.yaml`을 추가합니다.
+
 ## Bootstrap 설정과 자격증명
 
 클러스터 주소와 GitHub 로그인 설정은 `../init.sh` 상단에서 수정합니다.
