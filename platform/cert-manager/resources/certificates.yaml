@@ -1,32 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: scg-sh
+  name: argocd
   namespace: gateway-system
   annotations:
-    argocd.argoproj.io/sync-wave: '2'
+    argocd.argoproj.io/sync-wave: "2"
 spec:
-  secretName: scg-sh-tls
+  secretName: argocd-tls
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-cloudflare
   dnsNames:
-    - scg.sh
-    - '*.scg.sh'
     - argocd.infra.scg.sh
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: scg-skku-ac-kr
-  namespace: gateway-system
-  annotations:
-    argocd.argoproj.io/sync-wave: '2'
-spec:
-  secretName: scg-skku-ac-kr-tls
-  issuerRef:
-    kind: ClusterIssuer
-    name: letsencrypt-rfc2136
-  dnsNames:
-    - scg.skku.ac.kr
-    - '*.scg.skku.ac.kr'

@@ -41,12 +41,9 @@ platform/
 | Gateway address | `115.145.134.232` |
 | Argo CD | `https://argocd.infra.scg.sh` |
 | Argo CD login | GitHub `SystemConsultantGroup/active` 구성원만 허용 |
-| Public domains | `*.scg.sh`, `*.scg.skku.ac.kr` |
+| TLS hostname | `argocd.infra.scg.sh` |
 | ACME email | `scg@scg.skku.ac.kr` |
-| `scg.sh` DNS-01 | Cloudflare API Token |
-| `scg.skku.ac.kr` DNS-01 | RFC2136 `115.145.172.17:53`, `cert-manager-key`, `HMACSHA256` |
-
-DNS zone 이전 전에는 인증서를 발급하지 않습니다. 이전 후 `platform/cert-manager/resources/kustomization.yaml`에 `certificates.yaml`을 추가합니다.
+| DNS-01 | Cloudflare API Token |
 
 ## Bootstrap 설정과 자격증명
 
@@ -63,20 +60,18 @@ ARGOCD_GITHUB_CLIENT_ID="..."
 클러스터 생성 전에 bootstrap 환경에 다음 Secret을 주입합니다.
 
 - `CLOUDFLARE_API_TOKEN`: `Zone:DNS:Edit`, `Zone:Zone:Read`, `scg.sh`로 제한
-- `RFC2136_TSIG_SECRET`: TSIG shared key의 Base64 문자열
 - `ARGOCD_GITHUB_CLIENT_SECRET`: GitHub OAuth App Client Secret
 
 로컬 실행 시 값이 shell history에 남지 않도록 입력합니다.
 
 ```bash
 read -rsp 'Cloudflare API token: ' CLOUDFLARE_API_TOKEN; echo
-read -rsp 'RFC2136 TSIG secret: ' RFC2136_TSIG_SECRET; echo
 read -rsp 'GitHub OAuth client secret: ' ARGOCD_GITHUB_CLIENT_SECRET; echo
-export CLOUDFLARE_API_TOKEN RFC2136_TSIG_SECRET ARGOCD_GITHUB_CLIENT_SECRET
+export CLOUDFLARE_API_TOKEN ARGOCD_GITHUB_CLIENT_SECRET
 
 (cd .. && ./init.sh)
 
-unset CLOUDFLARE_API_TOKEN RFC2136_TSIG_SECRET ARGOCD_GITHUB_CLIENT_SECRET
+unset CLOUDFLARE_API_TOKEN ARGOCD_GITHUB_CLIENT_SECRET
 ```
 
 CI에서는 같은 환경변수를 CI Secret에서 주입합니다. `init.sh`는 값을 Git에 저장하지 않고 Kubernetes Secret으로 생성하며, GitHub `active` Team 구성원만 Argo CD에 로그인하고 `admin` 역할을 받도록 설정합니다.

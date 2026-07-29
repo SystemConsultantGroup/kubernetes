@@ -6,34 +6,6 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-    - name: scg-sh-https
-      hostname: '*.scg.sh'
-      port: 443
-      protocol: HTTPS
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: scg-sh-tls
-      allowedRoutes:
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels:
-              gateway.scg.sh/public: 'true'
-    - name: scg-skku-https
-      hostname: '*.scg.skku.ac.kr'
-      port: 443
-      protocol: HTTPS
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: scg-skku-ac-kr-tls
-      allowedRoutes:
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels:
-              gateway.scg.sh/public: 'true'
     - name: argocd-https
       hostname: argocd.infra.scg.sh
       port: 443
@@ -41,10 +13,10 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: scg-sh-tls
+          - name: argocd-tls
       allowedRoutes:
         namespaces:
           from: Selector
           selector:
             matchLabels:
-              gateway.scg.sh/public: 'true'
+              gateway.scg.sh/public: "true"
