@@ -1,0 +1,40 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-cloudflare
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  acme:
+    email: scg@scg.skku.ac.kr
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-cloudflare-account
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-rfc2136
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  acme:
+    email: scg@scg.skku.ac.kr
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-rfc2136-account
+    solvers:
+      - dns01:
+          rfc2136:
+            nameserver: 115.145.172.17:53
+            tsigKeyName: cert-manager-key
+            tsigAlgorithm: HMACSHA256
+            tsigSecretSecretRef:
+              name: rfc2136-tsig
+              key: secret

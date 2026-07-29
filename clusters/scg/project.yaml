@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: scg
+  namespace: argocd
+spec:
+  description: SCG cluster platform
+  sourceRepos:
+    - https://github.com/SystemConsultantGroup/gitops.git
+    - quay.io/jetstack/charts
+  destinations:
+    - namespace: "*"
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
