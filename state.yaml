@@ -1,0 +1,23 @@
+name: scg
+endpoint: scc
+
+talos:
+  version: "1.13.7"
+  schematic: "fd096f676a0df013f9631767d26696f8cb5ba7b7d3921cd8781a061a7ce9016d"
+
+kubernetes:
+  version: "1.36.2"
+
+cilium:
+  version: "1.19.6"
+
+argocd:
+  version: "10.2.2" # chart version
+
+nodes:
+  scc:
+    address: "115.145.134.232"
+  # e1s:
+  #   address: REPLACE_WITH_E1S_IP
+  # e2s:
+  #   address: REPLACE_WITH_E2S_IP

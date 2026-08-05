@@ -1,0 +1,5 @@
+.devbox
+controlplane.yaml
+talosconfig
+kubeconfig
+secrets.yaml

@@ -1,0 +1,10 @@
+# Super Computing Center node specific patches
+machine:
+    install:
+        diskSelector:
+            wwid: naa.31402ec0102fbdd2
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: k8s.scc
+auto: off

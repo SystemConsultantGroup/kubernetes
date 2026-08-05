@@ -1,0 +1,29 @@
+global:
+  domain: argocd.infra.scg.sh
+
+configs:
+  params:
+    server.insecure: true
+
+  cm:
+    url: https://argocd.infra.scg.sh
+    admin.enabled: false
+    dex.config: |
+      connectors:
+        - type: github
+          id: github
+          name: GitHub
+          config:
+            clientID: Ov23liOiPk0ECCc9Wfgk # gitleaks:allow (OAuth client ID, not a secret)
+            clientSecret: $argocd-github-oauth:dex.github.clientSecret
+            orgs:
+              - name: SystemConsultantGroup
+                teams:
+                  - active
+            teamNameField: slug
+
+  rbac:
+    policy.csv: |
+      g, SystemConsultantGroup:active, role:admin
+    policy.default: role:readonly
+    scopes: '[groups]'
