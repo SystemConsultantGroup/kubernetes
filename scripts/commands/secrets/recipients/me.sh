@@ -1,4 +1,4 @@
-require_no_args "t secrets recipient me" "$@"
+require_no_args "t secrets recipients me" "$@"
 
 key_file="$(age_key_file)"
 key_dir="$(dirname "$key_file")"

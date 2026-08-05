@@ -6,10 +6,10 @@ talos:
   schematic: "fd096f676a0df013f9631767d26696f8cb5ba7b7d3921cd8781a061a7ce9016d"
 
 kubernetes:
-  version: "1.36.2"
+  version: "1.36.3"
 
 cilium:
-  version: "1.19.6"
+  version: "1.20.0"
 
 argocd:
   version: "10.2.2" # chart version

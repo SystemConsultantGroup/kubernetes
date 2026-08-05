@@ -11,8 +11,8 @@ for argument in "$@"; do
     esac
 done
 
-node="$(resolve_node "${requested:-$MAIN_IP}")"
-if [[ "$node" == -* || "$node" == *[[:space:]]* ]]; then
+node="$(resolve_node "${requested:-$MAIN_NODE}")"
+if [[ "$node" == -* || "$node" == null || "$node" == REPLACE_* || "$node" == *[[:space:]]* ]]; then
     echo "Invalid node: $node" >&2
     return 2
 fi

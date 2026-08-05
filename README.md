@@ -27,10 +27,10 @@ talos:
   schematic: "..."
 
 kubernetes:
-  version: "1.36.2"
+  version: "1.36.3"
 
 cilium:
-  version: "1.19.6"
+  version: "1.20.0"
 
 argocd:
   version: "10.2.2" # chart version
@@ -67,7 +67,7 @@ Encrypted secret files live under `secrets/`:
 Create or display your local identity:
 
 ```bash
-t secrets recipient me
+t secrets recipients me
 ```
 
 The private key defaults to `~/.config/sops/age/keys.txt`. The command prints the corresponding public `age1...` recipient.
@@ -75,7 +75,7 @@ The private key defaults to `~/.config/sops/age/keys.txt`. The command prints th
 A new operator cannot grant their own key access. Send the printed recipient to an existing operator, who runs:
 
 ```bash
-t secrets recipient add alice-laptop age1...
+t secrets recipients add alice-laptop age1...
 ```
 
 Recipient aliases should identify a person and device so one compromised device can be revoked independently.
@@ -83,10 +83,10 @@ Recipient aliases should identify a person and device so one compromised device 
 ### Recipient management
 
 ```bash
-t secrets recipient me
-t secrets recipient list
-t secrets recipient add <name> <age1...>
-t secrets recipient remove <name>
+t secrets recipients me
+t secrets recipients list
+t secrets recipients add <name> <age1...>
+t secrets recipients remove <name>
 ```
 
 Adding or removing a recipient regenerates `.sops.yaml` and rekeys every encrypted file. The operation restores the previous files if rekeying fails. Duplicate aliases and recipients are rejected, and the final recipient cannot be removed.
@@ -165,7 +165,7 @@ Use `--yes` to skip confirmation. Each command checks the installed version and 
 
 - **Talos** upgrades nodes sequentially with the configured factory image, then checks cluster health.
 - **Kubernetes** prints Talos's dry-run upgrade plan before confirmation, applies it, then checks health.
-- **Cilium** uses `cilium upgrade` and waits up to ten minutes.
+- **Cilium** reconciles Gateway API CRDs, then uses `cilium upgrade` and waits up to ten minutes.
 - **Argo CD** upgrades the pinned Helm chart with the existing values and bootstrap secrets.
 
 A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checking cluster health between components.
@@ -192,6 +192,7 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 
 | Command | Description |
 | --- | --- |
+| `t install gateway-api` | Install or reconcile the Gateway API CRDs required by Cilium |
 | `t install cilium` | Install Gateway API CRDs and Cilium on a fresh cluster |
 | `t install argocd` | Install or reconcile Argo CD, credentials, and the root application |
 | `t wait talos` | Wait for Talos and Kubernetes control-plane health |
@@ -203,10 +204,10 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 ```text
 t edit <secret>
 t secrets check
-t secrets recipient me
-t secrets recipient list
-t secrets recipient add <name> <age1...>
-t secrets recipient remove <name>
+t secrets recipients me
+t secrets recipients list
+t secrets recipients add <name> <age1...>
+t secrets recipients remove <name>
 t upgrade <talos|kubernetes|cilium|argocd> [--yes]
 ```
 

@@ -1,4 +1,4 @@
-require_no_args "t secrets recipient list" "$@"
+require_no_args "t secrets recipients list" "$@"
 require_file "$SECRET_STATE_FILE"
 
 me=""

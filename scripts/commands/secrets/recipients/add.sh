@@ -1,5 +1,5 @@
 if (($# != 2)); then
-    echo "Usage: t secrets recipient add <name> <recipient>" >&2
+    echo "Usage: t secrets recipients add <name> <recipient>" >&2
     return 2
 fi
 

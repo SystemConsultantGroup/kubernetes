@@ -9,4 +9,5 @@ if [[ "$current" == "$CILIUM_VERSION" ]]; then
 fi
 
 confirm_action "t upgrade cilium [--yes]" "Upgrade Cilium to $CILIUM_VERSION?" "$@"
+run install gateway-api
 cilium upgrade --version "$CILIUM_VERSION" --wait --wait-duration 10m

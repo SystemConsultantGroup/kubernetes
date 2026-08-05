@@ -30,6 +30,8 @@ _t_complete() {
 
     for ((index = 1; index < COMP_CWORD; index++)); do
         part="${COMP_WORDS[index]}"
+        [[ "$part" != help ]] || continue
+        [[ "$directory" != "$_T_COMMAND_DIR/secrets" || "$part" != recipient ]] || part=recipients
         if [[ -d "$directory/$part" ]]; then
             directory="$directory/$part"
         else
@@ -37,14 +39,14 @@ _t_complete() {
             break
         fi
     done
-    [[ -z "$directory" ]] || choices="$(_t_command_names "$directory")"
+    [[ -z "$directory" ]] || choices="help --help $(_t_command_names "$directory")"
 
     case "${COMP_WORDS[*]:1:COMP_CWORD-1}" in
         edit) choices="$(_t_secret_names)" ;;
         reset) choices="--yes $(_t_node_names)" ;;
         "reset --yes") choices="$(_t_node_names)" ;;
         reset\ *) choices="--yes" ;;
-        "secrets recipient remove") choices="$(_t_recipient_names)" ;;
+        "secrets recipient remove"|"secrets recipients remove") choices="$(_t_recipient_names)" ;;
         "upgrade argocd"|"upgrade cilium"|"upgrade kubernetes"|"upgrade talos") choices="--yes" ;;
     esac
 

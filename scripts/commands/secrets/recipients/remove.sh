@@ -1,5 +1,5 @@
 if (($# != 1)); then
-    echo "Usage: t secrets recipient remove <name>" >&2
+    echo "Usage: t secrets recipients remove <name>" >&2
     return 2
 fi
 
