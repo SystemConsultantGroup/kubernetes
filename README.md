@@ -6,13 +6,13 @@ The repository manages Talos machine configuration, Cilium networking, Argo CD b
 
 ## Requirements
 
-Install [Devbox](https://www.jetify.com/devbox/) and enter the project shell:
+Install [Flox](https://flox.dev/) and enter the project environment:
 
 ```bash
-devbox shell
+flox activate
 ```
 
-Devbox provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `t`.
+Flox provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `t`.
 
 ## Configuration
 
@@ -221,7 +221,7 @@ secrets/                      Encrypted values and public recipient state
 scripts/t                     CLI entry point and shared helpers
 scripts/commands/             Dynamically discovered command modules
 scripts/completions/t.bash    Bash completion
-devbox.json                   Reproducible local tool environment
+.flox/                        Reproducible local tool environment
 ```
 
 Do not commit plaintext secrets, `talosconfig`, or `kubeconfig`.

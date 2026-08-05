@@ -1,0 +1,662 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "schema-version": "1.14.0",
+    "install": {
+      "age": {
+        "pkg-path": "age"
+      },
+      "cilium-cli": {
+        "pkg-path": "cilium-cli"
+      },
+      "kubectl": {
+        "pkg-path": "kubectl"
+      },
+      "kubernetes-helm": {
+        "pkg-path": "kubernetes-helm"
+      },
+      "sops": {
+        "pkg-path": "sops"
+      },
+      "talosctl": {
+        "pkg-path": "talosctl"
+      },
+      "yq-go": {
+        "pkg-path": "yq-go"
+      }
+    },
+    "hook": {
+      "on-activate": "  export PATH=\"$FLOX_ENV_PROJECT/scripts:$PATH\"\n  export TALOSCONFIG=\"$FLOX_ENV_PROJECT/talosconfig\"\n  export KUBECONFIG=\"$FLOX_ENV_PROJECT/kubeconfig\"\n"
+    },
+    "profile": {
+      "bash": "  source \"$FLOX_ENV_PROJECT/scripts/completions/t.bash\"\n"
+    },
+    "options": {
+      "systems": [
+        "aarch64-darwin",
+        "aarch64-linux",
+        "x86_64-linux"
+      ]
+    }
+  },
+  "packages": [
+    {
+      "attr_path": "age",
+      "broken": false,
+      "derivation": "/nix/store/xlslzigfxf35zfnkcnmvc94w1dlj9m6q-age-1.3.1.drv",
+      "description": "Modern encryption tool with small explicit keys",
+      "install_id": "age",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "age-1.3.1",
+      "pname": "age",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:54:36.230046Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/n86iql7dby2dzhk3k5xfbb2gj547y3sj-age-1.3.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "age",
+      "broken": false,
+      "derivation": "/nix/store/kh81dkcmwkq90av65qqs2vqjn9ymc8mc-age-1.3.1.drv",
+      "description": "Modern encryption tool with small explicit keys",
+      "install_id": "age",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "age-1.3.1",
+      "pname": "age",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:23:44.569950Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/0lrdmsq11fhy60d2v2lcnxrlvxdynsgw-age-1.3.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "age",
+      "broken": false,
+      "derivation": "/nix/store/r0l9w9lbx4jznjk4kxj8jcr7gvwsrqv3-age-1.3.1.drv",
+      "description": "Modern encryption tool with small explicit keys",
+      "install_id": "age",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "age-1.3.1",
+      "pname": "age",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:57:00.778191Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/80sgb96knhn2cxqs8znfv714qmbgnzxw-age-1.3.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cilium-cli",
+      "broken": false,
+      "derivation": "/nix/store/h5lqphaw9lrk62g7xv4gdpswwq1a93gf-cilium-cli-0.19.7.drv",
+      "description": "CLI to install, manage & troubleshoot Kubernetes clusters running Cilium",
+      "install_id": "cilium-cli",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "cilium-cli-0.19.7",
+      "pname": "cilium-cli",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:54:36.724671Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.19.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/phfhizm4vh6s75l7ydgikq7d1ydpxpr5-cilium-cli-0.19.7"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cilium-cli",
+      "broken": false,
+      "derivation": "/nix/store/ab79r87chn71gnarih40717ys37da785-cilium-cli-0.19.7.drv",
+      "description": "CLI to install, manage & troubleshoot Kubernetes clusters running Cilium",
+      "install_id": "cilium-cli",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "cilium-cli-0.19.7",
+      "pname": "cilium-cli",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:23:45.122363Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.19.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/34bgsz5ri4izjhxfahm6pwzz1bwynbf2-cilium-cli-0.19.7"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cilium-cli",
+      "broken": false,
+      "derivation": "/nix/store/ys1zmw49y9zijxzzz64l2pd7hhqn1zdm-cilium-cli-0.19.7.drv",
+      "description": "CLI to install, manage & troubleshoot Kubernetes clusters running Cilium",
+      "install_id": "cilium-cli",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "cilium-cli-0.19.7",
+      "pname": "cilium-cli",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:57:01.388801Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.19.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/iydkr8gxya78002zkmgwj6aizm9fl651-cilium-cli-0.19.7"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubectl",
+      "broken": false,
+      "derivation": "/nix/store/dv2i6qzcncqkvcjf0kyg42l5k9qsia5r-kubectl-1.36.3.drv",
+      "description": "Kubernetes CLI",
+      "install_id": "kubectl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubectl-1.36.3",
+      "pname": "kubectl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:54:53.771665Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.36.3",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "convert": "/nix/store/yzb59f5y4qhra438w2lma11svrl58j9w-kubectl-1.36.3-convert",
+        "man": "/nix/store/d5nh9pwixcm9672rhqwy655k9i2a26lp-kubectl-1.36.3-man",
+        "out": "/nix/store/3qb9nx5p60da5mxgpqykdgmr5yy63b25-kubectl-1.36.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubectl",
+      "broken": false,
+      "derivation": "/nix/store/4m6c724d21gglamzj0mhclrcchpw3l7k-kubectl-1.36.3.drv",
+      "description": "Kubernetes CLI",
+      "install_id": "kubectl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubectl-1.36.3",
+      "pname": "kubectl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:24:08.332786Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.36.3",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "convert": "/nix/store/mj3q2rip56ykf0amhi5qldmpzmcwhl7s-kubectl-1.36.3-convert",
+        "man": "/nix/store/c2pj3axay86cxhmi9fmxd5g0rm7cpxb9-kubectl-1.36.3-man",
+        "out": "/nix/store/hrvl2jwvk4n983cm0pznqqq1wngkz5wi-kubectl-1.36.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubectl",
+      "broken": false,
+      "derivation": "/nix/store/p967n6507l493ph3riccsckr4j1446jn-kubectl-1.36.3.drv",
+      "description": "Kubernetes CLI",
+      "install_id": "kubectl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubectl-1.36.3",
+      "pname": "kubectl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:57:25.698105Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.36.3",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "convert": "/nix/store/xm69shzq95d044c87296rjfsq6a9fi3d-kubectl-1.36.3-convert",
+        "man": "/nix/store/1yn762n6qnzpbrvmrz4qh1fd3gphg78z-kubectl-1.36.3-man",
+        "out": "/nix/store/gr13vsi0xrrw3y6fpyrk2kgmkidpqrm9-kubectl-1.36.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubernetes-helm",
+      "broken": false,
+      "derivation": "/nix/store/h27s9phbjyisaq14bdrh1hc6v1bmh1kh-kubernetes-helm-4.2.3.drv",
+      "description": "Package manager for kubernetes",
+      "install_id": "kubernetes-helm",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubernetes-helm-4.2.3",
+      "pname": "kubernetes-helm",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:54:53.819102Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.2.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/zxlrdn6fsss4s2i496np7kdrwy92261j-kubernetes-helm-4.2.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubernetes-helm",
+      "broken": false,
+      "derivation": "/nix/store/w61scb5zj8c4dmckwlmrxf8m2ma263fl-kubernetes-helm-4.2.3.drv",
+      "description": "Package manager for kubernetes",
+      "install_id": "kubernetes-helm",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubernetes-helm-4.2.3",
+      "pname": "kubernetes-helm",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:24:08.390307Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.2.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/3m7a0rmsr6k5hs0xl2ym6kiv4iqgwypj-kubernetes-helm-4.2.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kubernetes-helm",
+      "broken": false,
+      "derivation": "/nix/store/qkhmnhnv2j5zql42fylj3vs4h8f4p35z-kubernetes-helm-4.2.3.drv",
+      "description": "Package manager for kubernetes",
+      "install_id": "kubernetes-helm",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "kubernetes-helm-4.2.3",
+      "pname": "kubernetes-helm",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:57:25.756760Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.2.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/wkb6xckn077grj4jqb6z6wgmwzj7g1xr-kubernetes-helm-4.2.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "sops",
+      "broken": false,
+      "derivation": "/nix/store/1298kr7352xdh3n7577kf2qbknq1r2xc-sops-3.13.3.drv",
+      "description": "Simple and flexible tool for managing secrets",
+      "install_id": "sops",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "sops-3.13.3",
+      "pname": "sops",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:56:28.856173Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.13.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/v66nkhq6y3dw41lmq8z4wj6h5jk4as9j-sops-3.13.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "sops",
+      "broken": false,
+      "derivation": "/nix/store/55w97nykrx6l7jafz3x5avwiajkf7kkd-sops-3.13.3.drv",
+      "description": "Simple and flexible tool for managing secrets",
+      "install_id": "sops",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "sops-3.13.3",
+      "pname": "sops",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:26:12.132327Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.13.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/048q8lb310573ss7lg0gxhd7nw1gq5rl-sops-3.13.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "sops",
+      "broken": false,
+      "derivation": "/nix/store/5nj8zasy47wvbg1wg4dqg3xl0zppnw3v-sops-3.13.3.drv",
+      "description": "Simple and flexible tool for managing secrets",
+      "install_id": "sops",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "sops-3.13.3",
+      "pname": "sops",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:59:35.492077Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.13.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/yvr8hphgpqyj6s46y0mld7w0r31rirwk-sops-3.13.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "talosctl",
+      "broken": false,
+      "derivation": "/nix/store/9r5j7ngn7qlihm7dpb2hfpgq5dncv6fa-talosctl-1.13.7.drv",
+      "description": "CLI for out-of-band management of Kubernetes nodes created by Talos",
+      "install_id": "talosctl",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "talosctl-1.13.7",
+      "pname": "talosctl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:56:30.962302Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.13.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/wqvxx6iik6ddqvlzvmz38a69m1iql07l-talosctl-1.13.7"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "talosctl",
+      "broken": false,
+      "derivation": "/nix/store/3yrlbv7zhnyslpixy33wjqalirp9fly9-talosctl-1.13.7.drv",
+      "description": "CLI for out-of-band management of Kubernetes nodes created by Talos",
+      "install_id": "talosctl",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "talosctl-1.13.7",
+      "pname": "talosctl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:26:15.477730Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.13.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/5vlgdxls1k9iln9px45h5h36162carrb-talosctl-1.13.7"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "talosctl",
+      "broken": false,
+      "derivation": "/nix/store/a9058ibby2fwsslpjx1w8w1xjah3nf4a-talosctl-1.13.7.drv",
+      "description": "CLI for out-of-band management of Kubernetes nodes created by Talos",
+      "install_id": "talosctl",
+      "license": "MPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "talosctl-1.13.7",
+      "pname": "talosctl",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:59:39.179880Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.13.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/r7l0r6m9hf5lk711dw2jxz03596mq8yc-talosctl-1.13.7"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "yq-go",
+      "broken": false,
+      "derivation": "/nix/store/1vp45f21wks9v3lizarl7a9sjhak9lf0-yq-go-4.53.3.drv",
+      "description": "Portable command-line YAML processor",
+      "install_id": "yq-go",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "yq-go-4.53.3",
+      "pname": "yq-go",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T04:57:29.787483Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.53.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ka1kvl4b0zhcz16kb6amn86qjjqglw3z-yq-go-4.53.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "yq-go",
+      "broken": false,
+      "derivation": "/nix/store/wc0dhpccp56xhf3ps639l6727a0qvsxb-yq-go-4.53.3.drv",
+      "description": "Portable command-line YAML processor",
+      "install_id": "yq-go",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "yq-go-4.53.3",
+      "pname": "yq-go",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T05:27:32.086381Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.53.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/f3mpc2r89qqvqz9sya611fr5lf4qawb5-yq-go-4.53.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "yq-go",
+      "broken": false,
+      "derivation": "/nix/store/lwg011rsxbv2yki46cqxhcsda6nk52gf-yq-go-4.53.3.drv",
+      "description": "Portable command-line YAML processor",
+      "install_id": "yq-go",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "name": "yq-go-4.53.3",
+      "pname": "yq-go",
+      "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+      "rev_count": 1047536,
+      "rev_date": "2026-08-04T07:31:08Z",
+      "scrape_date": "2026-08-05T06:01:02.095851Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.53.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/pyy2agrvaazs49lkpn75dibpvz45pwkm-yq-go-4.53.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}

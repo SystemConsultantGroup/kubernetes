@@ -1,4 +1,3 @@
-.devbox
 controlplane.yaml
 talosconfig
 kubeconfig
