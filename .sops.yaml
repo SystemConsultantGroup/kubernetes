@@ -3,3 +3,4 @@ creation_rules:
   - path_regex: ^secrets/(env|talos)\.yaml$
     age:
       - age122cs9lkwpzx6ccpw73gjudy0t5ln6ueqcl9tckj4y2yrxvqv6u3qph6ap3
+      - age1lhcjrkxtx5qr3ynnjcewwhh36fyp9ahu5d34ccfpl5hzdwlzz58q6f5y30
