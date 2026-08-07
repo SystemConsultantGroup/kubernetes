@@ -67,7 +67,7 @@ Every registered workload has explicit testing and production branches. Branch n
 | --- | --- | --- | --- |
 | Production | `workloads.<name>.branches.production` | `app-production-<application>` | production `domain` |
 | Testing | `workloads.<name>.branches.testing` | `app-testing-<application>` | `<application>.testing.scg.sh` |
-| Preview | eligible labeled pull request | `app-preview-<application>-<workload>-pr<number>` | `<application>-<workload>-pr<number>.preview.scg.sh` |
+| Preview | eligible labeled pull request | `app-preview-<application>-<workload>-<number>` | `<application>-<workload>-<number>.preview.scg.sh` |
 
 PR numbers are repository-scoped, so preview identity includes the workload. A pull request affecting multiple published workloads may produce one preview per workload. Each preview is a complete immutable snapshot of every application workload; unchanged workloads are copied from the pull request target environment.
 
@@ -148,7 +148,7 @@ routes:
 | --- | --- | --- | --- |
 | `domain` | when `routes` exists | `string \| Domain` | Canonical production hostname and optional additional production hostnames. |
 | `workloads` | yes | non-empty map of `Workload` | Deployment definitions keyed by local DNS-label workload names such as `fe`, `be`, `api`, or `worker`. |
-| `routes` | no | `custom \| Route[]` | Omitted for no public HTTP routing, a list for generated routing, or `custom` for constrained custom HTTPRoutes. |
+| `routes` | no | `custom \| GeneratedRouteRule[]` | Omitted for no public HTTP routing, a list of chart-specific generated-route rules, or `custom` for constrained Gateway API HTTPRoutes. |
 
 No other top-level fields are allowed.
 
@@ -353,13 +353,15 @@ routes:
     workload: be
 ```
 
-Each generated `Route` contains exactly:
+Each list entry is chart-specific metadata, not a Gateway API `HTTPRoute` embedded as-is. The chart translates `GeneratedRouteRule` entries into rules within platform-owned `HTTPRoute` resources.
 
 ```text
-Route:
+GeneratedRouteRule:
   path: absolute HTTP path prefix       required
   workload: existing workload key       required
 ```
+
+Fields such as `apiVersion`, `kind`, `metadata`, `hostnames`, `parentRefs`, filters, and raw Gateway API rules are invalid here. Applications needing actual Gateway API `HTTPRoute` resources use `routes: custom` instead.
 
 Rules:
 
@@ -426,7 +428,7 @@ lock:
           imageDigest: sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 
   previews:
-    fe-pr42:
+    fe-42:
       workload: fe
       pullRequest: 42
       targetEnvironment: testing
@@ -450,8 +452,8 @@ Rules:
 - the rendered image is `<meta workload image>@<imageDigest>`;
 - workflow validation verifies the digest exists and its workflow-bound provenance matches the registered repository and `sourceRevision`;
 - a stable lock update must originate from the corresponding registered branch, may change only the initiating workload entry, and must leave sibling workload entries unchanged;
-- preview keys are exactly `<workload>-pr<number>` and unique, with a positive integer pull-request number;
-- each key must equal its `workload` plus `-pr` plus its `pullRequest`, and the workload must exist in metadata;
+- preview keys are exactly `<workload>-<number>` and unique, with a positive integer pull-request number;
+- each key must equal its `workload` plus `-` plus its `pullRequest`, and the workload must exist in metadata;
 - `targetEnvironment` is exactly `testing` or `production`; the PR base ref must equal the initiating workload's registered branch for that environment;
 - the initiating workload's `sourceRevision` must equal the PR head commit;
 - preview snapshots are complete, not deltas, and every non-initiating workload entry must exactly equal its selected target-environment lock entry;
