@@ -1,0 +1,58 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: scg-platform
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        revision: main
+        files:
+          - path: platform/*/meta.yaml
+  template:
+    metadata:
+      name: 'scg-{{ .name }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: scg
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+  templatePatch: |
+    spec:
+      {{- if eq .source.type "helm" }}
+      sources:
+        - repoURL: '{{ .source.repoURL }}'
+          chart: '{{ .source.chart }}'
+          targetRevision: '{{ .source.targetRevision }}'
+          helm:
+            releaseName: '{{ .name }}'
+            valueFiles:
+              - '$values/{{ .source.values }}'
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          ref: values
+        {{- with .source.manifestsPath }}
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          path: '{{ . }}'
+        {{- end }}
+      {{- else }}
+      source:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        targetRevision: main
+        path: '{{ .source.path }}'
+      {{- end }}

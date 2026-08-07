@@ -1,5 +1,5 @@
 {
-  description = "Talos cluster tooling";
+  description = "Kubernetes cluster tooling";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 

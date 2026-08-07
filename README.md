@@ -1,8 +1,8 @@
-# Talos cluster
+# Kubernetes cluster
 
-Declarative configuration and a small `t` CLI for provisioning and maintaining the `scg` Talos Kubernetes cluster.
+Declarative configuration and a small `t` CLI for provisioning and maintaining the `scg` Kubernetes cluster.
 
-The repository manages Talos machine configuration, Cilium networking, Argo CD bootstrap, and SOPS-encrypted secrets. Cluster state is declared in [`state.yaml`](state.yaml); generated client configurations stay local.
+The repository manages Talos machine configuration, Cilium networking, Argo CD bootstrap, Argo CD-reconciled platform services, and SOPS-encrypted secrets. Cluster state is declared in [`state.yaml`](state.yaml); generated client configurations stay local.
 
 ## Requirements
 
@@ -135,6 +135,18 @@ t install
 
 `t apply` automatically uses the authenticated Talos API for configured nodes and insecure maintenance mode for fresh nodes.
 
+## GitOps
+
+Argo CD reconciles [`clusters/scg`](clusters/scg), whose ApplicationSet discovers platform components from `platform/*/meta.yaml`. The current platform includes Argo CD configuration, the public Gateway, cert-manager, and Argo CD Image Updater.
+
+Bootstrap components required to start Argo CD remain under `scripts/`; everything else belongs under `clusters/` or `platform/`. Push desired-state changes to `main` and Argo CD applies them automatically.
+
+External routes must be created in namespaces carrying this label:
+
+```yaml
+gateway.scg.sh/public: "true"
+```
+
 ### Reset
 
 Reset the endpoint node or a named node from `state.yaml`:
@@ -222,6 +234,8 @@ secrets/                      Encrypted values and public recipient state
 scripts/t                     CLI entry point and shared helpers
 scripts/commands/             Dynamically discovered command modules
 scripts/completions/t.bash    Bash completion
+clusters/scg/                 Argo CD root desired state
+platform/                     Argo CD-managed platform components
 flake.nix                     Reproducible local tool environment
 ```
 

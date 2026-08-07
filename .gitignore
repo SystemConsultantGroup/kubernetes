@@ -1,3 +1,5 @@
+.DS_Store
+.pi-subagents/
 controlplane.yaml
 talosconfig
 kubeconfig

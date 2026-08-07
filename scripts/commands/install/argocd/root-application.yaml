@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/SystemConsultantGroup/gitops.git
+    repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
     targetRevision: main
     path: clusters/scg
   destination:
