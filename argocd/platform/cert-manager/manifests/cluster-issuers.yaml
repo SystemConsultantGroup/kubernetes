@@ -1,15 +1,20 @@
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-cloudflare
+  name: zerossl-cloudflare
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   acme:
     email: scg@scg.skku.ac.kr
-    server: https://acme-v02.api.letsencrypt.org/directory
+    server: https://acme.zerossl.com/v2/DV90
     privateKeySecretRef:
-      name: letsencrypt-cloudflare-account
+      name: zerossl-cloudflare-account
+    externalAccountBinding:
+      keyID: y3xGHKQKa3p96B6gdKwhXQ
+      keySecretRef:
+        name: zerossl-eab
+        key: hmac-key
     solvers:
       - dns01:
           cloudflare:

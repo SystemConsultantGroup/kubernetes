@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: scg-applications
+  name: applications
   namespace: argocd
 spec:
   goTemplate: true
@@ -16,7 +16,7 @@ spec:
           - path: applications/*
   template:
     metadata:
-      name: 'scg-{{ .path.basename }}'
+      name: '{{ .path.basename }}'
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io

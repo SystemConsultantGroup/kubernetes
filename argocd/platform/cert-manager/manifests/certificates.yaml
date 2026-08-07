@@ -9,6 +9,6 @@ spec:
   secretName: argocd-tls
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt-cloudflare
+    name: zerossl-cloudflare
   dnsNames:
     - argocd.infra.scg.sh
