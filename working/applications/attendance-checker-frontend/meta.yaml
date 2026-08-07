@@ -1,0 +1,15 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/attendance-checker-frontend.git
+    image: docker.io/scgskku/attendance-checker-fe-dev
+    branches:
+      production: main
+    port: 3000
+
+domain:
+  name: attendance.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: fe

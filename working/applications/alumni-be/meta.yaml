@@ -1,0 +1,22 @@
+workloads:
+  be:
+    repository: https://github.com/SystemConsultantGroup/skku-alumni-backend.git
+    image: docker.io/scgskku/alumni-be-prod
+    branches:
+      testing: develop
+      production: main
+    port: 8000
+    readiness:
+      type: tcp
+    env:
+      from:
+        secrets:
+          - alumni-be-secret
+
+domain:
+  name: api.alumni.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: be

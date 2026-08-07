@@ -1,0 +1,16 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/scg-url-shortener-frontend.git
+    image: docker.io/scgskku/shortener-fe-prod
+    branches:
+      testing: dev
+      production: main
+    port: 3000
+
+domain:
+  name: app.scg.sh
+  external: false
+
+routes:
+  - path: /
+    workload: fe

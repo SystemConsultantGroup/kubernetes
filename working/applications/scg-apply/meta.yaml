@@ -1,0 +1,28 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-frontend.git
+    image: docker.io/scgskku/scg-apply-fe-prod
+    branches:
+      production: main
+    port: 3000
+
+  be:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-backend.git
+    image: docker.io/scgskku/scg-apply-be-prod
+    branches:
+      production: main
+    port: 8000
+    env:
+      from:
+        secrets:
+          - scg-apply-secret
+
+domain:
+  name: apply.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: fe
+  - path: /v1
+    workload: be

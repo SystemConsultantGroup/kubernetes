@@ -1,0 +1,22 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/room-reservation-frontend.git
+    image: docker.io/scgskku/reservation-fe-prod
+    branches:
+      testing: develop
+      production: main
+    port: 3000
+    readiness:
+      type: tcp
+    env:
+      from:
+        secrets:
+          - reservation-fe-secret
+
+domain:
+  name: semi.room.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: fe

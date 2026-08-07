@@ -1,0 +1,19 @@
+workloads:
+  app:
+    repository: https://github.com/SystemConsultantGroup/ICC-lecture-enrollment.git
+    image: docker.io/scgskku/icc-lecture-enrollment
+    branches:
+      production: master
+    port: 8090
+    env:
+      from:
+        secrets:
+          - icc-lecture-enrollment-secret
+
+domain:
+  name: profsystem.icc.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: app

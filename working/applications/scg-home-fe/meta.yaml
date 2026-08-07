@@ -1,0 +1,16 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/scg-2026-frontend.git
+    image: docker.io/scgskku/scg-home-fe-prod
+    branches:
+      production: main
+    port: 3000
+    env:
+      literals:
+        NODE_ENV: production
+
+domain:
+  name: scg.skku.ac.kr
+  external: false
+
+routes: custom

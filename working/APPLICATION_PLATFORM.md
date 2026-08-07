@@ -2,7 +2,7 @@
 
 Status: approved design specification; not yet operationally authoritative.
 
-This document defines the strict registry, lock, and Helm rendering contracts for ordinary SCG applications. `working/LEGACY_CONFIG_SWEEP.md` is the evidence basis. The implementation must reject unsupported or ambiguous input rather than silently guessing.
+This document defines the strict registry, lock, and Helm rendering contracts for ordinary SCG applications. The paper port in `working/applications/` is the evidence and pressure-test basis (`working/applications/README.md` is the index). The implementation must reject unsupported or ambiguous input rather than silently guessing.
 
 ## 1. Scope
 
@@ -26,7 +26,7 @@ The public `SystemConsultantGroup/kubernetes` repository is the sole desired-sta
 
 - Argo CD UI changes are non-authoritative and must not be used for persistent configuration.
 - Application repositories contain code, Dockerfiles, and a small caller for the central reusable workflow.
-- Application workflows publish immutable images and update the matching registry lock in this repository.
+- Application workflows publish immutable images and submit attested lock-mutation requests; the central lock writer is the only non-human authority that edits registry locks in this repository.
 - Argo CD receives a webhook for this repository and polls as a fallback.
 - Argo CD refreshes after a Git change, renders desired resources, and syncs only when rendered resources differ from live resources.
 - Argo CD Image Updater is removed once the lock-writing workflow is operational. There must be one image-revision writer.
@@ -37,6 +37,7 @@ The public `SystemConsultantGroup/kubernetes` repository is the sole desired-sta
 .github/
   workflows/
     publish-application-image.yaml  # reusable workflow_call workflow
+lock-writer/                         # Cloudflare Queue consumer and submission API
 applications/
   <application>/
     meta.yaml                       # human-managed intent
@@ -61,15 +62,17 @@ The application directory basename is the application name. It must be a lowerca
 
 ## 4. Environments and names
 
-Every registered workload has explicit testing and production branches. Branch names are per workload because component repositories may use different conventions.
+Every registered workload has a production branch. Testing is optional, but an application either declares a testing branch for every workload or for none; partial testing applications are invalid. Branch names remain per workload because component repositories may use different conventions.
 
 | Environment | Source | Namespace | Hostname |
 | --- | --- | --- | --- |
 | Production | `workloads.<name>.branches.production` | `app-production-<application>` | production `domain` |
-| Testing | `workloads.<name>.branches.testing` | `app-testing-<application>` | `<application>.testing.scg.sh` |
-| Preview | eligible labeled pull request | `app-preview-<application>-<workload>-<number>` | `<application>-<workload>-<number>.preview.scg.sh` |
+| Testing | all workloads declare `branches.testing` | `app-testing-<application>` | `<application>.testing.scg.sh` |
+| Preview | eligible labeled pull request | `app-preview-<application>-<anchor>-<number>` | `<application>-<anchor>-<number>.preview.scg.sh` |
 
-PR numbers are repository-scoped, so preview identity includes the workload. A pull request affecting multiple published workloads may produce one preview per workload. Each preview is a complete immutable snapshot of every application workload; unchanged workloads are copied from the pull request target environment.
+Applications without testing branches have no testing release. They may still create previews from pull requests targeting production.
+
+PR numbers are repository-scoped, so preview identity includes a repository anchor: the lexicographically first application workload backed by the pull request repository. One application/repository/pull-request tuple produces one preview, even when the trusted build publishes several workloads from that repository. Each preview is a complete immutable snapshot of every application workload; workloads absent from the atomic mutation request are copied from the pull request target environment.
 
 Testing and preview infrastructure is static platform policy:
 
@@ -87,13 +90,15 @@ The fixed policies must be validated against the source addresses Cilium observe
 
 Unknown fields and duplicate YAML mapping keys at every level are errors. Strict parsing rejects duplicates before schema validation. YAML aliases, merge keys, and environment interpolation are not part of the contract. Values have the types shown below; strings are not coerced from numbers or booleans.
 
-### 5.1 Complete example
+### 5.1 Complete synthetic example
+
+The names and values below illustrate the schema only; they are not migration evidence for an existing application.
 
 ```yaml
 workloads:
   fe:
-    repository: https://github.com/SystemConsultantGroup/scg-apply-frontend.git
-    image: docker.io/scgskku/scg-apply-fe-prod
+    repository: https://github.com/SystemConsultantGroup/example-frontend.git
+    image: docker.io/scgskku/example-fe-prod
     branches:
       testing: dev
       production: main
@@ -102,8 +107,8 @@ workloads:
       type: tcp
 
   be:
-    repository: https://github.com/SystemConsultantGroup/scg-apply-backend.git
-    image: docker.io/scgskku/scg-apply-be-prod
+    repository: https://github.com/SystemConsultantGroup/example-backend.git
+    image: docker.io/scgskku/example-be-prod
     branches:
       testing: dev
       production: main
@@ -125,14 +130,14 @@ workloads:
         LOG_LEVEL: info
       from:
         secrets:
-          - scg-apply-secret
+          - example-secret
 
 domain:
-  name: apply.cs.skku.edu
+  name: example.cs.skku.edu
   external: true
   additional:
-    - apply-old.scg.sh
-    - name: apply2.cs.skku.edu
+    - example-old.scg.sh
+    - name: example2.cs.skku.edu
       external: true
 
 routes:
@@ -151,6 +156,12 @@ routes:
 | `routes` | no | `custom \| GeneratedRouteRule[]` | Omitted for no public HTTP routing, a list of chart-specific generated-route rules, or `custom` for constrained Gateway API HTTPRoutes. |
 
 No other top-level fields are allowed.
+
+#### Application boundaries
+
+Workloads that form one product and share a production hostname and route set belong in one application. This permits generated rules such as frontend `/` plus backend `/v1` without competing hostname ownership.
+
+Split workloads into separate applications when they require different production hostname route sets or independent release ownership. Reusing one repository in several applications or workloads is allowed. Reusing one production hostname across applications is not. Because non-production custom routes are collapsed onto one derived hostname, host-separated production components normally remain separate applications unless their combined testing and preview routing is intentional and unambiguous.
 
 ### 5.3 Domain
 
@@ -257,11 +268,11 @@ The registry is mandatory. `docker.io`, GHCR, Harbor, and other registries are n
 
 ```yaml
 branches:
-  testing: dev
   production: main
+  testing: dev
 ```
 
-Both fields are required, non-empty Git branch names and must differ. Applications without both branches are not registerable until they adopt the testing/production workflow.
+`production` is required. `testing` is optional. Both values are non-empty Git branch names and must differ when testing is present. Within one application, testing must be declared by every workload or by none.
 
 #### Port and Service
 
@@ -396,6 +407,7 @@ Strict custom-route contract:
 - cross-namespace backend references and `ExtensionRef` filters are forbidden;
 - source annotations are forbidden except `platform.scg.sh/production-only: "true"`;
 - routes carrying that annotation are omitted from testing and previews;
+- v1 custom-route filters are limited to core `RequestRedirect` and `URLRewrite`; CORS, header modifiers, mirrors, and implementation-specific filters remain unsupported until their semantics and Cilium conformance are proven;
 - every rendered route must pass Gateway API schema validation and Cilium conformance tests before migration.
 
 The implementation must prove the Kustomize/multi-source injection and resource allowlist before the first custom-route migration. Custom routing is not an arbitrary Kubernetes escape hatch.
@@ -444,23 +456,25 @@ lock:
 Rules:
 
 - `lock.version` is exactly `1`;
-- `testing` and `production` are required; `previews` is optional and defaults to an empty map;
+- `production` is required; `testing` is required exactly when every metadata workload declares `branches.testing`; `previews` is optional and defaults to an empty map;
 - every stable and preview snapshot contains exactly every metadata workload key;
 - no lock workload may be absent from or additional to `meta.yaml`;
 - `sourceRevision` is a quoted string containing the full 40-character lowercase Git commit SHA;
 - `imageDigest` is exactly `sha256:` followed by 64 lowercase hexadecimal characters;
 - the rendered image is `<meta workload image>@<imageDigest>`;
 - workflow validation verifies the digest exists and its workflow-bound provenance matches the registered repository and `sourceRevision`;
-- a stable lock update must originate from the corresponding registered branch, may change only the initiating workload entry, and must leave sibling workload entries unchanged;
-- preview keys are exactly `<workload>-<number>` and unique, with a positive integer pull-request number;
-- each key must equal its `workload` plus `-` plus its `pullRequest`, and the workload must exist in metadata;
-- `targetEnvironment` is exactly `testing` or `production`; the PR base ref must equal the initiating workload's registered branch for that environment;
-- the initiating workload's `sourceRevision` must equal the PR head commit;
-- preview snapshots are complete, not deltas, and every non-initiating workload entry must exactly equal its selected target-environment lock entry;
+- a stable mutation must originate from the corresponding registered branch and contain a non-empty set of workload updates;
+- one mutation may update several workloads atomically only when all changed workloads are registered to the same source repository and were built from the same source revision by one trusted workflow run;
+- stable sibling workload entries absent from the mutation must remain unchanged;
+- preview keys are exactly `<anchor>-<number>` and unique, with a positive integer pull-request number; `anchor` is the lexicographically first application workload registered to the pull request repository;
+- each preview's `workload` field contains that anchor and the key must equal it plus `-` plus `pullRequest`;
+- `targetEnvironment` is exactly an available `testing` or `production` environment; the PR base ref must equal every changed workload's registered branch for that environment;
+- every changed preview workload's `sourceRevision` must equal the PR head commit and all changed workloads must belong to the pull request repository;
+- preview snapshots are complete, not deltas; at creation, workloads absent from the atomic mutation are copied from the selected target-environment lock; on later updates, workloads absent from the mutation remain equal to the previous preview snapshot, so stable updates never cause an existing preview to drift;
 - removing the preview label or closing the pull request removes its lock entry;
 - manual changes pass the same validation as workflow changes.
 
-A PR that updates several workloads may create separate workload-scoped previews. This avoids collisions between repository-scoped pull request numbers while keeping preview identity explicit.
+A PR that updates several workloads from one repository creates one atomic repository-scoped preview. Separate repositories can still produce separate previews because their pull requests and source revisions are independent.
 
 ## 7. Reusable image workflow contract
 
@@ -470,7 +484,7 @@ The reusable workflow lives at:
 SystemConsultantGroup/kubernetes/.github/workflows/publish-application-image.yaml
 ```
 
-Each application repository contains only a small event/caller workflow. Its explicit inputs identify the application, workload, Dockerfile, and build context; v1 does not auto-discover monorepo build targets.
+Each application repository contains only a small event/caller workflow. One invocation targets exactly one application and takes a non-empty list of workload, Dockerfile, and build-context tuples; v1 does not auto-discover monorepo build targets. A single-workload application supplies a one-entry list. One trusted workflow run builds the complete list and submits all resulting workload updates in one mutation. A repository publishing workloads for several applications invokes the workflow separately for each application.
 
 Build-time configuration is a CI concern, not chart metadata. Non-secret build values come from the selected GitHub `testing` or `production` environment variables. Build secrets use BuildKit secret mounts from the matching GitHub environment and must not be passed as Docker build arguments or persisted in image layers. Preview builds receive only explicitly approved preview-safe values and never production build secrets. Applications whose frontend or backend build cannot follow this contract are blocked from migration.
 
@@ -478,10 +492,17 @@ The workflow separates trust domains:
 
 1. an unprivileged job checks out and tests/builds application code without Kubernetes-repository or GitHub App credentials;
 2. a publisher job consumes only the resulting immutable build output, publishes the configured canonical image, and creates workflow-bound provenance/attestation for the source repository, commit, workflow, and digest;
-3. a lock-writer job runs trusted reusable-workflow code only, verifies that provenance, resolves the application/workload against `meta.yaml`, and proposes the matching `lock.yaml` update through a narrowly permissioned GitHub App;
-4. no job may write another application's workload or execute pull-request code while lock-writing credentials are present.
+3. a trusted submitter verifies local build outputs and emits an immutable, idempotent lock-mutation request containing one or more same-repository workload updates, their attestations, the target application/environment, and the compare-and-swap expectations defined below;
+4. one central lock writer serializes requests per application, re-verifies provenance and authorization against `meta.yaml`, applies the complete mutation atomically, regenerates the release index, and proposes the Git change through its narrowly permissioned GitHub App;
+5. no publisher or untrusted application job receives lock-writing credentials, and no automated identity other than the central lock writer may edit `lock.yaml`.
 
-Testing and production branch pushes update their matching stable snapshots. Eligible maintainer-labeled pull requests update a workload-scoped preview snapshot. Central CI validates schema, attested provenance, authorization, Helm rendering, and changed-file scope before merge. Production lock updates follow the established production-branch merge procedure.
+V1 uses a Cloudflare Queue owned by this repository. Application workflows receive only submit authority and enqueue immutable mutation objects; the queue consumer Worker holds the GitHub App credential and is the sole automated lock writer. The consumer runs with global concurrency one and processes each delivered batch sequentially.
+
+The writer maintains one pending lock-update branch and pull request. It reads that branch when present, otherwise the authoritative branch; applies and validates one mutation; commits the mutation plus regenerated release index; and acknowledges the queue message only after Git durably contains that proposal. Later messages extend the same branch, so automation never creates competing lock proposals. CI or a human merges the accumulated proposal; a failed check or merge leaves the mutation durably pending rather than silently delivered. Queue retries and a dead-letter queue cover failures before the proposal commit. Add a Durable Object only if measured throughput or pending-branch coordination outgrows this globally serialized design.
+
+Each request has a unique mutation ID. Every changed workload includes its expected current lock entry and desired replacement; preview creation additionally includes the expected target-environment snapshot hash. The writer applies an exact compare-and-swap: an already-identical desired result is a successful no-op, an exact expected match is updated, and any other state is rejected as stale without automatic rebasing. A newly submitted request may reuse the verified build outputs with refreshed expectations. Human recovery edits remain allowed and pass the same validation.
+
+Testing and production branch pushes update their matching stable snapshots when that branch is registered. Eligible maintainer-labeled pull requests update one repository-scoped preview snapshot. Central CI validates schema, attested provenance, authorization, Helm rendering, and changed-file scope before merge. Production lock updates follow the established production-branch merge procedure.
 
 ## 8. Helm release inputs
 
@@ -549,7 +570,7 @@ Registration and lock CI must reject:
 - production domains beneath the reserved `testing.scg.sh` or `preview.scg.sh` zones;
 - shorthand or credential-bearing repository URLs;
 - image tags, image digests, or implicit registries in `meta.yaml`;
-- equal testing and production branches;
+- equal testing and production branches when testing is declared, testing declared for only some application workloads, or `replicas.testing` declared when the application has no testing environment;
 - duplicate or registry-conflicting domains, environment variables, Secret refs, or route paths;
 - managed domains outside the configured ExternalDNS zone allowlist;
 - routes referencing missing or portless workloads;
@@ -568,7 +589,7 @@ Generated Applications use hard-coded restrictive AppProjects. Preview sources m
 
 `env.from.secrets` references ordinary same-namespace Kubernetes Secrets. The application chart does not choose or expose a secret backend.
 
-A separate platform implementation must provision those Secrets in production, testing, and eligible preview namespaces before an application is migrated. The selected backend must reconcile to native Kubernetes Secrets. Provider paths and production-secret access remain trusted platform configuration, not pull-request-controlled application values.
+A separate platform implementation must provision those Secrets in every available stable environment and eligible preview namespace before an application is migrated. The selected backend must reconcile to native Kubernetes Secrets. Provider paths and production-secret access remain trusted platform configuration, not pull-request-controlled application values.
 
 ## 12. Deliberate exclusions
 
@@ -600,12 +621,12 @@ Add a capability only when an active ordinary application proves it cannot be re
 4. Implement and test the generic chart rendering contract.
 5. Add the two static wildcard DNS records, Certificate SANs, and Gateway listeners.
 6. Validate fixed Cilium source restrictions after NAT.
-7. Implement the reusable image workflow, environment-scoped build inputs, isolated credential jobs, attestations, and scoped lock-update validation.
+7. Implement the reusable image workflow, environment-scoped build inputs, isolated credential jobs, attestations, Cloudflare mutation queue/consumer, and scoped lock-update validation.
 8. Replace Image Updater after the lock workflow is live.
 9. Implement restrictive stable/preview AppProjects, ApplicationSets, service-account-token disabling, and preview network isolation.
 10. Select and implement native Kubernetes Secret reconciliation before migrating an application that references Secrets.
-11. Prove custom-route injection and allowlisting with CSE before enabling `routes: custom`.
-12. Migrate ICC Haedong first, then the remaining applications in the order recorded by the legacy sweep.
+11. Prove custom-route injection and allowlisting with the S-TOP rewrite and SCG homepage redirect before enabling `routes: custom`.
+12. Migrate ICC Haedong first, then the remaining applications in the migration order in [`applications/README.md`](applications/README.md); a production-only application simply has no testing release.
 13. Remove hello-world's static listeners/certificates and old application manifests only after the replacement path passes live HTTP, TLS, DNS, readiness, rollback, and webhook/polling tests.
 
 ## 14. Required implementation proofs
@@ -615,9 +636,9 @@ Before this approved design becomes operationally authoritative, demonstrate:
 - schema rejection of every forbidden shape listed above;
 - deterministic rendering from `meta.yaml` plus `lock.yaml` and deterministic regeneration of the flat release index;
 - Git webhook refresh and polling fallback;
-- stable branch lock update and rollback by Git revert;
-- workload-scoped authorization for lock changes;
-- workload-scoped PR preview creation, update, and deletion;
+- stable single- and same-repository multi-workload atomic lock updates and rollback by Git revert;
+- application/workload-scoped authorization, serialization, retry idempotency, and stale-revision handling for lock changes;
+- repository-scoped PR preview creation, update, and deletion;
 - shared wildcard testing/preview DNS and TLS;
 - organization-only testing/preview access after real NAT;
 - managed HTTPS and external HTTP-only production domains;
@@ -628,7 +649,7 @@ Before this approved design becomes operationally authoritative, demonstrate:
 
 ## References
 
-- Legacy evidence: [`LEGACY_CONFIG_SWEEP.md`](LEGACY_CONFIG_SWEEP.md)
+- Evidence/pressure-test basis: [`applications/README.md`](applications/README.md) (paper port index, migration order, and per-application `PORTING.md` evidence pointers); [`applications/EXCLUDED.md`](applications/EXCLUDED.md) records excluded platform/stateful/stale repositories
 - Argo CD ApplicationSet Git generator: <https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Git/>
 - Argo CD Pull Request generator: <https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Pull-Request/>
 - Argo CD webhooks: <https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/>

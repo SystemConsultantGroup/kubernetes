@@ -1,0 +1,19 @@
+workloads:
+  web:
+    repository: https://github.com/SystemConsultantGroup/ICC-haedong-seminar-reservation.git
+    image: docker.io/scgskku/icc-haedong-seminar-reservation
+    branches:
+      production: master
+    port: 3000
+    env:
+      from:
+        secrets:
+          - icc-haedong-reservation-secret
+
+domain:
+  name: seminar.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: web

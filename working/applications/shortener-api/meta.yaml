@@ -1,0 +1,25 @@
+workloads:
+  api:
+    repository: https://github.com/SystemConsultantGroup/scg-url-shortener-backend.git
+    image: docker.io/scgskku/shortener-api-prod
+    branches:
+      testing: develop
+      production: main
+    port: 8000
+    env:
+      literals:
+        APP_API_BASE_DOMAIN: api.scg.sh
+        APP_SLUG_BASE_DOMAIN: scg.sh
+      from:
+        secrets:
+          - shortener-secret
+
+domain:
+  name: api.scg.sh
+  external: false
+  additional:
+    - scg.sh
+
+routes:
+  - path: /
+    workload: api

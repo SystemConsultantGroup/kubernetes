@@ -1,0 +1,22 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/exhibition-frontend.git
+    image: docker.io/scgskku/exhibition-fe
+    branches:
+      production: main
+    port: 3000
+
+domain:
+  name: exhibition.scg.sh
+  external: false
+  additional:
+    - swgp.exhibition.scg.sh
+    - scg.exhibition.scg.sh
+    - exhibition.scg.skku.ac.kr
+    - exhibition2.scg.skku.ac.kr
+    - swgp.exhb.scg.skku.ac.kr
+    - aiswm.exhb.scg.skku.ac.kr
+
+routes:
+  - path: /
+    workload: fe

@@ -1,0 +1,18 @@
+workloads:
+  user:
+    repository: https://github.com/SystemConsultantGroup/skku-alumni-frontend.git
+    image: docker.io/scgskku/alumni-user-fe-prod
+    branches:
+      testing: develop
+      production: main
+    port: 3000
+    readiness:
+      type: tcp
+
+domain:
+  name: alumni.scg.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: user

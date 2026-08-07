@@ -1,0 +1,24 @@
+workloads:
+  web:
+    repository: https://github.com/SystemConsultantGroup/CSE-undergrad-gp-manage-v2.git
+    image: docker.io/scgskku/cse-undergrad-gp-manage
+    branches:
+      production: main
+    port: 8091
+    readiness:
+      type: tcp
+    env:
+      from:
+        secrets:
+          - cse-undergrad-gp-manage-secret
+
+domain:
+  name: cssys.cs.skku.ac.kr
+  external: false
+  additional:
+    - name: cssys.skku.ac.kr
+      external: true
+
+routes:
+  - path: /
+    workload: web

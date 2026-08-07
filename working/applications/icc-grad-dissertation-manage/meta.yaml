@@ -1,0 +1,31 @@
+workloads:
+  be:
+    repository: https://github.com/SystemConsultantGroup/ICC-grad-dissertation-manage-backend.git
+    image: docker.io/scgskku/icc-grad-dissertation-manage-backend
+    branches:
+      production: main
+    port: 4000
+    resources:
+      requests:
+        cpu: "1"
+    env:
+      from:
+        secrets:
+          - prod-ice-grad-secret
+
+  fe:
+    repository: https://github.com/SystemConsultantGroup/ICC-grad-dissertation-manage-frontend.git
+    image: docker.io/scgskku/ice-gs-thesis-fe-prod
+    branches:
+      production: main
+    port: 3000
+
+domain:
+  name: grad.icc.skku.ac.kr
+  external: false
+
+routes:
+  - path: /
+    workload: fe
+  - path: /v1
+    workload: be

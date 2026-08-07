@@ -1,0 +1,30 @@
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/S-top-frontend.git
+    image: docker.io/scgskku/stop-fe-prod
+    branches:
+      testing: develop
+      production: main
+    port: 3000
+    readiness:
+      type: tcp
+
+  be:
+    repository: https://github.com/SystemConsultantGroup/S-top-backend.git
+    image: docker.io/jcy0308/stop-be-prod
+    branches:
+      testing: develop
+      production: main
+    port: 8000
+    readiness:
+      type: tcp
+    env:
+      from:
+        secrets:
+          - stop-secret
+
+domain:
+  name: s-top.cs.skku.edu
+  external: false
+
+routes: custom

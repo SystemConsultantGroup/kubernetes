@@ -1,0 +1,3 @@
+resources:
+  - application.yaml
+  - seminar-redirect.yaml
