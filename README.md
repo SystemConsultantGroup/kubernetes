@@ -1,6 +1,6 @@
 # Kubernetes cluster
 
-Declarative configuration and a small `t` CLI for provisioning and maintaining the `scg` Kubernetes cluster.
+Declarative configuration and a small `k` CLI for provisioning and maintaining the `scg` Kubernetes cluster.
 
 The repository manages Talos machine configuration, Cilium networking, Argo CD bootstrap, Argo CD-reconciled platform services, and SOPS-encrypted secrets. Cluster state is declared in [`state.yaml`](state.yaml); generated client configurations stay local.
 
@@ -12,7 +12,7 @@ Install [Nix](https://nixos.org/) with flakes enabled and enter the development 
 nix develop
 ```
 
-The flake provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `t`.
+The flake provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `k`.
 
 ## Configuration
 
@@ -40,7 +40,7 @@ nodes:
     address: "115.145.134.232"
 ```
 
-Talos versions omit the `v` prefix; `t` adds it when invoking Talos tools. `endpoint` names the node used for the Kubernetes API and bootstrap operations.
+Talos versions omit the `v` prefix; `k` adds it when invoking Talos tools. `endpoint` names the node used for the Kubernetes API and bootstrap operations.
 
 Each configured node requires a matching `patches/<name>.yaml`. The current apply flow generates every configured node as a control plane and applies:
 
@@ -67,7 +67,7 @@ Encrypted secret files live under `secrets/`:
 Create or display your local identity:
 
 ```bash
-t secrets recipients me
+k secrets recipients me
 ```
 
 The private key defaults to `~/.config/sops/age/keys.txt`. The command prints the corresponding public `age1...` recipient.
@@ -75,7 +75,7 @@ The private key defaults to `~/.config/sops/age/keys.txt`. The command prints th
 A new operator cannot grant their own key access. Send the printed recipient to an existing operator, who runs:
 
 ```bash
-t secrets recipients add alice-laptop age1...
+k secrets recipients add alice-laptop age1...
 ```
 
 Recipient aliases should identify a person and device so one compromised device can be revoked independently.
@@ -83,10 +83,10 @@ Recipient aliases should identify a person and device so one compromised device 
 ### Recipient management
 
 ```bash
-t secrets recipients me
-t secrets recipients list
-t secrets recipients add <name> <age1...>
-t secrets recipients remove <name>
+k secrets recipients me
+k secrets recipients list
+k secrets recipients add <name> <age1...>
+k secrets recipients remove <name>
 ```
 
 Adding or removing a recipient regenerates `.sops.yaml` and rekeys every encrypted file. The operation restores the previous files if rekeying fails. Duplicate aliases and recipients are rejected, and the final recipient cannot be removed.
@@ -94,17 +94,17 @@ Adding or removing a recipient regenerates `.sops.yaml` and rekeys every encrypt
 Validate recipient state and decryptability:
 
 ```bash
-t secrets check
+k secrets check
 ```
 
 Edit an encrypted file by its discovered name:
 
 ```bash
-t secrets edit env
-t secrets edit talos
+k secrets edit env
+k secrets edit talos
 ```
 
-`t secrets edit` discovers `secrets/*.yaml` dynamically and excludes `state.yaml`. Plaintext is handled by SOPS and is never written to a tracked file.
+`k secrets edit` discovers `secrets/*.yaml` dynamically and excludes `state.yaml`. Plaintext is handled by SOPS and is never written to a tracked file.
 
 The bootstrap environment currently recognizes:
 
@@ -112,18 +112,18 @@ The bootstrap environment currently recognizes:
 - `CLOUDFLARE_API_TOKEN`
 - `RFC2136_TSIG_SECRET`
 
-The first two are required by `t install` and `t install argocd`.
+The first two are required by `k install` and `k install argocd`.
 
 ## Provisioning
 
 For a fresh or reset Talos node:
 
 ```bash
-t secrets check
-t install
+k secrets check
+k install
 ```
 
-`t install` runs, in order:
+`k install` runs, in order:
 
 1. Generate `talosconfig` from encrypted Talos secrets.
 2. Generate and apply control-plane configuration to every node.
@@ -133,7 +133,7 @@ t install
 6. Install Gateway API CRDs and Cilium.
 7. Install Argo CD and apply the root application.
 
-`t apply` automatically uses the authenticated Talos API for configured nodes and insecure maintenance mode for fresh nodes.
+`k apply` automatically uses the authenticated Talos API for configured nodes and insecure maintenance mode for fresh nodes.
 
 ## GitOps
 
@@ -152,14 +152,14 @@ gateway.scg.sh/public: "true"
 Reset the endpoint node or a named node from `state.yaml`:
 
 ```bash
-t reset
-t reset scc
+k reset
+k reset scc
 ```
 
 Reset wipes Talos `STATE` and `EPHEMERAL` data and asks for confirmation. For unattended operation:
 
 ```bash
-t reset --yes scc
+k reset --yes scc
 ```
 
 ## Upgrades
@@ -167,10 +167,10 @@ t reset --yes scc
 Change the desired version in `state.yaml`, then run the matching command:
 
 ```bash
-t upgrade talos
-t upgrade kubernetes
-t upgrade cilium
-t upgrade argocd
+k upgrade talos
+k upgrade kubernetes
+k upgrade cilium
+k upgrade argocd
 ```
 
 Use `--yes` to skip confirmation. Each command checks the installed version and exits without changes when already current.
@@ -188,42 +188,42 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 
 | Command | Description |
 | --- | --- |
-| `t install` | Provision a fresh cluster and install Cilium and Argo CD |
-| `t apply` | Generate and apply machine configuration to all declared nodes |
-| `t reset [--yes] [node]` | Destructively reset a node |
+| `k install` | Provision a fresh cluster and install Cilium and Argo CD |
+| `k apply` | Generate and apply machine configuration to all declared nodes |
+| `k reset [--yes] [node]` | Destructively reset a node |
 
 ### Generated access files
 
 | Command | Description |
 | --- | --- |
-| `t generate talosconfig` | Generate the project-local Talos client configuration |
-| `t generate kubeconfig` | Download the project-local Kubernetes configuration |
+| `k generate talosconfig` | Generate the project-local Talos client configuration |
+| `k generate kubeconfig` | Download the project-local Kubernetes configuration |
 
 ### Installation and health
 
 | Command | Description |
 | --- | --- |
-| `t install kubernetes` | Apply Talos configuration, bootstrap etcd, and generate Kubernetes access |
-| `t install gateway-api` | Install or reconcile the Gateway API CRDs required by Cilium |
-| `t install cilium` | Install Gateway API CRDs and Cilium on a fresh cluster |
-| `t install argocd` | Install or reconcile Argo CD, credentials, and the root application |
-| `t wait talos` | Wait for Talos and Kubernetes control-plane health |
-| `t wait kubernetes [component]` | Wait up to ten minutes for all pods in all namespaces to become Ready |
-| `t forward argocd` | Forward Argo CD to `http://localhost:8080` |
+| `k install kubernetes` | Apply Talos configuration, bootstrap etcd, and generate Kubernetes access |
+| `k install gateway-api` | Install or reconcile the Gateway API CRDs required by Cilium |
+| `k install cilium` | Install Gateway API CRDs and Cilium on a fresh cluster |
+| `k install argocd` | Install or reconcile Argo CD, credentials, and the root application |
+| `k wait talos` | Wait for Talos and Kubernetes control-plane health |
+| `k wait kubernetes [component]` | Wait up to ten minutes for all pods in all namespaces to become Ready |
+| `k forward argocd` | Forward Argo CD to `http://localhost:8080` |
 
 ### Secrets and upgrades
 
 ```text
-t secrets edit <secret>
-t secrets check
-t secrets recipients me
-t secrets recipients list
-t secrets recipients add <name> <age1...>
-t secrets recipients remove <name>
-t upgrade <talos|kubernetes|cilium|argocd> [--yes]
+k secrets edit <secret>
+k secrets check
+k secrets recipients me
+k secrets recipients list
+k secrets recipients add <name> <age1...>
+k secrets recipients remove <name>
+k upgrade <talos|kubernetes|cilium|argocd> [--yes]
 ```
 
-Run `t --help` or `t <group> --help` to discover commands. Bash completion follows the nested command tree and dynamically completes secret names, recipient aliases, and node names.
+Run `k --help` or `k <group> --help` to discover commands. Bash completion follows the nested command tree and dynamically completes secret names, recipient aliases, and node names.
 
 ## Repository layout
 
@@ -231,9 +231,9 @@ Run `t --help` or `t <group> --help` to discover commands. Bash completion follo
 state.yaml                    Cluster versions, endpoint, and nodes
 patches/                      Talos machine configuration patches
 secrets/                      Encrypted values and public recipient state
-scripts/t                     CLI entry point and shared helpers
+scripts/k                     CLI entry point and shared helpers
 scripts/commands/             Dynamically discovered command modules
-scripts/completions/t.bash    Bash completion
+scripts/k.completions         Bash completion
 clusters/scg/                 Argo CD root desired state
 platform/                     Argo CD-managed platform components
 flake.nix                     Reproducible local tool environment

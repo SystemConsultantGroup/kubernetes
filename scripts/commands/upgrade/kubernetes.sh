@@ -1,4 +1,4 @@
-require_optional_yes "t upgrade kubernetes [--yes]" "$@"
+require_optional_yes "k upgrade kubernetes [--yes]" "$@"
 
 current="$(kubectl version -o json | yq -p=json -r '.serverVersion.gitVersion')"
 if [[ "${current#v}" == "$KUBERNETES_VERSION" ]]; then
@@ -7,6 +7,6 @@ if [[ "${current#v}" == "$KUBERNETES_VERSION" ]]; then
 fi
 
 talosctl upgrade-k8s --nodes "$MAIN_IP" --to "$KUBERNETES_VERSION" --dry-run
-confirm_action "t upgrade kubernetes [--yes]" "Apply this Kubernetes upgrade?" "$@"
+confirm_action "k upgrade kubernetes [--yes]" "Apply this Kubernetes upgrade?" "$@"
 talosctl upgrade-k8s --nodes "$MAIN_IP" --to "$KUBERNETES_VERSION"
 run wait talos

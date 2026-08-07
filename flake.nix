@@ -27,7 +27,7 @@
               export TALOSCONFIG="$PWD/talosconfig"
               export KUBECONFIG="$PWD/kubeconfig"
               if [ -n "''${BASH_VERSION:-}" ]; then
-                source "$PWD/scripts/completions/t.bash"
+                source "$PWD/scripts/k.completions"
               fi
             '';
           };

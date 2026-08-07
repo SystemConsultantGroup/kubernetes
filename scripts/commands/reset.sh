@@ -3,9 +3,9 @@ requested=""
 for argument in "$@"; do
     case "$argument" in
         --yes) force=1 ;;
-        -*|'') echo "Usage: t reset [--yes] [node]" >&2; return 2 ;;
+        -*|'') echo "Usage: k reset [--yes] [node]" >&2; return 2 ;;
         *)
-            [[ -z "$requested" ]] || { echo "Usage: t reset [--yes] [node]" >&2; return 2; }
+            [[ -z "$requested" ]] || { echo "Usage: k reset [--yes] [node]" >&2; return 2; }
             requested="$argument"
             ;;
     esac
@@ -24,6 +24,8 @@ if ((!force)); then
         return 1
     fi
 fi
+
+[[ -f "$TALOSCONFIG" ]] || run generate talosconfig
 
 talosctl -n "$node" reset \
     --graceful=false \

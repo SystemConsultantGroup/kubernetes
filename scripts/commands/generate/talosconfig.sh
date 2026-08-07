@@ -1,4 +1,4 @@
-require_no_args "t generate talosconfig" "$@"
+require_no_args "k generate talosconfig" "$@"
 
 talos_secrets="$(decrypt_talos_secrets)"
 trap 'rm -f "$talos_secrets"' EXIT

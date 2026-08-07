@@ -1,4 +1,4 @@
-require_no_args "t install argocd" "$@"
+require_no_args "k install argocd" "$@"
 require_bootstrap_secrets
 argocd_github_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_CLIENT_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"

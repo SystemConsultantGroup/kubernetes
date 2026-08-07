@@ -1,4 +1,4 @@
-require_no_args "t install kubernetes" "$@"
+require_no_args "k install kubernetes" "$@"
 
 run generate talosconfig
 run apply

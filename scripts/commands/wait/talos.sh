@@ -1,4 +1,4 @@
-require_no_args "t wait talos" "$@"
+require_no_args "k wait talos" "$@"
 
 echo "Waiting for Talos and Kubernetes..."
 for node in "${NODES[@]}"; do

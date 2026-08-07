@@ -1,4 +1,4 @@
-require_no_args "t apply" "$@"
+require_no_args "k apply" "$@"
 validate_talos_inputs
 
 talos_secrets="$(decrypt_talos_secrets)"

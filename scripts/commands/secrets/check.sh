@@ -1,4 +1,4 @@
-require_no_args "t secrets check" "$@"
+require_no_args "k secrets check" "$@"
 require_file "$SECRET_STATE_FILE"
 require_file "$SOPS_CONFIG_FILE"
 

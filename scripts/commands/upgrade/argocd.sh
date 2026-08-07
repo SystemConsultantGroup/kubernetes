@@ -1,4 +1,4 @@
-require_optional_yes "t upgrade argocd [--yes]" "$@"
+require_optional_yes "k upgrade argocd [--yes]" "$@"
 
 chart="$(helm list --namespace argocd --filter '^argocd$' --output json | yq -p=json -r '.[0].chart // ""')"
 [[ -n "$chart" ]] || { echo "Argo CD is not installed" >&2; return 1; }
@@ -8,5 +8,5 @@ if [[ "$current" == "$ARGOCD_VERSION" ]]; then
     return
 fi
 
-confirm_action "t upgrade argocd [--yes]" "Upgrade the Argo CD chart to $ARGOCD_VERSION?" "$@"
+confirm_action "k upgrade argocd [--yes]" "Upgrade the Argo CD chart to $ARGOCD_VERSION?" "$@"
 run install argocd

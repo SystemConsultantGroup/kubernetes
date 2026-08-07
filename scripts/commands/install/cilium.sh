@@ -1,4 +1,4 @@
-require_no_args "t install cilium" "$@"
+require_no_args "k install cilium" "$@"
 
 run install gateway-api
 

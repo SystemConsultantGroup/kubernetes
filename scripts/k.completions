@@ -1,0 +1,56 @@
+# Bash completion for k.
+
+_K_ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+_K_COMMAND_DIR="$_K_ROOT_DIR/scripts/commands"
+
+_k_command_names() {
+    local directory="$1" file
+    for file in "$directory"/*.sh; do
+        [[ -f "$file" ]] && basename "$file" .sh
+    done
+}
+
+_k_secret_names() {
+    local file
+    for file in "$_K_ROOT_DIR/secrets"/*.yaml; do
+        [[ -f "$file" && "$(basename "$file")" != state.yaml ]] && basename "$file" .yaml
+    done
+}
+
+_k_recipient_names() {
+    yq -r '.recipients | keys | .[]' "$_K_ROOT_DIR/secrets/state.yaml" 2>/dev/null
+}
+
+_k_node_names() {
+    yq -r '.nodes | keys | .[]' "$_K_ROOT_DIR/state.yaml" 2>/dev/null
+}
+
+_k_complete() {
+    local current="${COMP_WORDS[COMP_CWORD]}" directory="$_K_COMMAND_DIR" choices="" part index
+
+    for ((index = 1; index < COMP_CWORD; index++)); do
+        part="${COMP_WORDS[index]}"
+        [[ "$part" != help ]] || continue
+        [[ "$directory" != "$_K_COMMAND_DIR/secrets" || "$part" != recipient ]] || part=recipients
+        if [[ -d "$directory/$part" ]]; then
+            directory="$directory/$part"
+        else
+            directory=""
+            break
+        fi
+    done
+    [[ -z "$directory" ]] || choices="help --help $(_k_command_names "$directory")"
+
+    case "${COMP_WORDS[*]:1:COMP_CWORD-1}" in
+        "secrets edit") choices="$(_k_secret_names)" ;;
+        reset) choices="--yes $(_k_node_names)" ;;
+        "reset --yes") choices="$(_k_node_names)" ;;
+        reset\ *) choices="--yes" ;;
+        "secrets recipient remove"|"secrets recipients remove") choices="$(_k_recipient_names)" ;;
+        "upgrade argocd"|"upgrade cilium"|"upgrade kubernetes"|"upgrade talos") choices="--yes" ;;
+    esac
+
+    mapfile -t COMPREPLY < <(compgen -W "$choices" -- "$current")
+}
+
+complete -F _k_complete k

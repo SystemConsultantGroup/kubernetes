@@ -1,4 +1,4 @@
-require_optional_yes "t upgrade talos [--yes]" "$@"
+require_optional_yes "k upgrade talos [--yes]" "$@"
 
 targets=()
 for node in "${NODES[@]}"; do
@@ -12,7 +12,7 @@ for node in "${NODES[@]}"; do
 done
 ((${#targets[@]})) || return 0
 
-confirm_action "t upgrade talos [--yes]" "Upgrade Talos to $TALOS_VERSION?" "$@"
+confirm_action "k upgrade talos [--yes]" "Upgrade Talos to $TALOS_VERSION?" "$@"
 for node in "${targets[@]}"; do
     node_ip="${node#*:}"
     talosctl upgrade --nodes "$node_ip" --image "$TALOS_INSTALL_IMAGE" --wait
