@@ -1,3 +1,4 @@
+fullnameOverride: external-dns-scg-sh
 provider:
   name: cloudflare
 sources:

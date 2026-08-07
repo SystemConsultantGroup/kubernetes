@@ -1,3 +1,4 @@
+fullnameOverride: external-dns-scg-skku-ac-kr
 provider:
   name: rfc2136
 sources:
