@@ -1,0 +1,16 @@
+provider:
+  name: cloudflare
+sources:
+  - gateway-httproute
+gatewayNamespace: gateway-system
+domainFilters:
+  - scg.sh
+policy: sync
+registry: txt
+txtOwnerId: scg.sh
+env:
+  - name: CF_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: api-token

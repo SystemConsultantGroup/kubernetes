@@ -37,7 +37,7 @@ k secrets edit bootstrap
 k secrets edit talos
 ```
 
-`bootstrap` must contain `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET` and `CLOUDFLARE_API_TOKEN`. Recipient aliases are public in `secrets/recipients.yaml`; secret values remain SOPS-encrypted.
+`bootstrap` must contain `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET` and `CLOUDFLARE_API_TOKEN`. The Cloudflare token needs Zone Read and DNS Edit access to `scg.sh`. Recipient aliases are public in `secrets/recipients.yaml`; secret values remain SOPS-encrypted.
 
 ## Deployments
 
@@ -59,6 +59,8 @@ Namespaces attached to the public Gateway must carry:
 ```yaml
 gateway.scg.sh/public: "true"
 ```
+
+ExternalDNS publishes `HTTPRoute.spec.hostnames` under `scg.sh` through Cloudflare. The inactive RFC2136 configuration for `scg.skku.ac.kr` is kept in `argocd/platform/external-dns-scg.skku.ac.kr/` as `*.example` files.
 
 ## Operations
 

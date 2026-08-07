@@ -22,11 +22,13 @@ helm upgrade --install argocd \
     --wait \
     --timeout 10m
 
-kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
-printf '%s' "$cloudflare_api_token" | \
-    kubectl -n cert-manager create secret generic cloudflare-api-token \
-        --from-file=api-token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
-unset cloudflare_api_token
+for namespace in cert-manager external-dns; do
+    kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
+    printf '%s' "$cloudflare_api_token" | \
+        kubectl -n "$namespace" create secret generic cloudflare-api-token \
+            --from-file=api-token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+done
+unset cloudflare_api_token namespace
 
 kubectl apply -f "$argocd_dir/root-application.yaml"
 kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found

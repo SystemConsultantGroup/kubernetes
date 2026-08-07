@@ -1,0 +1,8 @@
+name: external-dns-scg.skku.ac.kr
+namespace: external-dns
+source:
+  type: helm
+  repoURL: https://kubernetes-sigs.github.io/external-dns/
+  chart: external-dns
+  targetRevision: 1.21.1
+  values: argocd/platform/external-dns-scg.skku.ac.kr/values.yaml

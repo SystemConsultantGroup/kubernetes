@@ -1,0 +1,28 @@
+provider:
+  name: rfc2136
+sources:
+  - gateway-httproute
+gatewayNamespace: gateway-system
+domainFilters:
+  - scg.skku.ac.kr
+policy: upsert-only
+registry: txt
+txtOwnerId: scg.skku.ac.kr
+extraArgs:
+  - --rfc2136-host=REPLACE_ME
+  - --rfc2136-port=53
+  - --rfc2136-zone=scg.skku.ac.kr
+  - --rfc2136-tsig-secret-alg=hmac-sha256
+  # Enable with policy=sync after authenticated AXFR is allowed:
+  # - --rfc2136-tsig-axfr
+env:
+  - name: EXTERNAL_DNS_RFC2136_TSIG_KEYNAME
+    valueFrom:
+      secretKeyRef:
+        name: rfc2136-external-dns
+        key: key-name
+  - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: rfc2136-external-dns
+        key: secret
