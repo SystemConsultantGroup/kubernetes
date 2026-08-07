@@ -13,12 +13,12 @@ _k_command_names() {
 _k_secret_names() {
     local file
     for file in "$_K_ROOT_DIR/secrets"/*.yaml; do
-        [[ -f "$file" && "$(basename "$file")" != state.yaml ]] && basename "$file" .yaml
+        [[ -f "$file" && "$(basename "$file")" != recipients.yaml ]] && basename "$file" .yaml
     done
 }
 
 _k_recipient_names() {
-    yq -r '.recipients | keys | .[]' "$_K_ROOT_DIR/secrets/state.yaml" 2>/dev/null
+    yq -r '.recipients | keys | .[]' "$_K_ROOT_DIR/secrets/recipients.yaml" 2>/dev/null
 }
 
 _k_node_names() {

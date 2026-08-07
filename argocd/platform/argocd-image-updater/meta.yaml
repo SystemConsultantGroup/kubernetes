@@ -2,4 +2,4 @@ name: argocd-image-updater
 namespace: argocd
 source:
   type: kustomize
-  path: platform/argocd-image-updater
+  path: argocd/platform/argocd-image-updater

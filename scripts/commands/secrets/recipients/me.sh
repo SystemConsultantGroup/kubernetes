@@ -20,8 +20,8 @@ chmod 600 "$key_file"
 
 recipient="$(age-keygen -y "$key_file")"
 echo "Recipient: $recipient"
-if [[ -f "$SECRET_STATE_FILE" ]]; then
-    aliases="$(RECIPIENT="$recipient" yq -r '.recipients | to_entries[] | select(.value == strenv(RECIPIENT)) | .key' "$SECRET_STATE_FILE")"
+if [[ -f "$RECIPIENTS_FILE" ]]; then
+    aliases="$(RECIPIENT="$recipient" yq -r '.recipients | to_entries[] | select(.value == strenv(RECIPIENT)) | .key' "$RECIPIENTS_FILE")"
 fi
 if [[ -n "${aliases:-}" ]]; then
     echo "Aliases: ${aliases//$'\n'/, }"

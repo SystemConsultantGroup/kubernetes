@@ -2,4 +2,4 @@ name: argocd
 namespace: argocd
 source:
   type: kustomize
-  path: platform/argocd
+  path: argocd/platform/argocd

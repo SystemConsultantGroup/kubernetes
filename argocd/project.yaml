@@ -4,7 +4,7 @@ metadata:
   name: scg
   namespace: argocd
 spec:
-  description: SCG cluster platform
+  description: SCG cluster
   sourceRepos:
     - https://github.com/SystemConsultantGroup/kubernetes.git
     - quay.io/jetstack/charts

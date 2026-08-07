@@ -1,18 +1,18 @@
 require_no_args "k install argocd" "$@"
 require_bootstrap_secrets
-argocd_github_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_CLIENT_SECRET)"
+argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_CLIENT_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
 
-argocd_dir="$COMMAND_DIR/install/argocd"
+argocd_dir="$ROOT_DIR/argocd/bootstrap"
 require_file "$argocd_dir/values.yaml"
 require_file "$argocd_dir/root-application.yaml"
 
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-printf '%s' "$argocd_github_client_secret" | \
+printf '%s' "$argocd_github_oauth_client_secret" | \
     kubectl -n argocd create secret generic argocd-github-oauth \
-        --from-file=dex.github.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+        --from-file=github.oauth.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n argocd label secret argocd-github-oauth app.kubernetes.io/part-of=argocd --overwrite
-unset argocd_github_client_secret
+unset argocd_github_oauth_client_secret
 
 helm upgrade --install argocd \
     oci://ghcr.io/argoproj/argo-helm/argo-cd \

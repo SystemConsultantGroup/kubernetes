@@ -9,10 +9,10 @@ COMMAND_DIR="$SCRIPT_DIR/commands"
 PATCH_DIR="$ROOT_DIR/patches"
 SECRETS_DIR="$ROOT_DIR/secrets"
 STATE_FILE="$ROOT_DIR/state.yaml"
-SECRET_STATE_FILE="$SECRETS_DIR/state.yaml"
+RECIPIENTS_FILE="$SECRETS_DIR/recipients.yaml"
 SOPS_CONFIG_FILE="$ROOT_DIR/.sops.yaml"
 TALOS_SECRETS_FILE="$SECRETS_DIR/talos.yaml"
-ENV_SECRETS_FILE="$SECRETS_DIR/env.yaml"
+BOOTSTRAP_SECRETS_FILE="$SECRETS_DIR/bootstrap.yaml"
 export TALOSCONFIG="$ROOT_DIR/talosconfig"
 export KUBECONFIG="$ROOT_DIR/kubeconfig"
 cd "$ROOT_DIR"
@@ -112,13 +112,13 @@ local_age_recipient() {
 secret_files() {
     local file
     for file in "$SECRETS_DIR"/*.yaml; do
-        [[ -f "$file" && "$file" != "$SECRET_STATE_FILE" ]] && printf '%s\n' "$file"
+        [[ -f "$file" && "$file" != "$RECIPIENTS_FILE" ]] && printf '%s\n' "$file"
     done
 }
 
 secret_file() {
     local name="$1" file
-    if [[ "$name" == *[!a-z0-9._-]* || "$name" == .* || -z "$name" || "$name" == state ]]; then
+    if [[ "$name" == *[!a-z0-9._-]* || "$name" == .* || -z "$name" || "$name" == recipients ]]; then
         echo "Invalid secret name: $name" >&2
         return 2
     fi
@@ -130,7 +130,7 @@ secret_file() {
 write_sops_config() {
     local output="$1" file name pattern recipient
     local -a names=()
-    require_file "$SECRET_STATE_FILE"
+    require_file "$RECIPIENTS_FILE"
 
     while IFS= read -r file; do
         name="$(basename "$file" .yaml)"
@@ -150,7 +150,7 @@ write_sops_config() {
         echo "    age:"
         while IFS= read -r recipient; do
             [[ -n "$recipient" ]] && printf '      - %s\n' "$recipient"
-        done < <(yq -r '.recipients | to_entries | sort_by(.key) | .[].value' "$SECRET_STATE_FILE")
+        done < <(yq -r '.recipients | to_entries | sort_by(.key) | .[].value' "$RECIPIENTS_FILE")
     } >"$output"
     grep -q '^      - age1' "$output" || {
         rm -f "$output"
@@ -178,7 +178,7 @@ rekey_secrets() {
     local backup file success=1
     backup="$(mktemp -d)"
     mkdir "$backup/secrets"
-    cp "$SECRET_STATE_FILE" "$backup/state.yaml"
+    cp "$RECIPIENTS_FILE" "$backup/recipients.yaml"
     cp "$SOPS_CONFIG_FILE" "$backup/.sops.yaml"
     while IFS= read -r file; do
         cp "$file" "$backup/secrets/"
@@ -197,7 +197,7 @@ rekey_secrets() {
         fi
     fi
 
-    cp "$backup/state.yaml" "$SECRET_STATE_FILE"
+    cp "$backup/recipients.yaml" "$RECIPIENTS_FILE"
     cp "$backup/.sops.yaml" "$SOPS_CONFIG_FILE"
     cp "$backup/secrets/"*.yaml "$SECRETS_DIR/"
     rm -rf "$backup"
@@ -219,19 +219,19 @@ decrypt_talos_secrets() {
 read_bootstrap_secret() {
     local name="$1"
     case "$name" in
-        ARGOCD_GITHUB_CLIENT_SECRET|CLOUDFLARE_API_TOKEN|RFC2136_TSIG_SECRET) ;;
+        ARGOCD_GITHUB_OAUTH_CLIENT_SECRET|CLOUDFLARE_API_TOKEN) ;;
         *) echo "Unknown bootstrap secret: $name" >&2; return 2 ;;
     esac
-    require_file "$ENV_SECRETS_FILE"
-    sops decrypt --extract "[\"$name\"]" "$ENV_SECRETS_FILE"
+    require_file "$BOOTSTRAP_SECRETS_FILE"
+    sops decrypt --extract "[\"$name\"]" "$BOOTSTRAP_SECRETS_FILE"
 }
 
 require_bootstrap_secrets() {
     local name value
-    for name in ARGOCD_GITHUB_CLIENT_SECRET CLOUDFLARE_API_TOKEN; do
+    for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET CLOUDFLARE_API_TOKEN; do
         value="$(read_bootstrap_secret "$name")"
         [[ -n "$value" && "$value" != REPLACE_ME ]] || {
-            echo "Set $name with: k secrets edit env" >&2
+            echo "Set $name with: k secrets edit bootstrap" >&2
             return 1
         }
     done

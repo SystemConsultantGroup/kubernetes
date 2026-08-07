@@ -13,10 +13,10 @@ if [[ "$recipient" != age1* ]] || ! age --encrypt --recipient "$recipient" </dev
     echo "Invalid age recipient" >&2
     return 2
 fi
-require_file "$SECRET_STATE_FILE"
+require_file "$RECIPIENTS_FILE"
 require_file "$SOPS_CONFIG_FILE"
 
-existing="$(NAME="$name" yq -r '.recipients[strenv(NAME)] // ""' "$SECRET_STATE_FILE")"
+existing="$(NAME="$name" yq -r '.recipients[strenv(NAME)] // ""' "$RECIPIENTS_FILE")"
 if [[ "$existing" == "$recipient" ]]; then
     echo "$name is already configured"
     return
@@ -25,12 +25,12 @@ elif [[ -n "$existing" ]]; then
     return 1
 fi
 
-existing="$(RECIPIENT="$recipient" yq -r '.recipients | to_entries[] | select(.value == strenv(RECIPIENT)) | .key' "$SECRET_STATE_FILE")"
+existing="$(RECIPIENT="$recipient" yq -r '.recipients | to_entries[] | select(.value == strenv(RECIPIENT)) | .key' "$RECIPIENTS_FILE")"
 [[ -z "$existing" ]] || {
     echo "Recipient is already configured as: $existing" >&2
     return 1
 }
 
 NAME="$name" RECIPIENT="$recipient" rekey_secrets \
-    yq -i '.recipients[strenv(NAME)] = strenv(RECIPIENT)' "$SECRET_STATE_FILE"
+    yq -i '.recipients[strenv(NAME)] = strenv(RECIPIENT)' "$RECIPIENTS_FILE"
 echo "Added recipient: $name"

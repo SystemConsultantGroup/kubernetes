@@ -13,7 +13,7 @@ spec:
         repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
         revision: main
         files:
-          - path: platform/*/meta.yaml
+          - path: argocd/platform/*/meta.yaml
   template:
     metadata:
       name: 'scg-{{ .name }}'

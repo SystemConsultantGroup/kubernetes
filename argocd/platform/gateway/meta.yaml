@@ -2,4 +2,4 @@ name: gateway
 namespace: gateway-system
 source:
   type: kustomize
-  path: platform/gateway
+  path: argocd/platform/gateway
