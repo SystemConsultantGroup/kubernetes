@@ -45,7 +45,7 @@ spec:
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
           ref: values
-        {{- with .source.manifestsPath }}
+        {{- with (index .source "manifestsPath") }}
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
           path: '{{ . }}'
