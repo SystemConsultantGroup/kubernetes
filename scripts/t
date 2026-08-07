@@ -231,7 +231,7 @@ require_bootstrap_secrets() {
     for name in ARGOCD_GITHUB_CLIENT_SECRET CLOUDFLARE_API_TOKEN; do
         value="$(read_bootstrap_secret "$name")"
         [[ -n "$value" && "$value" != REPLACE_ME ]] || {
-            echo "Set $name with: t edit env" >&2
+            echo "Set $name with: t secrets edit env" >&2
             return 1
         }
     done

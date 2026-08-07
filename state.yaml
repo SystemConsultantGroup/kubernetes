@@ -20,4 +20,4 @@ nodes:
   # e1s:
   #   address: REPLACE_WITH_E1S_IP
   # e2s:
-  #   address: REPLACE_WITH_E2S_IP
+  #   address: "115.145.172.19"

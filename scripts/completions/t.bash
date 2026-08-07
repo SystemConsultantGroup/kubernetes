@@ -42,7 +42,7 @@ _t_complete() {
     [[ -z "$directory" ]] || choices="help --help $(_t_command_names "$directory")"
 
     case "${COMP_WORDS[*]:1:COMP_CWORD-1}" in
-        edit) choices="$(_t_secret_names)" ;;
+        "secrets edit") choices="$(_t_secret_names)" ;;
         reset) choices="--yes $(_t_node_names)" ;;
         "reset --yes") choices="$(_t_node_names)" ;;
         reset\ *) choices="--yes" ;;

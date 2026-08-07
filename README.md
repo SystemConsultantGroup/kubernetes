@@ -6,13 +6,13 @@ The repository manages Talos machine configuration, Cilium networking, Argo CD b
 
 ## Requirements
 
-Install [Flox](https://flox.dev/) and enter the project environment:
+Install [Nix](https://nixos.org/) with flakes enabled and enter the development shell:
 
 ```bash
-flox activate
+nix develop
 ```
 
-Flox provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `t`.
+The flake provides `talosctl`, `kubectl`, `cilium`, Helm, SOPS, age, and `yq`. It also adds `scripts/` to `PATH`, sets project-local `TALOSCONFIG` and `KUBECONFIG` paths, and loads Bash completion for `t`.
 
 ## Configuration
 
@@ -100,11 +100,11 @@ t secrets check
 Edit an encrypted file by its discovered name:
 
 ```bash
-t edit env
-t edit talos
+t secrets edit env
+t secrets edit talos
 ```
 
-`t edit` discovers `secrets/*.yaml` dynamically and excludes `state.yaml`. Plaintext is handled by SOPS and is never written to a tracked file.
+`t secrets edit` discovers `secrets/*.yaml` dynamically and excludes `state.yaml`. Plaintext is handled by SOPS and is never written to a tracked file.
 
 The bootstrap environment currently recognizes:
 
@@ -202,7 +202,7 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 ### Secrets and upgrades
 
 ```text
-t edit <secret>
+t secrets edit <secret>
 t secrets check
 t secrets recipients me
 t secrets recipients list
@@ -222,7 +222,7 @@ secrets/                      Encrypted values and public recipient state
 scripts/t                     CLI entry point and shared helpers
 scripts/commands/             Dynamically discovered command modules
 scripts/completions/t.bash    Bash completion
-.flox/                        Reproducible local tool environment
+flake.nix                     Reproducible local tool environment
 ```
 
 Do not commit plaintext secrets, `talosconfig`, or `kubeconfig`.
