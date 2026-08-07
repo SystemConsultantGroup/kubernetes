@@ -112,7 +112,7 @@ The bootstrap environment currently recognizes:
 - `CLOUDFLARE_API_TOKEN`
 - `RFC2136_TSIG_SECRET`
 
-The first two are required by `t setup` and `t install argocd`.
+The first two are required by `t install` and `t install argocd`.
 
 ## Provisioning
 
@@ -120,10 +120,10 @@ For a fresh or reset Talos node:
 
 ```bash
 t secrets check
-t setup
+t install
 ```
 
-`t setup` runs, in order:
+`t install` runs, in order:
 
 1. Generate `talosconfig` from encrypted Talos secrets.
 2. Generate and apply control-plane configuration to every node.
@@ -176,9 +176,8 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 
 | Command | Description |
 | --- | --- |
-| `t setup` | Provision a fresh cluster and install Cilium and Argo CD |
+| `t install` | Provision a fresh cluster and install Cilium and Argo CD |
 | `t apply` | Generate and apply machine configuration to all declared nodes |
-| `t bootstrap` | Bootstrap etcd, or exit when it is already initialized |
 | `t reset [--yes] [node]` | Destructively reset a node |
 
 ### Generated access files
@@ -192,6 +191,7 @@ A conservative upgrade order is Talos, Kubernetes, Cilium, then Argo CD, checkin
 
 | Command | Description |
 | --- | --- |
+| `t install kubernetes` | Apply Talos configuration, bootstrap etcd, and generate Kubernetes access |
 | `t install gateway-api` | Install or reconcile the Gateway API CRDs required by Cilium |
 | `t install cilium` | Install Gateway API CRDs and Cilium on a fresh cluster |
 | `t install argocd` | Install or reconcile Argo CD, credentials, and the root application |
