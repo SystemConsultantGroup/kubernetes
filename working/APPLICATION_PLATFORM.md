@@ -1,279 +1,635 @@
-# SCG Application Platform Design
+# SCG Application Platform Specification
 
-Status: brainstormed design, not yet implemented. This document preserves decisions and open questions so work can continue in a later session.
+Status: approved design specification; not yet operationally authoritative.
 
-## Current implementation baseline
+This document defines the strict registry, lock, and Helm rendering contracts for ordinary SCG applications. `working/LEGACY_CONFIG_SWEEP.md` is the evidence basis. The implementation must reject unsupported or ambiguous input rather than silently guessing.
 
-Today, `argocd/applicationsets/applications.yaml` discovers `applications/*` directories and deploys their in-repository Kustomizations directly. `applications/hello-world/` contains four workload/routing manifests, and the README documents that directory-as-namespace model. The current `scg` AppProject is broad, namespaces are only created through `CreateNamespace=true`, and the shared Gateway and cert-manager manifests contain static hello-world listeners and certificates.
+## 1. Scope
 
-Implementing this proposal therefore requires an explicit migration rather than adding metadata beside the current generator:
+The platform supports ordinary stateless application workloads that can be represented as:
 
-1. Add and validate the generic chart and metadata schema.
-2. Add replacement stable/preview ApplicationSets and restrictive AppProjects.
-3. Add managed namespace labels and ListenerSet platform support.
-4. Migrate hello-world to `meta.yaml` and remove its old manifests only after end-to-end validation.
-5. Update the README when the new generator becomes authoritative.
+- one or more container images;
+- one Deployment per workload;
+- an optional ClusterIP Service per workload;
+- optional HTTP routing;
+- literal environment variables and references to existing Kubernetes Secrets;
+- resource and replica deviations;
+- TCP or HTTP readiness checks.
 
-## Goal
+A workload with no `port` is a long-running worker Deployment. A workload with a `port` gets a Service on port 80 targeting that container port. A route exposes such a Service through the shared Gateway.
 
-Make `applications/*` a small application registry rather than a collection of Kubernetes manifests. Ordinary applications should provide only identity and values that cannot be inferred. Cluster policy, environment generation, routing, TLS, and workload defaults should be centralized.
+The application chart does not support CronJobs, one-shot migrations, databases, Redis, persistent volumes, custom commands, arbitrary manifests, RBAC, service accounts, scheduling controls, or stateful/platform software. Those remain platform components or receive a dedicated chart when an active application proves the need.
 
-All deployable software is treated as one of:
+## 2. Authoritative sources
 
-1. **Application** — an HTTP workload using the generic application chart.
-2. **Platform component** — shared cluster infrastructure under `argocd/platform/`, managed by the existing platform ApplicationSet.
+The public `SystemConsultantGroup/kubernetes` repository is the sole desired-state source.
 
-Legacy `*-config` repositories are references for discovering real requirements only. They will not be used as deployment sources or migrated as-is.
+- Argo CD UI changes are non-authoritative and must not be used for persistent configuration.
+- Application repositories contain code, Dockerfiles, and a small caller for the central reusable workflow.
+- Application workflows publish immutable images and update the matching registry lock in this repository.
+- Argo CD receives a webhook for this repository and polls as a fallback.
+- Argo CD refreshes after a Git change, renders desired resources, and syncs only when rendered resources differ from live resources.
+- Argo CD Image Updater is removed once the lock-writing workflow is operational. There must be one image-revision writer.
 
-## Repository layout
+## 3. Repository layout
 
 ```text
+.github/
+  workflows/
+    publish-application-image.yaml  # reusable workflow_call workflow
 applications/
-  hello-world/
-    meta.yaml
-    routes/                 # absent unless custom routing is needed
+  <application>/
+    meta.yaml                       # human-managed intent
+    lock.yaml                       # workflow-managed immutable state
+    routes/                         # only when routes: custom
       kustomization.yaml
       *.yaml
 argocd/
   applicationsets/
+  generated/
+    releases.yaml                 # generated flat release index
   charts/
     application/
       Chart.yaml
       values.yaml
+      values.schema.json
       templates/
   platform/
 ```
 
-The generic chart belongs at `argocd/charts/application` because it is cluster policy instantiated by Argo CD. It is not an application-owned product chart.
+The application directory basename is the application name. It must be a lowercase DNS label, and every derived hostname, namespace, Argo Application name, and resource name must remain within the Kubernetes 63-character limit.
 
-## Application registration
+## 4. Environments and names
 
-The directory name is the application name. Required metadata is intentionally limited to values that cannot be inferred:
+Every registered workload has explicit testing and production branches. Branch names are per workload because component repositories may use different conventions.
+
+| Environment | Source | Namespace | Hostname |
+| --- | --- | --- | --- |
+| Production | `workloads.<name>.branches.production` | `app-production-<application>` | production `domain` |
+| Testing | `workloads.<name>.branches.testing` | `app-testing-<application>` | `<application>.testing.scg.sh` |
+| Preview | eligible labeled pull request | `app-preview-<application>-<workload>-pr<number>` | `<application>-<workload>-pr<number>.preview.scg.sh` |
+
+PR numbers are repository-scoped, so preview identity includes the workload. A pull request affecting multiple published workloads may produce one preview per workload. Each preview is a complete immutable snapshot of every application workload; unchanged workloads are copied from the pull request target environment.
+
+Testing and preview infrastructure is static platform policy:
+
+- wildcard DNS records for `*.testing.scg.sh` and `*.preview.scg.sh` point to the shared Gateway;
+- two static HTTPS Gateway listeners serve those zones;
+- one Certificate contains both wildcard SANs;
+- testing and preview namespaces are restricted to the organization source CIDRs by central Cilium policy;
+- preview namespaces additionally deny private/cluster-network egress and Kubernetes API access by default;
+- application Pods do not receive service-account tokens;
+- applications cannot override these access policies.
+
+The fixed policies must be validated against the source addresses Cilium observes after load-balancer and school-firewall NAT. Applications requiring preview access to private dependencies are unsupported until the platform defines a narrow trusted exception mechanism.
+
+## 5. Strict `meta.yaml` contract
+
+Unknown fields and duplicate YAML mapping keys at every level are errors. Strict parsing rejects duplicates before schema validation. YAML aliases, merge keys, and environment interpolation are not part of the contract. Values have the types shown below; strings are not coerced from numbers or booleans.
+
+### 5.1 Complete example
 
 ```yaml
-repository: SystemConsultantGroup/kubernetes-hello-world
-domain: hello.world.scg.sh
+workloads:
+  fe:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-frontend.git
+    image: docker.io/scgskku/scg-apply-fe-prod
+    branches:
+      testing: dev
+      production: main
+    port: 3000
+    readiness:
+      type: tcp
+
+  be:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-backend.git
+    image: docker.io/scgskku/scg-apply-be-prod
+    branches:
+      testing: dev
+      production: main
+    port: 8000
+    readiness:
+      type: http
+      path: /health/ready
+    replicas:
+      testing: 1
+      production: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    env:
+      literals:
+        LOG_LEVEL: info
+      from:
+        secrets:
+          - scg-apply-secret
+
+domain:
+  name: apply.cs.skku.edu
+  external: true
+  additional:
+    - apply-old.scg.sh
+    - name: apply2.cs.skku.edu
+      external: true
+
+routes:
+  - path: /
+    workload: fe
+  - path: /v1
+    workload: be
 ```
 
-`repository` is always the full GitHub `owner/repository` identifier, not a URL and not a legacy `*-config` repository.
+### 5.2 Top-level fields
 
-Derived values:
+| Field | Required | Type | Meaning |
+| --- | --- | --- | --- |
+| `domain` | when `routes` exists | `string \| Domain` | Canonical production hostname and optional additional production hostnames. |
+| `workloads` | yes | non-empty map of `Workload` | Deployment definitions keyed by local DNS-label workload names such as `fe`, `be`, `api`, or `worker`. |
+| `routes` | no | `custom \| Route[]` | Omitted for no public HTTP routing, a list for generated routing, or `custom` for constrained custom HTTPRoutes. |
 
-| Value | Derivation |
-| --- | --- |
-| Application name | `meta.yaml` parent-directory basename |
-| Git URL | `https://github.com/<repository>.git` |
-| Default image | `ghcr.io/<lowercase repository>` |
-| Production hostname | `<domain>` |
-| Staging hostname | `staging.<domain>` |
-| PR hostname | `preview-<number>.<domain>` |
-| Production namespace | `<application>` |
-| Staging namespace | `<application>-staging` |
-| PR namespace | `<application>-preview-<number>` |
+No other top-level fields are allowed.
 
-Example with demonstrated deviations:
+### 5.3 Domain
+
+A string is shorthand for a platform-managed production domain:
 
 ```yaml
-repository: SystemConsultantGroup/example
 domain: example.scg.sh
-port: 3000
-healthPath: /healthz
+```
+
+Equivalent object form:
+
+```yaml
+domain:
+  name: example.scg.sh
+  external: false
+```
+
+Strict non-recursive shape:
+
+```text
+Domain:
+  name: hostname                       required
+  external: boolean                    required
+  additional: AdditionalDomain[]       optional, default []
+
+AdditionalDomain:
+  string                               managed shorthand
+  or:
+    name: hostname                     required
+    external: boolean                  required
+```
+
+`additional` is deliberately not recursive. Additional domains cannot contain additional domains; recursion would add no behavior and would permit ambiguous trees and duplicates.
+
+All primary and additional names must be unique valid lowercase DNS hostnames. Hostname ownership is globally unique across the complete application registry; two applications cannot claim the same primary or additional hostname. The platform reserves the complete `testing.scg.sh` and `preview.scg.sh` subtrees, so production domains cannot fall beneath either zone. Managed hostnames must belong to an explicitly configured and operational ExternalDNS zone.
+
+Managed domain behavior (`string` or `external: false`):
+
+- create an exact DNS record through ExternalDNS;
+- create an exact HTTPS listener;
+- request certificate coverage through cert-manager;
+- route HTTPS traffic through the shared Gateway.
+
+External domain behavior (`external: true`):
+
+- do not create or mutate DNS;
+- do not request a Certificate;
+- create an exact HTTP listener on port 80;
+- mark generated HTTPRoutes so ExternalDNS ignores them;
+- do not redirect HTTP to HTTPS;
+- expect the school firewall to own the public DNS/TLS path and forward HTTP while preserving the Host header.
+
+External listeners must accept only the observed school-firewall source ranges to prevent direct bypass. Registration remains blocked until those ranges and post-NAT behavior are validated.
+
+Additional domains exist only in production. Testing and preview always use the platform wildcard zones.
+
+### 5.4 Workload
+
+```text
+Workload:
+  repository: string                   required
+  image: string                        required
+  branches: Branches                   required
+  port: integer                        optional, 1..65535
+  readiness: Readiness                 optional
+  replicas: Replicas                   optional
+  resources: Resources                 optional
+  env: Environment                     optional
+```
+
+No other workload fields are allowed.
+
+#### Repository
+
+`repository` is a canonical HTTPS Git clone URL:
+
+```yaml
+repository: https://github.com/SystemConsultantGroup/example.git
+```
+
+Requirements:
+
+- exact form `https://github.com/SystemConsultantGroup/<repository>.git` for v1;
+- no embedded credentials, query, fragment, or trailing slash;
+- `.git` suffix;
+- no GitHub `owner/repository` shorthand;
+- exact equality is used when validating workflow and lock updates.
+
+Other Git hosts or owners require a later workflow and authorization contract; a syntactically valid external URL is not accepted by v1.
+
+#### Image
+
+`image` is a fully qualified OCI image repository without a tag or digest:
+
+```yaml
+image: ghcr.io/systemconsultantgroup/example
+image: docker.io/scgskku/example
+image: registry.scg.skku.ac.kr/team/example
+```
+
+The registry is mandatory. `docker.io`, GHCR, Harbor, and other registries are not inferred from the Git repository. Image path components must use their canonical lowercase form.
+
+#### Branches
+
+```yaml
+branches:
+  testing: dev
+  production: main
+```
+
+Both fields are required, non-empty Git branch names and must differ. Applications without both branches are not registerable until they adopt the testing/production workflow.
+
+#### Port and Service
+
+- No `port`: Deployment only; the workload is not routable and receives no Service.
+- `port`: Deployment plus ClusterIP Service port 80 targeting the declared container port.
+- A generated route may reference only a workload with a port.
+- Services use the workload key as their stable local name.
+
+#### Readiness
+
+A workload with a port defaults to TCP readiness on that port. It may explicitly select:
+
+```yaml
+readiness:
+  type: tcp
+```
+
+or:
+
+```yaml
+readiness:
+  type: http
+  path: /health/ready
+```
+
+Rules:
+
+- `type` is exactly `tcp` or `http`;
+- `path` is required for HTTP and forbidden for TCP;
+- the workload port is always used and cannot be overridden;
+- readiness timing, thresholds, headers, and schemes are central chart policy;
+- readiness is forbidden when the workload has no port;
+- the chart does not generate liveness or startup probes.
+
+#### Replicas
+
+```yaml
 replicas:
+  testing: 1
   production: 3
-  staging: 2
+```
+
+Both values are optional positive integers. Omitted stable values default to one. Preview replicas are always one and cannot be configured.
+
+#### Resources
+
+```yaml
 resources:
   requests:
     cpu: 100m
     memory: 128Mi
   limits:
+    cpu: "1"
     memory: 512Mi
-env:
-  LOG_LEVEL: info
-envFromSecrets:
-  - example-config
 ```
 
-## Proposed metadata schema
+Only `requests` and `limits`, each containing only `cpu` and/or `memory`, are allowed. Omitted entries use central chart defaults. Kubernetes quantity validation occurs during schema/render validation.
 
-Required:
-
-- `repository`: full GitHub `owner/repository` identifier.
-- `domain`: canonical production hostname.
-
-Optional deviations:
-
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `image` | `ghcr.io/<lowercase repository>` | Override only the image repository; tags/digests remain automated. |
-| `port` | `8080` | Container port; Service port remains `80`. |
-| `healthPath` | `/` | HTTP readiness probe path. |
-| `routePath` | `/` | Default HTTPRoute path prefix. |
-| `replicas.production` | `1` | Production replicas. |
-| `replicas.staging` | `1` | Staging replicas; previews remain fixed at one. |
-| `resources` | central chart defaults | CPU/memory requests and limits. |
-| `env` | none | Non-secret environment variables. |
-| `envFromSecrets` | none | Existing same-namespace Secrets imported through `envFrom`; the chart does not create secret values. |
-| `route` | `generated` | Set to `custom` to disable the generated HTTPRoute and load `routes/`. |
-
-Unknown fields should fail validation once the new generator is implemented. The current repository has no application metadata schema or validator; implementation must add one before migration. Do not initially expose namespaces, image tags, hostnames, TLS, labels, pod security contexts, image pull policy, commands, arbitrary annotations, volumes, node selection, affinity, or tolerations. Add a capability only when an active application proves it is required.
-
-## Generic `application` chart
-
-The first chart version represents one image and one HTTP Service. It should render:
-
-- Deployment
-- Service
-- HTTPRoute unless `route: custom`
-- Per-application ListenerSet from the production release only
-- Standard labels
-- Restricted container and pod security defaults
-- Readiness probe
-- Resource defaults
-
-The generated Argo CD Applications create namespaces with `CreateNamespace=true` and apply required labels through `syncPolicy.managedNamespaceMetadata`, including the Gateway selector and Pod Security Admission labels. The chart should not create Namespace resources. The current ApplicationSet does not yet configure managed namespace metadata.
-
-Platform components do not use this chart. Applications that demonstrably need multiple independently deployed images may become multiple application registrations or justify one narrow chart extension; do not add a speculative component framework.
-
-## Actual project repositories and images
-
-Actual project repositories replace legacy split configuration repositories. They own application code and a Dockerfile. Kubernetes manifests are not required for applications that fit the generic chart.
-
-A Dockerfile alone is not deployable: an image must be built and published. The minimal initial project contract is expected to be:
-
-```text
-Dockerfile
-.github/workflows/image.yaml
-```
-
-The workflow should call a centrally maintained reusable workflow and publish immutable commit-SHA images. A literal Dockerfile-only repository requires organization-level build automation and is deferred until that is proven worthwhile.
-
-Planned sample repository: `SystemConsultantGroup/kubernetes-hello-world`. It has not yet been created.
-
-## ApplicationSet model
-
-ApplicationSets read `applications/*/meta.yaml` with a Git files generator.
-
-Expected generated applications:
-
-- Production for each registration
-- Staging for each registration
-- One preview per eligible open pull request
-
-The project repository is used for repository identity, PR discovery, and image revision. The generated Argo CD Application deploys the central `argocd/charts/application` chart rather than application-owned Kubernetes manifests.
-
-PR preview behavior:
-
-1. A maintainer applies a `preview` label to a pull request in the registered project repository.
-2. The Pull Request generator creates an Application pinned to the PR head SHA.
-3. CI must have published the matching immutable image.
-4. Argo deploys it to `<application>-preview-<number>` at `preview-<number>.<domain>`.
-5. New commits update the generated Application.
-6. Closing the PR or removing the label deletes the Application and prunes its resources.
-
-A GitHub App with read-only organization repository/PR access is preferred over a personal token. Polling can start at five minutes; add the ApplicationSet webhook only if the delay matters.
-
-## Per-application routing and TLS
-
-Use one shared Cilium Gateway and a per-application Gateway API ListenerSet. Ownership is split deliberately:
-
-- The platform owns the shared Gateway, its `allowedListeners` policy, Gateway API CRDs, and cert-manager configuration.
-- Trusted central metadata and the generic chart define the ListenerSet shape and domain allocation.
-- The production Argo release is the single resource owner that applies the namespaced ListenerSet; staging and previews must never apply it.
-- cert-manager creates the resulting Certificate and TLS Secret in the ListenerSet namespace.
-
-The ListenerSet has two HTTPS listeners:
-
-- `<domain>`
-- `*.<domain>`
-
-Both reference the same TLS Secret, so cert-manager creates one Certificate containing the apex and wildcard SANs. Production attaches to the apex listener; staging and previews attach to the wildcard listener. During hello-world migration, its current static Gateway listener and explicit Certificate must be removed only after the ListenerSet is accepted and serving the replacement certificate.
-
-ExternalDNS should create explicit records from HTTPRoute hostnames:
-
-- `<domain>`
-- `staging.<domain>`
-- `preview-<number>.<domain>`
-
-Do not create wildcard DNS records merely because the certificate contains a wildcard SAN.
-
-Current platform implications:
-
-- The repository declares Gateway API `v1.6.1`, but `scripts/commands/install/gateway-api.sh` does not yet install the ListenerSet CRD.
-- The shared Gateway must enable `spec.allowedListeners` for selected application namespaces.
-- Cilium `1.20.0` declares ListenerSet support.
-- cert-manager `1.21.0` supports ListenerSets but needs `config.gatewayAPI.enableListenerSet: true` and the `ListenerSets` feature gate.
-- ExternalDNS chart `1.21.1` runs ExternalDNS `0.21.0`, which supports HTTPRoutes attached through ListenerSets.
-- Current ExternalDNS configuration is restricted to `scg.sh`; other DNS zones need explicit provider and domain-filter configuration.
-
-## Custom routes
-
-The generated route covers the normal one-hostname, one-Service case. An application needing custom path routing or multiple HTTPRoutes sets:
+#### Environment
 
 ```yaml
-route: custom
+env:
+  literals:
+    LOG_LEVEL: info
+  from:
+    secrets:
+      - application-config
 ```
 
-and adds:
+Rules:
+
+- `literals` is a map of valid environment-variable names to string values;
+- `from.secrets` is a unique list of same-namespace Kubernetes Secret names;
+- the chart renders Secret names through native `envFrom.secretRef`;
+- Secret values never appear in `meta.yaml` or `lock.yaml`;
+- missing non-optional Secrets prevent the Pod from starting;
+- secret provisioning and rotation are external platform responsibilities;
+- changing a Secret does not change an existing process environment without a rollout.
+
+Only `literals` and `from.secrets` are supported initially. Future `secretKeys` or `configMaps` require an evidence-backed schema revision; placeholders for them are not accepted now.
+
+### 5.5 Generated routes
+
+```yaml
+routes:
+  - path: /
+    workload: fe
+  - path: /api
+    workload: be
+```
+
+Each generated `Route` contains exactly:
 
 ```text
-applications/<application>/routes/
-  kustomization.yaml
-  *.yaml
+Route:
+  path: absolute HTTP path prefix       required
+  workload: existing workload key       required
 ```
 
-The ApplicationSet adds this directory as an additional Kustomize source and injects the environment-specific hostname and ListenerSet parent. Custom routing is an explicit deviation, so only affected applications pay the extra files.
+Rules:
 
-The custom directory is intended for Gateway API route kinds, not arbitrary Gateways, ListenerSets, Certificates, Deployments, or cluster-scoped resources. ListenerSet shape and domain allocation remain controlled by trusted central templates, while the production release is their sole Argo resource owner. The exact kind allowlist and environment-patching mechanism must be validated during implementation.
+- the list must contain at least one route;
+- match type is Gateway API `PathPrefix`;
+- duplicate paths are forbidden;
+- the referenced workload must have a port;
+- the most specific path wins according to Gateway API precedence;
+- testing and preview emit one HTTPRoute using only their derived platform hostname;
+- production emits one HTTPRoute per declared production domain so managed and external DNS behavior never shares one annotated resource;
+- every emitted route contains the same generated path rules.
 
-## Security boundaries
+Generated routes do not expose rewrites, redirects, CORS, regular expressions, headers, mirrors, weights, or arbitrary annotations.
 
-Do not deploy pull-request content through the current broad `scg` AppProject. The existing ApplicationSet still uses `project: scg`; replacing that assignment is a required migration step, not current behavior.
+### 5.6 Custom routes
 
-Create restrictive application projects, especially for previews:
+```yaml
+routes: custom
+```
 
-- Hard-code the AppProject in generated Applications.
-- Restrict source repositories to registered project repositories plus this central chart repository.
-- Restrict destination namespace patterns.
-- Deny cluster-scoped resources for previews.
-- Deny Gateway, ListenerSet, Certificate, RBAC, and other infrastructure ownership from preview sources.
-- Apply restricted Pod Security Admission labels to generated namespaces.
-- Keep domain, Gateway listener, certificate, and project selection controlled by trusted central metadata/templates rather than pull-request content.
-- Allow only maintainers to apply the `preview` label.
+This requires `applications/<application>/routes/` and disables generated HTTPRoute rendering.
 
-The precise Argo CD and Kubernetes enforcement needed to prevent a manifest from escaping its generated namespace remains an implementation validation item.
+Strict custom-route contract:
 
-## Deliberate non-goals for the first version
+- only namespaced `gateway.networking.k8s.io` `HTTPRoute` resources are allowed;
+- Gateways, ListenerSets, Certificates, Services, Deployments, policies, Secrets, RBAC, and cluster-scoped resources are forbidden;
+- source `metadata.namespace` and `spec.parentRefs` are forbidden; the platform injects and overwrites the release namespace and exact parent;
+- every source HTTPRoute must contain a non-empty production `hostnames` list that is a subset of the declared primary and additional production domains;
+- one production HTTPRoute cannot mix managed and external hostnames; the platform applies ExternalDNS-ignore only to external-domain routes;
+- the platform always overwrites non-production `hostnames` with the one exact derived testing or preview hostname; omission cannot match the whole wildcard listener;
+- backend references may target only Services generated for local declared workloads on Service port 80;
+- cross-namespace backend references and `ExtensionRef` filters are forbidden;
+- source annotations are forbidden except `platform.scg.sh/production-only: "true"`;
+- routes carrying that annotation are omitted from testing and previews;
+- every rendered route must pass Gateway API schema validation and Cilium conformance tests before migration.
 
-- Universal arbitrary Kubernetes escape hatches
-- Multi-component application framework
-- Databases or Redis managed by the application chart
-- Persistent volumes
-- Autoscaling
-- Per-application service accounts/RBAC
-- Arbitrary pod scheduling controls
-- Long-lived environment branches
-- Wildcard DNS records
-- Migrating legacy `*-config` repositories as-is
+The implementation must prove the Kustomize/multi-source injection and resource allowlist before the first custom-route migration. Custom routing is not an arbitrary Kubernetes escape hatch.
 
-## Open decisions
+## 6. Strict `lock.yaml` contract
 
-1. **Promotion semantics:** deploying the same `main` revision to staging and production simultaneously makes staging ineffective. Decide how a verified staging image is promoted to production.
-2. **Image publication:** choose GHCR visibility/authentication and define the reusable build workflow.
-3. **Stable image revision:** define how production and staging select immutable project-repository commit SHAs or digests.
-4. **Secrets:** define how per-environment Secrets are provisioned before relying on `envFromSecrets`.
-5. **Custom-route injection:** prove the multi-source Kustomize hostname/parent patching model.
-6. **Namespace enforcement:** verify that preview Applications cannot deploy resources outside their generated namespace.
-7. **Multi-component applications:** use the legacy audit to determine whether splitting registrations is enough.
-8. **Sample:** create `SystemConsultantGroup/kubernetes-hello-world` only after the image and chart contracts are executable end to end.
+`lock.yaml` is committed desired state. It is normally workflow-managed but remains human-editable for recovery. Unknown fields are errors.
 
-## Planned evidence
+```yaml
+lock:
+  version: 1
 
-`LEGACY_CONFIG_SWEEP.md` is a temporary orchestration handoff for a read-only audit of legacy `*-config` repositories. Its resulting `legacy-config-sweep-report.md` should test this proposal against real applications and identify only evidence-backed deviations. The handoff deletes itself; this design document must remain.
+  environments:
+    testing:
+      workloads:
+        fe:
+          sourceRevision: "0123456789abcdef0123456789abcdef01234567"
+          imageDigest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        be:
+          sourceRevision: "89abcdef0123456789abcdef0123456789abcdef"
+          imageDigest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+    production:
+      workloads:
+        fe:
+          sourceRevision: "1111111111111111111111111111111111111111"
+          imageDigest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+        be:
+          sourceRevision: "2222222222222222222222222222222222222222"
+          imageDigest: sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+
+  previews:
+    fe-pr42:
+      workload: fe
+      pullRequest: 42
+      targetEnvironment: testing
+      workloads:
+        fe:
+          sourceRevision: "3333333333333333333333333333333333333333"
+          imageDigest: sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        be:
+          sourceRevision: "89abcdef0123456789abcdef0123456789abcdef"
+          imageDigest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+```
+
+Rules:
+
+- `lock.version` is exactly `1`;
+- `testing` and `production` are required; `previews` is optional and defaults to an empty map;
+- every stable and preview snapshot contains exactly every metadata workload key;
+- no lock workload may be absent from or additional to `meta.yaml`;
+- `sourceRevision` is a quoted string containing the full 40-character lowercase Git commit SHA;
+- `imageDigest` is exactly `sha256:` followed by 64 lowercase hexadecimal characters;
+- the rendered image is `<meta workload image>@<imageDigest>`;
+- workflow validation verifies the digest exists and its workflow-bound provenance matches the registered repository and `sourceRevision`;
+- a stable lock update must originate from the corresponding registered branch, may change only the initiating workload entry, and must leave sibling workload entries unchanged;
+- preview keys are exactly `<workload>-pr<number>` and unique, with a positive integer pull-request number;
+- each key must equal its `workload` plus `-pr` plus its `pullRequest`, and the workload must exist in metadata;
+- `targetEnvironment` is exactly `testing` or `production`; the PR base ref must equal the initiating workload's registered branch for that environment;
+- the initiating workload's `sourceRevision` must equal the PR head commit;
+- preview snapshots are complete, not deltas, and every non-initiating workload entry must exactly equal its selected target-environment lock entry;
+- removing the preview label or closing the pull request removes its lock entry;
+- manual changes pass the same validation as workflow changes.
+
+A PR that updates several workloads may create separate workload-scoped previews. This avoids collisions between repository-scoped pull request numbers while keeping preview identity explicit.
+
+## 7. Reusable image workflow contract
+
+The reusable workflow lives at:
+
+```text
+SystemConsultantGroup/kubernetes/.github/workflows/publish-application-image.yaml
+```
+
+Each application repository contains only a small event/caller workflow. Its explicit inputs identify the application, workload, Dockerfile, and build context; v1 does not auto-discover monorepo build targets.
+
+Build-time configuration is a CI concern, not chart metadata. Non-secret build values come from the selected GitHub `testing` or `production` environment variables. Build secrets use BuildKit secret mounts from the matching GitHub environment and must not be passed as Docker build arguments or persisted in image layers. Preview builds receive only explicitly approved preview-safe values and never production build secrets. Applications whose frontend or backend build cannot follow this contract are blocked from migration.
+
+The workflow separates trust domains:
+
+1. an unprivileged job checks out and tests/builds application code without Kubernetes-repository or GitHub App credentials;
+2. a publisher job consumes only the resulting immutable build output, publishes the configured canonical image, and creates workflow-bound provenance/attestation for the source repository, commit, workflow, and digest;
+3. a lock-writer job runs trusted reusable-workflow code only, verifies that provenance, resolves the application/workload against `meta.yaml`, and proposes the matching `lock.yaml` update through a narrowly permissioned GitHub App;
+4. no job may write another application's workload or execute pull-request code while lock-writing credentials are present.
+
+Testing and production branch pushes update their matching stable snapshots. Eligible maintainer-labeled pull requests update a workload-scoped preview snapshot. Central CI validates schema, attested provenance, authorization, Helm rendering, and changed-file scope before merge. Production lock updates follow the established production-branch merge procedure.
+
+## 8. Helm release inputs
+
+Argo supplies the chart with:
+
+- application name derived from the registry directory;
+- release environment (`production`, `testing`, or a preview key);
+- `meta.yaml`;
+- `lock.yaml`;
+- the central chart defaults.
+
+Helm does not discover sibling files. The generated Argo Application explicitly supplies both registry files as values sources. The chart selects one complete lock snapshot for the requested release and must fail rendering if it cannot resolve every workload.
+
+A deterministic registry compiler flattens all stable and preview lock snapshots into `argocd/generated/releases.yaml`. A native Git-plus-List matrix generator consumes that list through `elementsYaml`, producing one Argo Application per release without a custom ApplicationSet plugin or map iteration. Every lock-changing PR regenerates the index; CI rejects a missing or stale generated file. Manual lock recovery therefore runs the same repository generator before commit.
+
+Preview lock entries are created only for maintainer-labeled pull requests. Closing a PR or removing the label removes its lock entry and regenerated release entry; a scheduled central reconciliation workflow repairs missed close/label events. ApplicationSet discovers releases only from the generated index, while each generated Application still reads its registry metadata and lock as Helm values.
+
+The chart's `values.schema.json` validates the merged metadata, lock, application name, and release selector with `additionalProperties: false`. CI also validates `meta.yaml` and `lock.yaml` independently so chart defaults cannot hide missing registry input.
+
+## 9. Rendered resource contract
+
+For each workload, the chart renders:
+
+- one Deployment;
+- one ClusterIP Service only when `port` exists;
+- standard recommended Kubernetes labels;
+- restricted pod and container security defaults;
+- `automountServiceAccountToken: false`;
+- immutable digest image reference;
+- `IfNotPresent` image pull policy;
+- readiness as specified;
+- central resources unless overridden;
+- literal environment variables and native Secret references.
+
+Per release, the chart renders:
+
+- one generated HTTPRoute per active hostname when `routes` is a list;
+- no HTTPRoute when routes are omitted or custom;
+- a production ListenerSet for routed production releases only;
+- no ListenerSet or Certificate for testing or previews.
+
+Production ListenerSet behavior:
+
+- one exact HTTPS listener for each managed production domain;
+- one exact HTTP listener for each external production domain;
+- managed listeners reference cert-manager-created TLS material;
+- external listeners contain no TLS configuration;
+- the production release is the sole ListenerSet owner.
+
+Testing and preview HTTPRoutes attach directly to the shared static wildcard Gateway listener. Production HTTPRoutes attach to their local ListenerSet.
+
+The chart never renders Namespace resources. Generated Argo Applications use `CreateNamespace=true` and `managedNamespaceMetadata` for:
+
+- environment identity;
+- Gateway route selection;
+- Pod Security Admission restricted labels;
+- fixed testing/preview access-policy selection.
+
+## 10. Security and validation invariants
+
+Registration and lock CI must reject:
+
+- unknown fields and duplicate YAML mapping keys;
+- invalid, overlong, or globally colliding derived DNS/Kubernetes names;
+- production domains beneath the reserved `testing.scg.sh` or `preview.scg.sh` zones;
+- shorthand or credential-bearing repository URLs;
+- image tags, image digests, or implicit registries in `meta.yaml`;
+- equal testing and production branches;
+- duplicate or registry-conflicting domains, environment variables, Secret refs, or route paths;
+- managed domains outside the configured ExternalDNS zone allowlist;
+- routes referencing missing or portless workloads;
+- a domain without routes or routes without a domain;
+- readiness on a portless workload;
+- HTTP readiness without a path or TCP readiness with a path;
+- lock workload sets differing from metadata;
+- malformed or unverified image digests and source revisions;
+- unauthorized workflow changes to another application/workload/environment;
+- custom route resource kinds or references outside the allowlist;
+- production, testing, or preview sources attempting to own infrastructure or escape their generated namespace.
+
+Generated Applications use hard-coded restrictive AppProjects. Preview sources must not receive production Secrets and cannot create cluster-scoped resources, RBAC, Gateways, ListenerSets, Certificates, policies, cross-namespace references, or unrestricted private-network/Kubernetes-API egress.
+
+## 11. Secret provisioning
+
+`env.from.secrets` references ordinary same-namespace Kubernetes Secrets. The application chart does not choose or expose a secret backend.
+
+A separate platform implementation must provision those Secrets in production, testing, and eligible preview namespaces before an application is migrated. The selected backend must reconcile to native Kubernetes Secrets. Provider paths and production-secret access remain trusted platform configuration, not pull-request-controlled application values.
+
+## 12. Deliberate exclusions
+
+The first chart version excludes:
+
+- CronJobs and Jobs;
+- init containers and migration hooks;
+- liveness and startup probes;
+- commands and arguments;
+- arbitrary annotations, labels, or pod specs;
+- ConfigMap generation;
+- individual Secret-key mappings;
+- volumes and persistence;
+- Redis and databases;
+- autoscaling and PDBs;
+- service accounts and RBAC;
+- affinity, tolerations, topology spread, and node selection;
+- arbitrary Gateway API kinds and extension filters;
+- configurable testing/preview access policy;
+- application-controlled namespaces, domains for non-production, DNS, TLS, or Gateway ownership.
+
+Add a capability only when an active ordinary application proves it cannot be represented safely without it.
+
+## 13. Implementation and migration order
+
+1. Create strict independent metadata and lock schemas plus merged Helm `values.schema.json`.
+2. Implement the deterministic flat release-index generator and stale-output CI check.
+3. Add fixtures for a single HTTP workload, FE/BE application, worker, internal Service, external production domain, managed production domain, and preview snapshot.
+4. Implement and test the generic chart rendering contract.
+5. Add the two static wildcard DNS records, Certificate SANs, and Gateway listeners.
+6. Validate fixed Cilium source restrictions after NAT.
+7. Implement the reusable image workflow, environment-scoped build inputs, isolated credential jobs, attestations, and scoped lock-update validation.
+8. Replace Image Updater after the lock workflow is live.
+9. Implement restrictive stable/preview AppProjects, ApplicationSets, service-account-token disabling, and preview network isolation.
+10. Select and implement native Kubernetes Secret reconciliation before migrating an application that references Secrets.
+11. Prove custom-route injection and allowlisting with CSE before enabling `routes: custom`.
+12. Migrate ICC Haedong first, then the remaining applications in the order recorded by the legacy sweep.
+13. Remove hello-world's static listeners/certificates and old application manifests only after the replacement path passes live HTTP, TLS, DNS, readiness, rollback, and webhook/polling tests.
+
+## 14. Required implementation proofs
+
+Before this approved design becomes operationally authoritative, demonstrate:
+
+- schema rejection of every forbidden shape listed above;
+- deterministic rendering from `meta.yaml` plus `lock.yaml` and deterministic regeneration of the flat release index;
+- Git webhook refresh and polling fallback;
+- stable branch lock update and rollback by Git revert;
+- workload-scoped authorization for lock changes;
+- workload-scoped PR preview creation, update, and deletion;
+- shared wildcard testing/preview DNS and TLS;
+- organization-only testing/preview access after real NAT;
+- managed HTTPS and external HTTP-only production domains;
+- exact hostname/parent injection and kind enforcement for custom HTTPRoutes;
+- namespace and AppProject escape prevention;
+- Secret availability before Deployment rollout;
+- live readiness and traffic smoke tests.
 
 ## References
 
+- Legacy evidence: [`LEGACY_CONFIG_SWEEP.md`](LEGACY_CONFIG_SWEEP.md)
+- Argo CD ApplicationSet Git generator: <https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Git/>
 - Argo CD Pull Request generator: <https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Pull-Request/>
-- Argo CD Matrix generator: <https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Matrix/>
+- Argo CD webhooks: <https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/>
 - Gateway API ListenerSet: <https://gateway-api.sigs.k8s.io/guides/user-guides/listener-set/>
-- cert-manager Gateway and ListenerSet support: <https://cert-manager.io/docs/usage/gateway/>
-- ExternalDNS Gateway API source: <https://kubernetes-sigs.github.io/external-dns/latest/docs/sources/gateway-api/>
+- cert-manager Gateway support: <https://cert-manager.io/docs/usage/gateway/>
+- ExternalDNS Gateway source: <https://kubernetes-sigs.github.io/external-dns/latest/docs/sources/gateway-api/>
