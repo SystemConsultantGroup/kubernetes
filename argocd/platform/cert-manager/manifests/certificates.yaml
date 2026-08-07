@@ -12,3 +12,18 @@ spec:
     name: zerossl-cloudflare
   dnsNames:
     - argocd.infra.scg.sh
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hello-world
+  namespace: gateway-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  secretName: hello-world-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: zerossl-cloudflare
+  dnsNames:
+    - hello.world.scg.sh
