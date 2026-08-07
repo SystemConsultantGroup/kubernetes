@@ -4,6 +4,14 @@ Configuration and tooling for the single `scg` cluster: Talos, Cilium, Argo CD, 
 
 ## Bootstrap
 
+Install Nix (if you don't have it):
+
+```bash
+curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+```
+
+Then:
+
 ```bash
 nix develop
 k secrets check
