@@ -279,13 +279,34 @@ usage_for() {
 
 show_doc() {
     local doc="$1"
-    if [[ -f "$doc" ]]; then
-        if command -v glow >/dev/null 2>&1; then
-            glow "$doc"
-        else
-            cat "$doc"
-        fi
+    [[ -f "$doc" ]] || return 0
+    if command -v glow >/dev/null 2>&1 && [[ -t 1 ]]; then
+        glow "$doc"
+    else
+        md_style "$doc"
     fi
+}
+
+# Minimal ANSI markdown renderer: strips ATX heading markers (glow leaves
+# raw '#' when stdout is not a TTY) and dims code blocks.
+md_style() {
+    local in_code=0 line
+    while IFS= read -r line; do
+        if [[ "$line" == '```'* ]]; then
+            in_code=$((1 - in_code))
+            printf '\n'
+            continue
+        fi
+        if ((in_code)); then
+            printf '\033[2m%s\033[0m\n' "$line"
+        elif [[ "$line" =~ ^#{1,6}[[:space:]]+(.*)$ ]]; then
+            printf '\033[1;4m%s\033[0m\n' "${BASH_REMATCH[1]}"
+        elif [[ "$line" =~ ^[[:space:]]*[-*][[:space:]]+(.*)$ ]]; then
+            printf '  \033[1m\xE2\x80\xA2\033[0m %s\n' "${BASH_REMATCH[1]}"
+        else
+            printf '%s\n' "$line"
+        fi
+    done < "$1"
 }
 
 run_from() (
