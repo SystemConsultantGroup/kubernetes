@@ -1,7 +1,7 @@
 # Bash completion for k.
 
 _K_ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-_K_COMMAND_DIR="$_K_ROOT_DIR/scripts/commands"
+_K_COMMAND_DIR="$_K_ROOT_DIR/scripts/k.commands"
 
 _k_command_names() {
     local directory="$1" file
