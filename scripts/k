@@ -35,6 +35,7 @@ TALOS_VERSION="$(state_value '.talos.version')"
 }
 TALOS_VERSION="v$TALOS_VERSION"
 KUBERNETES_VERSION="$(state_value '.kubernetes.version')"
+GATEWAY_API_VERSION="$(state_value '."gateway-api".version')"
 CILIUM_VERSION="$(state_value '.cilium.version')"
 ARGOCD_VERSION="$(state_value '.argocd.version')"
 MAIN_NODE="$(state_value '.endpoint')"
