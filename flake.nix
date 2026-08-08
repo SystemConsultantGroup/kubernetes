@@ -15,6 +15,7 @@
               age
 #              bashInteractive
               cilium-cli
+              glow
               kubectl
               kubernetes-helm
               sops

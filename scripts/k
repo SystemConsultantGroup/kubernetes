@@ -254,15 +254,38 @@ validate_talos_inputs() {
     done
 }
 
+summary_of() {
+    local file="$1"
+    [[ -f "$file" ]] || return 0
+    awk 'NR > 1 && !/^#/ && NF { print; exit }' "$file"
+}
+
 usage_for() {
-    local directory="$1" prefix="$2" path found=0
+    local directory="$1" prefix="$2" path name summary found=0
     printf 'Usage: %s <command> [args...]\n\nCommands:\n' "$prefix"
     for path in "$directory"/*.sh; do
         [[ -f "$path" ]] || continue
-        printf '  %s\n' "$(basename "$path" .sh)"
+        name="$(basename "$path" .sh)"
+        summary="$(summary_of "${path%.sh}.md")"
+        if [[ -n "$summary" ]]; then
+            printf '  %-24s %s\n' "$name" "$summary"
+        else
+            printf '  %s\n' "$name"
+        fi
         found=1
     done
     ((found)) || echo "  (none)"
+}
+
+show_doc() {
+    local doc="$1"
+    if [[ -f "$doc" ]]; then
+        if command -v glow >/dev/null 2>&1; then
+            glow "$doc"
+        else
+            cat "$doc"
+        fi
+    fi
 }
 
 run_from() (
@@ -286,7 +309,11 @@ run_from() (
             return
             ;;
         -h|--help)
-            usage_for "$directory" "$prefix"
+            if [[ -f "$directory.md" ]]; then
+                show_doc "$directory.md"
+            else
+                usage_for "$directory" "$prefix"
+            fi
             return
             ;;
         *[!a-z0-9-]*|'')
@@ -305,7 +332,11 @@ run_from() (
         return 2
     fi
     if [[ "${1:-}" == -h || "${1:-}" == --help ]] && [[ ! -d "$directory/$command" ]]; then
-        echo "Usage: $prefix $command [args...]"
+        if [[ -f "${script%.sh}.md" ]]; then
+            show_doc "${script%.sh}.md"
+        else
+            echo "Usage: $prefix $command [args...]"
+        fi
         return
     fi
 
