@@ -1,5 +1,0 @@
-name: argocd
-namespace: argocd
-source:
-  type: kustomize
-  path: argocd/platform/argocd

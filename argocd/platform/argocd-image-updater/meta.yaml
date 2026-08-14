@@ -1,5 +1,0 @@
-name: argocd-image-updater
-namespace: argocd
-source:
-  type: kustomize
-  path: argocd/platform/argocd-image-updater

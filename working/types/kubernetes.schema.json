@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Selected Kubernetes v1.36.3 API types",
+  "$comment": "Generated from https://raw.githubusercontent.com/kubernetes/kubernetes/v1.36.3/api/openapi-spec/swagger.json. Descriptions were removed, object schemas were made strict, and IntOrString was normalized.",
+  "definitions": {
+    "io.k8s.api.core.v1.ConfigMapEnvSource": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ConfigMapKeySelector": {
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "type": "object",
+      "x-kubernetes-map-type": "atomic",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.EnvFromSource": {
+      "properties": {
+        "configMapRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.SecretEnvSource"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.EnvVar": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "valueFrom": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.EnvVarSource"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.EnvVarSource": {
+      "properties": {
+        "configMapKeyRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ConfigMapKeySelector"
+        },
+        "fieldRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ObjectFieldSelector"
+        },
+        "fileKeyRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.FileKeySelector"
+        },
+        "resourceFieldRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ResourceFieldSelector"
+        },
+        "secretKeyRef": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.SecretKeySelector"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ExecAction": {
+      "properties": {
+        "command": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.FileKeySelector": {
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        },
+        "volumeName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "volumeName",
+        "path",
+        "key"
+      ],
+      "type": "object",
+      "x-kubernetes-map-type": "atomic",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.GRPCAction": {
+      "properties": {
+        "port": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "service": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "port"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.HTTPGetAction": {
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "httpHeaders": {
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.HTTPHeader"
+          },
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        },
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+        },
+        "scheme": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "port"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.HTTPHeader": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ObjectFieldSelector": {
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fieldPath"
+      ],
+      "type": "object",
+      "x-kubernetes-map-type": "atomic",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.Probe": {
+      "properties": {
+        "exec": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ExecAction"
+        },
+        "failureThreshold": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "grpc": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.GRPCAction"
+        },
+        "httpGet": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.HTTPGetAction"
+        },
+        "initialDelaySeconds": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "periodSeconds": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "successThreshold": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "tcpSocket": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.TCPSocketAction"
+        },
+        "terminationGracePeriodSeconds": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "timeoutSeconds": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ResourceClaim": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ResourceFieldSelector": {
+      "properties": {
+        "containerName": {
+          "type": "string"
+        },
+        "divisor": {
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+        },
+        "resource": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "resource"
+      ],
+      "type": "object",
+      "x-kubernetes-map-type": "atomic",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.ResourceRequirements": {
+      "properties": {
+        "claims": {
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.ResourceClaim"
+          },
+          "type": "array",
+          "x-kubernetes-list-map-keys": [
+            "name"
+          ],
+          "x-kubernetes-list-type": "map"
+        },
+        "limits": {
+          "additionalProperties": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+          },
+          "type": "object"
+        },
+        "requests": {
+          "additionalProperties": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.SecretEnvSource": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.SecretKeySelector": {
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "type": "object",
+      "x-kubernetes-map-type": "atomic",
+      "additionalProperties": false
+    },
+    "io.k8s.api.core.v1.TCPSocketAction": {
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+        }
+      },
+      "required": [
+        "port"
+      ],
+      "type": "object",
+      "additionalProperties": false
+    },
+    "io.k8s.apimachinery.pkg.api.resource.Quantity": {
+      "type": "string"
+    },
+    "io.k8s.apimachinery.pkg.util.intstr.IntOrString": {
+      "$comment": "Kubernetes OpenAPI v2 models IntOrString as a string format; this expansion preserves its actual wire shape.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "format": "int32"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

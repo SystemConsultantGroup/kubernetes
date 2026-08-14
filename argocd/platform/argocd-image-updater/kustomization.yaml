@@ -1,5 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: argocd
-resources:
-  - https://github.com/argoproj-labs/argocd-image-updater//config/default?ref=1b622412d7ecc2392e86bd5d1d2fee755fc71ca1

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SCG application metadata",
+  "type": "object",
+  "minProperties": 1,
+  "propertyNames": {
+    "$ref": "#/$defs/workloadName"
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/workload"
+  },
+  "$defs": {
+    "workloadName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+    },
+    "hostname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253,
+      "format": "hostname",
+      "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$"
+    },
+    "domain": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/hostname"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "external"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/hostname"
+            },
+            "external": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "domainOrDomains": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/domain"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/domain"
+          }
+        }
+      ]
+    },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "domain": {
+          "$ref": "#/$defs/domainOrDomains"
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "./types/httprouterule.schema.json"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "rules"
+            ]
+          },
+          "then": {
+            "required": [
+              "domain"
+            ]
+          }
+        }
+      ]
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resources": {
+          "$ref": "./types/kubernetes.schema.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "$ref": "./types/kubernetes.schema.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "envFrom": {
+          "type": "array",
+          "items": {
+            "$ref": "./types/kubernetes.schema.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
+          }
+        },
+        "readinessProbe": {
+          "$ref": "./types/kubernetes.schema.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
+        "http": {
+          "$ref": "#/$defs/http"
+        }
+      }
+    }
+  }
+}

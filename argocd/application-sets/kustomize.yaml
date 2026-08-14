@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-kustomize
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        revision: main
+        files:
+          - path: applications/*/kustomization.yaml
+  template:
+    metadata:
+      name: 'app-{{ index .path.segments 1 }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: applications
+      source:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        targetRevision: main
+        path: '{{ .path.path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'app-{{ index .path.segments 1 }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            gateway.scg.sh/public: "true"
+            platform.scg.sh/application: '{{ index .path.segments 1 }}'
+            platform.scg.sh/release: custom
+            pod-security.kubernetes.io/enforce: restricted
+            pod-security.kubernetes.io/enforce-version: latest
+        syncOptions:
+          - CreateNamespace=true

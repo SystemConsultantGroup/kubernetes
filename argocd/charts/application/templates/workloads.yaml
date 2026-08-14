@@ -1,0 +1,102 @@
+{{- $context := required "_context is required" .Values._context -}}
+{{- $application := required "_context.application is required" $context.application -}}
+{{- $release := required "_context.release is required" $context.release -}}
+{{- $releaseType := required "_context.release.type is required" $release.type -}}
+{{- $workloads := omit .Values "_context" -}}
+{{- if eq (len $workloads) 0 -}}
+  {{- fail "at least one workload is required" -}}
+{{- end -}}
+{{- if eq $releaseType "preview" -}}
+  {{- $previewWorkload := required "preview release workload is required" $release.workload -}}
+  {{- if not (hasKey $workloads $previewWorkload) -}}
+    {{- fail (printf "preview workload %q does not exist" $previewWorkload) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- range $name, $workload := $workloads -}}
+  {{- $render := or (ne $releaseType "preview") (eq $name $release.workload) -}}
+  {{- if $render -}}
+    {{- $source := required (printf "workload %q has no source lock" $name) $workload.source -}}
+    {{- $image := required (printf "workload %q has no image lock" $name) $workload.image -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 4 }}
+  annotations:
+    platform.scg.sh/source-repository: {{ $source.repository | quote }}
+    platform.scg.sh/source-revision: {{ $source.revision | quote }}
+    {{- if hasPrefix "https://github.com/" $source.repository }}
+    link.argocd.argoproj.io/source: {{ printf "%s/commit/%s" (trimSuffix ".git" $source.repository) $source.revision | quote }}
+    {{- end }}
+spec:
+  replicas: {{ ternary 1 ($workload.replicas | default 1) (eq $releaseType "preview") }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name | quote }}
+      app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+  template:
+    metadata:
+      labels:
+        {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ $name }}
+          image: {{ $image | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          {{- with $workload.http }}
+          ports:
+            - name: http
+              containerPort: {{ .port }}
+              protocol: TCP
+          {{- end }}
+          {{- with $workload.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $workload.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $workload.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $workload.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+    {{- with $workload.http }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ $name | quote }}
+    app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+      appProtocol: http
+    {{ end }}
+  {{ end }}
+{{ end }}

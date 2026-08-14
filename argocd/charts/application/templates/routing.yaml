@@ -1,0 +1,196 @@
+{{- $context := .Values._context -}}
+{{- $application := $context.application -}}
+{{- $releaseType := $context.release.type -}}
+{{- $previewWorkload := $context.release.workload | default "" -}}
+{{- $workloads := omit .Values "_context" -}}
+{{- $allGroups := list -}}
+{{- range $owner, $workload := $workloads -}}
+  {{- if and $workload.http $workload.http.domain -}}
+    {{- $allGroups = append $allGroups (dict "owner" $owner "http" $workload.http) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if eq $releaseType "production" -}}
+  {{- range $group := $allGroups -}}
+    {{- $owner := $group.owner -}}
+    {{- $http := $group.http -}}
+    {{- $domains := list $http.domain -}}
+    {{- if kindIs "slice" $http.domain -}}
+      {{- $domains = $http.domain -}}
+    {{- end -}}
+    {{- range $domain := $domains -}}
+      {{- $hostname := $domain -}}
+      {{- $external := false -}}
+      {{- if kindIs "map" $domain -}}
+        {{- $hostname = $domain.name -}}
+        {{- $external = $domain.external -}}
+      {{- end -}}
+      {{- $suffix := trunc 8 (sha256sum $hostname) -}}
+      {{- $resourceName := printf "%s-%s" $owner $suffix | trunc 63 | trimSuffix "-" -}}
+      {{- $listenerName := $resourceName -}}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ $resourceName }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $owner) | nindent 4 }}
+spec:
+  parentRef:
+    name: public
+    namespace: gateway-system
+  listeners:
+    - name: {{ $listenerName }}
+      hostname: {{ $hostname | quote }}
+      port: {{ ternary 80 443 $external }}
+      protocol: {{ ternary "HTTP" "HTTPS" $external }}
+      {{- if not $external }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ $resourceName }}-tls
+      {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $resourceName }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $owner) | nindent 4 }}
+  {{- if $external }}
+  annotations:
+    external-dns.alpha.kubernetes.io/exclude: "true"
+  {{- end }}
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: {{ $listenerName }}
+  hostnames:
+    - {{ $hostname | quote }}
+  rules:
+    {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" (list $group)) | nindent 4 }}
+      {{- if not $external }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $resourceName }}-tls
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $owner) | nindent 4 }}
+spec:
+  secretName: {{ $resourceName }}-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: zerossl-cloudflare
+  dnsNames:
+    - {{ $hostname | quote }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ else if eq $releaseType "testing" -}}
+  {{- if gt (len $allGroups) 0 -}}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $application }}
+  labels:
+    app.kubernetes.io/name: {{ $application | quote }}
+    app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+    app.kubernetes.io/part-of: {{ $application | quote }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
+    platform.scg.sh/release: testing
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: testing-https
+  hostnames:
+    - {{ include "application.testingHostname" $ | quote }}
+  rules:
+    {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" $allGroups) | nindent 4 }}
+  {{- end }}
+{{- else if eq $releaseType "preview" -}}
+  {{- $previewGroups := list -}}
+  {{- range $group := $allGroups -}}
+    {{- $targetsPreview := false -}}
+    {{- $owner := $group.owner -}}
+    {{- $rules := $group.http.rules | default (list (dict)) -}}
+    {{- range $rule := $rules -}}
+      {{- if hasKey $rule "backendRefs" -}}
+        {{- range $backend := $rule.backendRefs -}}
+          {{- $groupName := get $backend "group" | default "" -}}
+          {{- $kind := get $backend "kind" | default "Service" -}}
+          {{- if and (eq $groupName "") (eq $kind "Service") (eq (get $backend "name") $previewWorkload) -}}
+            {{- $targetsPreview = true -}}
+          {{- end -}}
+        {{- end -}}
+      {{- else if and (eq $owner $previewWorkload) (ne (include "application.redirectOnly" $rule) "true") -}}
+        {{- $targetsPreview = true -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if $targetsPreview -}}
+      {{- $previewGroups = append $previewGroups $group -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $needsTesting := false -}}
+  {{- range $group := $previewGroups -}}
+    {{- $owner := $group.owner -}}
+    {{- range $rule := ($group.http.rules | default (list (dict))) -}}
+      {{- if hasKey $rule "backendRefs" -}}
+        {{- range $backend := $rule.backendRefs -}}
+          {{- $groupName := get $backend "group" | default "" -}}
+          {{- $kind := get $backend "kind" | default "Service" -}}
+          {{- $name := get $backend "name" | default "" -}}
+          {{- if and (eq $groupName "") (eq $kind "Service") (hasKey $workloads $name) (ne $name $previewWorkload) (not (hasKey $backend "namespace")) -}}
+            {{- $needsTesting = true -}}
+          {{- end -}}
+        {{- end -}}
+      {{- else if and (ne $owner $previewWorkload) (ne (include "application.redirectOnly" $rule) "true") -}}
+        {{- $needsTesting = true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $previewGroups) 0 -}}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $application }}
+  labels:
+    app.kubernetes.io/name: {{ $application | quote }}
+    app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+    app.kubernetes.io/part-of: {{ $application | quote }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
+    platform.scg.sh/release: preview
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: preview-https
+  hostnames:
+    - {{ include "application.previewHostname" $ | quote }}
+  rules:
+    {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" $previewGroups) | nindent 4 }}
+  {{- if $needsTesting }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: {{ printf "%s-%s-%v" $application $previewWorkload $context.release.pullRequest | trunc 63 | trimSuffix "-" }}
+  namespace: {{ include "application.testingNamespace" $ }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: {{ $.Release.Namespace }}
+  to:
+    - group: ""
+      kind: Service
+  {{- end }}
+  {{- end }}
+{{- end }}

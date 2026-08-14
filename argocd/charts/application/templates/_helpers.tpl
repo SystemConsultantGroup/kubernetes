@@ -1,0 +1,72 @@
+{{- define "application.commonLabels" -}}
+app.kubernetes.io/name: {{ .workload | quote }}
+app.kubernetes.io/instance: {{ .root.Release.Name | quote }}
+app.kubernetes.io/part-of: {{ .root.Values._context.application | quote }}
+app.kubernetes.io/managed-by: {{ .root.Release.Service | quote }}
+platform.scg.sh/release: {{ .root.Values._context.release.type | quote }}
+{{- end }}
+
+{{- define "application.testingNamespace" -}}
+{{- printf "app-testing-%s" .Values._context.application -}}
+{{- end }}
+
+{{- define "application.previewHostname" -}}
+{{- printf "%s-%s-%v.preview.scg.sh" .Values._context.application .Values._context.release.workload .Values._context.release.pullRequest -}}
+{{- end }}
+
+{{- define "application.testingHostname" -}}
+{{- printf "%s.testing.scg.sh" .Values._context.application -}}
+{{- end }}
+
+{{- define "application.redirectOnly" -}}
+{{- $redirect := false -}}
+{{- range (.filters | default (list)) -}}
+  {{- if eq .type "RequestRedirect" -}}
+    {{- $redirect = true -}}
+  {{- end -}}
+{{- end -}}
+{{- $redirect -}}
+{{- end }}
+
+{{- define "application.rules" -}}
+{{- $root := .root -}}
+{{- $workloads := .workloads -}}
+{{- $releaseType := $root.Values._context.release.type -}}
+{{- $previewWorkload := $root.Values._context.release.workload | default "" -}}
+{{- $testingNamespace := include "application.testingNamespace" $root -}}
+{{- range $group := .groups -}}
+  {{- $owner := $group.owner -}}
+  {{- $rules := $group.http.rules | default (list (dict)) -}}
+  {{- range $index, $original := $rules -}}
+    {{- $rule := deepCopy $original -}}
+    {{- if not (hasKey $rule "name") -}}
+      {{- $_ := set $rule "name" (printf "%s-%d" $owner (add1 $index)) -}}
+    {{- end -}}
+    {{- if not (hasKey $rule "backendRefs") -}}
+      {{- if ne (include "application.redirectOnly" $rule) "true" -}}
+        {{- $_ := set $rule "backendRefs" (list (dict "name" $owner "port" 80)) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if hasKey $rule "backendRefs" -}}
+      {{- $backends := list -}}
+      {{- range $originalBackend := $rule.backendRefs -}}
+        {{- $backend := deepCopy $originalBackend -}}
+        {{- $groupName := get $backend "group" | default "" -}}
+        {{- $kind := get $backend "kind" | default "Service" -}}
+        {{- $name := get $backend "name" | default "" -}}
+        {{- if and (eq $groupName "") (eq $kind "Service") (hasKey $workloads $name) (not (hasKey $backend "namespace")) -}}
+          {{- if not (hasKey $backend "port") -}}
+            {{- $_ := set $backend "port" 80 -}}
+          {{- end -}}
+          {{- if and (eq $releaseType "preview") (ne $name $previewWorkload) -}}
+            {{- $_ := set $backend "namespace" $testingNamespace -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $backends = append $backends $backend -}}
+      {{- end -}}
+      {{- $_ := set $rule "backendRefs" $backends -}}
+    {{- end -}}
+- {{ toYaml $rule | nindent 2 | trim }}
+{{ end }}
+{{ end }}
+{{- end }}

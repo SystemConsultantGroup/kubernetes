@@ -1,0 +1,2086 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Effective SCG application chart values",
+  "type": "object",
+  "required": [
+    "_context"
+  ],
+  "properties": {
+    "_context": {
+      "$ref": "#/$defs/context"
+    }
+  },
+  "patternProperties": {
+    "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$": {
+      "$ref": "#/$defs/workload"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "kubernetesDefinitions": {
+      "io.k8s.api.core.v1.ConfigMapEnvSource": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ConfigMapKeySelector": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "x-kubernetes-map-type": "atomic",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.EnvFromSource": {
+        "properties": {
+          "configMapRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "secretRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.SecretEnvSource"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.EnvVar": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "valueFrom": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.EnvVarSource"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.EnvVarSource": {
+        "properties": {
+          "configMapKeyRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ConfigMapKeySelector"
+          },
+          "fieldRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ObjectFieldSelector"
+          },
+          "fileKeyRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.FileKeySelector"
+          },
+          "resourceFieldRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ResourceFieldSelector"
+          },
+          "secretKeyRef": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.SecretKeySelector"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ExecAction": {
+        "properties": {
+          "command": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.FileKeySelector": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "volumeName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "volumeName",
+          "path",
+          "key"
+        ],
+        "type": "object",
+        "x-kubernetes-map-type": "atomic",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.GRPCAction": {
+        "properties": {
+          "port": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "service": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "port"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.HTTPGetAction": {
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "httpHeaders": {
+            "items": {
+              "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.HTTPHeader"
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "path": {
+            "type": "string"
+          },
+          "port": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+          },
+          "scheme": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "port"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.HTTPHeader": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ObjectFieldSelector": {
+        "properties": {
+          "apiVersion": {
+            "type": "string"
+          },
+          "fieldPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldPath"
+        ],
+        "type": "object",
+        "x-kubernetes-map-type": "atomic",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.Probe": {
+        "properties": {
+          "exec": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ExecAction"
+          },
+          "failureThreshold": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "grpc": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.GRPCAction"
+          },
+          "httpGet": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.HTTPGetAction"
+          },
+          "initialDelaySeconds": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "periodSeconds": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "successThreshold": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "tcpSocket": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.TCPSocketAction"
+          },
+          "terminationGracePeriodSeconds": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "timeoutSeconds": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ResourceClaim": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "request": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ResourceFieldSelector": {
+        "properties": {
+          "containerName": {
+            "type": "string"
+          },
+          "divisor": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+          },
+          "resource": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource"
+        ],
+        "type": "object",
+        "x-kubernetes-map-type": "atomic",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.ResourceRequirements": {
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ResourceClaim"
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
+          },
+          "limits": {
+            "additionalProperties": {
+              "$ref": "#/$defs/kubernetesDefinitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+            },
+            "type": "object"
+          },
+          "requests": {
+            "additionalProperties": {
+              "$ref": "#/$defs/kubernetesDefinitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+            },
+            "type": "object"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.SecretEnvSource": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.SecretKeySelector": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "x-kubernetes-map-type": "atomic",
+        "additionalProperties": false
+      },
+      "io.k8s.api.core.v1.TCPSocketAction": {
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+          }
+        },
+        "required": [
+          "port"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "io.k8s.apimachinery.pkg.api.resource.Quantity": {
+        "type": "string"
+      },
+      "io.k8s.apimachinery.pkg.util.intstr.IntOrString": {
+        "$comment": "Kubernetes OpenAPI v2 models IntOrString as a string format; this expansion preserves its actual wire shape.",
+        "oneOf": [
+          {
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "httpRouteRule": {
+      "properties": {
+        "backendRefs": {
+          "items": {
+            "properties": {
+              "filters": {
+                "items": {
+                  "properties": {
+                    "cors": {
+                      "properties": {
+                        "allowCredentials": {
+                          "type": "boolean"
+                        },
+                        "allowHeaders": {
+                          "items": {
+                            "maxLength": 256,
+                            "minLength": 1,
+                            "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                            "type": "string"
+                          },
+                          "maxItems": 64,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "AllowHeaders cannot contain '*' alongside other methods",
+                              "rule": "!('*' in self && self.size() > 1)"
+                            }
+                          ]
+                        },
+                        "allowMethods": {
+                          "items": {
+                            "enum": [
+                              "GET",
+                              "HEAD",
+                              "POST",
+                              "PUT",
+                              "DELETE",
+                              "CONNECT",
+                              "OPTIONS",
+                              "TRACE",
+                              "PATCH",
+                              "*"
+                            ],
+                            "type": "string"
+                          },
+                          "maxItems": 9,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "AllowMethods cannot contain '*' alongside other methods",
+                              "rule": "!('*' in self && self.size() > 1)"
+                            }
+                          ]
+                        },
+                        "allowOrigins": {
+                          "items": {
+                            "maxLength": 253,
+                            "minLength": 1,
+                            "pattern": "(^\\*$)|(^(http(s)?):\\/\\/(((\\*\\.)?([a-zA-Z0-9\\-]+\\.)*[a-zA-Z0-9-]+|\\*)(:([0-9]{1,5}))?)$)",
+                            "type": "string"
+                          },
+                          "maxItems": 64,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "AllowOrigins cannot contain '*' alongside other origins",
+                              "rule": "!('*' in self && self.size() > 1)"
+                            }
+                          ]
+                        },
+                        "exposeHeaders": {
+                          "items": {
+                            "maxLength": 256,
+                            "minLength": 1,
+                            "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                            "type": "string"
+                          },
+                          "maxItems": 64,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set"
+                        },
+                        "maxAge": {
+                          "default": 5,
+                          "format": "int32",
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "extensionRef": {
+                      "properties": {
+                        "group": {
+                          "maxLength": 253,
+                          "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "maxLength": 63,
+                          "minLength": 1,
+                          "pattern": "^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$",
+                          "type": "string"
+                        },
+                        "name": {
+                          "maxLength": 253,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "group",
+                        "kind",
+                        "name"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "requestHeaderModifier": {
+                      "properties": {
+                        "add": {
+                          "items": {
+                            "properties": {
+                              "name": {
+                                "maxLength": 256,
+                                "minLength": 1,
+                                "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                                "type": "string"
+                              },
+                              "value": {
+                                "maxLength": 4096,
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "value"
+                            ],
+                            "type": "object",
+                            "additionalProperties": false
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-map-keys": [
+                            "name"
+                          ],
+                          "x-kubernetes-list-type": "map"
+                        },
+                        "remove": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set"
+                        },
+                        "set": {
+                          "items": {
+                            "properties": {
+                              "name": {
+                                "maxLength": 256,
+                                "minLength": 1,
+                                "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                                "type": "string"
+                              },
+                              "value": {
+                                "maxLength": 4096,
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "value"
+                            ],
+                            "type": "object",
+                            "additionalProperties": false
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-map-keys": [
+                            "name"
+                          ],
+                          "x-kubernetes-list-type": "map"
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "requestMirror": {
+                      "properties": {
+                        "backendRef": {
+                          "properties": {
+                            "group": {
+                              "default": "",
+                              "maxLength": 253,
+                              "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                              "type": "string"
+                            },
+                            "kind": {
+                              "default": "Service",
+                              "maxLength": 63,
+                              "minLength": 1,
+                              "pattern": "^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$",
+                              "type": "string"
+                            },
+                            "name": {
+                              "maxLength": 253,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "namespace": {
+                              "maxLength": 63,
+                              "minLength": 1,
+                              "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+                              "type": "string"
+                            },
+                            "port": {
+                              "format": "int32",
+                              "maximum": 65535,
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ],
+                          "type": "object",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "Must have port for Service reference",
+                              "rule": "(size(self.group) == 0 && self.kind == 'Service') ? has(self.port) : true"
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fraction": {
+                          "properties": {
+                            "denominator": {
+                              "default": 100,
+                              "format": "int32",
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "numerator": {
+                              "format": "int32",
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "numerator"
+                          ],
+                          "type": "object",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "numerator must be less than or equal to denominator",
+                              "rule": "self.numerator <= self.denominator"
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        "percent": {
+                          "format": "int32",
+                          "maximum": 100,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "backendRef"
+                      ],
+                      "type": "object",
+                      "x-kubernetes-validations": [
+                        {
+                          "message": "Only one of percent or fraction may be specified in HTTPRequestMirrorFilter",
+                          "rule": "!(has(self.percent) && has(self.fraction))"
+                        }
+                      ],
+                      "additionalProperties": false
+                    },
+                    "requestRedirect": {
+                      "properties": {
+                        "hostname": {
+                          "maxLength": 253,
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                          "type": "string"
+                        },
+                        "path": {
+                          "properties": {
+                            "replaceFullPath": {
+                              "maxLength": 1024,
+                              "type": "string"
+                            },
+                            "replacePrefixMatch": {
+                              "maxLength": 1024,
+                              "type": "string"
+                            },
+                            "type": {
+                              "enum": [
+                                "ReplaceFullPath",
+                                "ReplacePrefixMatch"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ],
+                          "type": "object",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "replaceFullPath must be specified when type is set to 'ReplaceFullPath'",
+                              "rule": "self.type == 'ReplaceFullPath' ? has(self.replaceFullPath) : true"
+                            },
+                            {
+                              "message": "type must be 'ReplaceFullPath' when replaceFullPath is set",
+                              "rule": "has(self.replaceFullPath) ? self.type == 'ReplaceFullPath' : true"
+                            },
+                            {
+                              "message": "replacePrefixMatch must be specified when type is set to 'ReplacePrefixMatch'",
+                              "rule": "self.type == 'ReplacePrefixMatch' ? has(self.replacePrefixMatch) : true"
+                            },
+                            {
+                              "message": "type must be 'ReplacePrefixMatch' when replacePrefixMatch is set",
+                              "rule": "has(self.replacePrefixMatch) ? self.type == 'ReplacePrefixMatch' : true"
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        "port": {
+                          "format": "int32",
+                          "maximum": 65535,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "scheme": {
+                          "enum": [
+                            "http",
+                            "https"
+                          ],
+                          "type": "string"
+                        },
+                        "statusCode": {
+                          "default": 302,
+                          "enum": [
+                            301,
+                            302,
+                            303,
+                            307,
+                            308
+                          ],
+                          "type": "integer"
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "responseHeaderModifier": {
+                      "properties": {
+                        "add": {
+                          "items": {
+                            "properties": {
+                              "name": {
+                                "maxLength": 256,
+                                "minLength": 1,
+                                "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                                "type": "string"
+                              },
+                              "value": {
+                                "maxLength": 4096,
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "value"
+                            ],
+                            "type": "object",
+                            "additionalProperties": false
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-map-keys": [
+                            "name"
+                          ],
+                          "x-kubernetes-list-type": "map"
+                        },
+                        "remove": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-type": "set"
+                        },
+                        "set": {
+                          "items": {
+                            "properties": {
+                              "name": {
+                                "maxLength": 256,
+                                "minLength": 1,
+                                "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                                "type": "string"
+                              },
+                              "value": {
+                                "maxLength": 4096,
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "value"
+                            ],
+                            "type": "object",
+                            "additionalProperties": false
+                          },
+                          "maxItems": 16,
+                          "type": "array",
+                          "x-kubernetes-list-map-keys": [
+                            "name"
+                          ],
+                          "x-kubernetes-list-type": "map"
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "type": {
+                      "enum": [
+                        "RequestHeaderModifier",
+                        "ResponseHeaderModifier",
+                        "RequestMirror",
+                        "RequestRedirect",
+                        "URLRewrite",
+                        "ExtensionRef",
+                        "CORS"
+                      ],
+                      "type": "string"
+                    },
+                    "urlRewrite": {
+                      "properties": {
+                        "hostname": {
+                          "maxLength": 253,
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                          "type": "string"
+                        },
+                        "path": {
+                          "properties": {
+                            "replaceFullPath": {
+                              "maxLength": 1024,
+                              "type": "string"
+                            },
+                            "replacePrefixMatch": {
+                              "maxLength": 1024,
+                              "type": "string"
+                            },
+                            "type": {
+                              "enum": [
+                                "ReplaceFullPath",
+                                "ReplacePrefixMatch"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ],
+                          "type": "object",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "replaceFullPath must be specified when type is set to 'ReplaceFullPath'",
+                              "rule": "self.type == 'ReplaceFullPath' ? has(self.replaceFullPath) : true"
+                            },
+                            {
+                              "message": "type must be 'ReplaceFullPath' when replaceFullPath is set",
+                              "rule": "has(self.replaceFullPath) ? self.type == 'ReplaceFullPath' : true"
+                            },
+                            {
+                              "message": "replacePrefixMatch must be specified when type is set to 'ReplacePrefixMatch'",
+                              "rule": "self.type == 'ReplacePrefixMatch' ? has(self.replacePrefixMatch) : true"
+                            },
+                            {
+                              "message": "type must be 'ReplacePrefixMatch' when replacePrefixMatch is set",
+                              "rule": "has(self.replacePrefixMatch) ? self.type == 'ReplacePrefixMatch' : true"
+                            }
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "type": "object",
+                  "x-kubernetes-validations": [
+                    {
+                      "message": "filter.cors must be nil if the filter.type is not CORS",
+                      "rule": "!(has(self.cors) && self.type != 'CORS')"
+                    },
+                    {
+                      "message": "filter.cors must be specified for CORS filter.type",
+                      "rule": "!(!has(self.cors) && self.type == 'CORS')"
+                    },
+                    {
+                      "message": "filter.requestHeaderModifier must be nil if the filter.type is not RequestHeaderModifier",
+                      "rule": "!(has(self.requestHeaderModifier) && self.type != 'RequestHeaderModifier')"
+                    },
+                    {
+                      "message": "filter.requestHeaderModifier must be specified for RequestHeaderModifier filter.type",
+                      "rule": "!(!has(self.requestHeaderModifier) && self.type == 'RequestHeaderModifier')"
+                    },
+                    {
+                      "message": "filter.responseHeaderModifier must be nil if the filter.type is not ResponseHeaderModifier",
+                      "rule": "!(has(self.responseHeaderModifier) && self.type != 'ResponseHeaderModifier')"
+                    },
+                    {
+                      "message": "filter.responseHeaderModifier must be specified for ResponseHeaderModifier filter.type",
+                      "rule": "!(!has(self.responseHeaderModifier) && self.type == 'ResponseHeaderModifier')"
+                    },
+                    {
+                      "message": "filter.requestMirror must be nil if the filter.type is not RequestMirror",
+                      "rule": "!(has(self.requestMirror) && self.type != 'RequestMirror')"
+                    },
+                    {
+                      "message": "filter.requestMirror must be specified for RequestMirror filter.type",
+                      "rule": "!(!has(self.requestMirror) && self.type == 'RequestMirror')"
+                    },
+                    {
+                      "message": "filter.requestRedirect must be nil if the filter.type is not RequestRedirect",
+                      "rule": "!(has(self.requestRedirect) && self.type != 'RequestRedirect')"
+                    },
+                    {
+                      "message": "filter.requestRedirect must be specified for RequestRedirect filter.type",
+                      "rule": "!(!has(self.requestRedirect) && self.type == 'RequestRedirect')"
+                    },
+                    {
+                      "message": "filter.urlRewrite must be nil if the filter.type is not URLRewrite",
+                      "rule": "!(has(self.urlRewrite) && self.type != 'URLRewrite')"
+                    },
+                    {
+                      "message": "filter.urlRewrite must be specified for URLRewrite filter.type",
+                      "rule": "!(!has(self.urlRewrite) && self.type == 'URLRewrite')"
+                    },
+                    {
+                      "message": "filter.extensionRef must be nil if the filter.type is not ExtensionRef",
+                      "rule": "!(has(self.extensionRef) && self.type != 'ExtensionRef')"
+                    },
+                    {
+                      "message": "filter.extensionRef must be specified for ExtensionRef filter.type",
+                      "rule": "!(!has(self.extensionRef) && self.type == 'ExtensionRef')"
+                    }
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 16,
+                "type": "array",
+                "x-kubernetes-list-type": "atomic",
+                "x-kubernetes-validations": [
+                  {
+                    "message": "May specify either httpRouteFilterRequestRedirect or httpRouteFilterRequestRewrite, but not both",
+                    "rule": "!(self.exists(f, f.type == 'RequestRedirect') && self.exists(f, f.type == 'URLRewrite'))"
+                  },
+                  {
+                    "message": "CORS filter cannot be repeated",
+                    "rule": "self.filter(f, f.type == 'CORS').size() <= 1"
+                  },
+                  {
+                    "message": "RequestHeaderModifier filter cannot be repeated",
+                    "rule": "self.filter(f, f.type == 'RequestHeaderModifier').size() <= 1"
+                  },
+                  {
+                    "message": "ResponseHeaderModifier filter cannot be repeated",
+                    "rule": "self.filter(f, f.type == 'ResponseHeaderModifier').size() <= 1"
+                  },
+                  {
+                    "message": "RequestRedirect filter cannot be repeated",
+                    "rule": "self.filter(f, f.type == 'RequestRedirect').size() <= 1"
+                  },
+                  {
+                    "message": "URLRewrite filter cannot be repeated",
+                    "rule": "self.filter(f, f.type == 'URLRewrite').size() <= 1"
+                  }
+                ]
+              },
+              "group": {
+                "default": "",
+                "maxLength": 253,
+                "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                "type": "string"
+              },
+              "kind": {
+                "default": "Service",
+                "maxLength": 63,
+                "minLength": 1,
+                "pattern": "^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$",
+                "type": "string"
+              },
+              "name": {
+                "maxLength": 253,
+                "minLength": 1,
+                "type": "string"
+              },
+              "namespace": {
+                "maxLength": 63,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+                "type": "string"
+              },
+              "port": {
+                "format": "int32",
+                "maximum": 65535,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "weight": {
+                "default": 1,
+                "format": "int32",
+                "maximum": 1000000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "type": "object",
+            "x-kubernetes-validations": [
+              {
+                "message": "Must have port for Service reference",
+                "rule": "(size(self.group) == 0 && self.kind == 'Service') ? has(self.port) : true"
+              }
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 16,
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        },
+        "filters": {
+          "items": {
+            "properties": {
+              "cors": {
+                "properties": {
+                  "allowCredentials": {
+                    "type": "boolean"
+                  },
+                  "allowHeaders": {
+                    "items": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "AllowHeaders cannot contain '*' alongside other methods",
+                        "rule": "!('*' in self && self.size() > 1)"
+                      }
+                    ]
+                  },
+                  "allowMethods": {
+                    "items": {
+                      "enum": [
+                        "GET",
+                        "HEAD",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "CONNECT",
+                        "OPTIONS",
+                        "TRACE",
+                        "PATCH",
+                        "*"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 9,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "AllowMethods cannot contain '*' alongside other methods",
+                        "rule": "!('*' in self && self.size() > 1)"
+                      }
+                    ]
+                  },
+                  "allowOrigins": {
+                    "items": {
+                      "maxLength": 253,
+                      "minLength": 1,
+                      "pattern": "(^\\*$)|(^(http(s)?):\\/\\/(((\\*\\.)?([a-zA-Z0-9\\-]+\\.)*[a-zA-Z0-9-]+|\\*)(:([0-9]{1,5}))?)$)",
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "AllowOrigins cannot contain '*' alongside other origins",
+                        "rule": "!('*' in self && self.size() > 1)"
+                      }
+                    ]
+                  },
+                  "exposeHeaders": {
+                    "items": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set"
+                  },
+                  "maxAge": {
+                    "default": 5,
+                    "format": "int32",
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "type": "object",
+                "additionalProperties": false
+              },
+              "extensionRef": {
+                "properties": {
+                  "group": {
+                    "maxLength": 253,
+                    "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "maxLength": 63,
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 253,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group",
+                  "kind",
+                  "name"
+                ],
+                "type": "object",
+                "additionalProperties": false
+              },
+              "requestHeaderModifier": {
+                "properties": {
+                  "add": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "maxLength": 256,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 4096,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-map-keys": [
+                      "name"
+                    ],
+                    "x-kubernetes-list-type": "map"
+                  },
+                  "remove": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set"
+                  },
+                  "set": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "maxLength": 256,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 4096,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-map-keys": [
+                      "name"
+                    ],
+                    "x-kubernetes-list-type": "map"
+                  }
+                },
+                "type": "object",
+                "additionalProperties": false
+              },
+              "requestMirror": {
+                "properties": {
+                  "backendRef": {
+                    "properties": {
+                      "group": {
+                        "default": "",
+                        "maxLength": 253,
+                        "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "default": "Service",
+                        "maxLength": 63,
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$",
+                        "type": "string"
+                      },
+                      "name": {
+                        "maxLength": 253,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "namespace": {
+                        "maxLength": 63,
+                        "minLength": 1,
+                        "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+                        "type": "string"
+                      },
+                      "port": {
+                        "format": "int32",
+                        "maximum": 65535,
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "type": "object",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "Must have port for Service reference",
+                        "rule": "(size(self.group) == 0 && self.kind == 'Service') ? has(self.port) : true"
+                      }
+                    ],
+                    "additionalProperties": false
+                  },
+                  "fraction": {
+                    "properties": {
+                      "denominator": {
+                        "default": 100,
+                        "format": "int32",
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "numerator": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "numerator"
+                    ],
+                    "type": "object",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "numerator must be less than or equal to denominator",
+                        "rule": "self.numerator <= self.denominator"
+                      }
+                    ],
+                    "additionalProperties": false
+                  },
+                  "percent": {
+                    "format": "int32",
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "backendRef"
+                ],
+                "type": "object",
+                "x-kubernetes-validations": [
+                  {
+                    "message": "Only one of percent or fraction may be specified in HTTPRequestMirrorFilter",
+                    "rule": "!(has(self.percent) && has(self.fraction))"
+                  }
+                ],
+                "additionalProperties": false
+              },
+              "requestRedirect": {
+                "properties": {
+                  "hostname": {
+                    "maxLength": 253,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                    "type": "string"
+                  },
+                  "path": {
+                    "properties": {
+                      "replaceFullPath": {
+                        "maxLength": 1024,
+                        "type": "string"
+                      },
+                      "replacePrefixMatch": {
+                        "maxLength": 1024,
+                        "type": "string"
+                      },
+                      "type": {
+                        "enum": [
+                          "ReplaceFullPath",
+                          "ReplacePrefixMatch"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "replaceFullPath must be specified when type is set to 'ReplaceFullPath'",
+                        "rule": "self.type == 'ReplaceFullPath' ? has(self.replaceFullPath) : true"
+                      },
+                      {
+                        "message": "type must be 'ReplaceFullPath' when replaceFullPath is set",
+                        "rule": "has(self.replaceFullPath) ? self.type == 'ReplaceFullPath' : true"
+                      },
+                      {
+                        "message": "replacePrefixMatch must be specified when type is set to 'ReplacePrefixMatch'",
+                        "rule": "self.type == 'ReplacePrefixMatch' ? has(self.replacePrefixMatch) : true"
+                      },
+                      {
+                        "message": "type must be 'ReplacePrefixMatch' when replacePrefixMatch is set",
+                        "rule": "has(self.replacePrefixMatch) ? self.type == 'ReplacePrefixMatch' : true"
+                      }
+                    ],
+                    "additionalProperties": false
+                  },
+                  "port": {
+                    "format": "int32",
+                    "maximum": 65535,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "scheme": {
+                    "enum": [
+                      "http",
+                      "https"
+                    ],
+                    "type": "string"
+                  },
+                  "statusCode": {
+                    "default": 302,
+                    "enum": [
+                      301,
+                      302,
+                      303,
+                      307,
+                      308
+                    ],
+                    "type": "integer"
+                  }
+                },
+                "type": "object",
+                "additionalProperties": false
+              },
+              "responseHeaderModifier": {
+                "properties": {
+                  "add": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "maxLength": 256,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 4096,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-map-keys": [
+                      "name"
+                    ],
+                    "x-kubernetes-list-type": "map"
+                  },
+                  "remove": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-type": "set"
+                  },
+                  "set": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "maxLength": 256,
+                          "minLength": 1,
+                          "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 4096,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "maxItems": 16,
+                    "type": "array",
+                    "x-kubernetes-list-map-keys": [
+                      "name"
+                    ],
+                    "x-kubernetes-list-type": "map"
+                  }
+                },
+                "type": "object",
+                "additionalProperties": false
+              },
+              "type": {
+                "enum": [
+                  "RequestHeaderModifier",
+                  "ResponseHeaderModifier",
+                  "RequestMirror",
+                  "RequestRedirect",
+                  "URLRewrite",
+                  "ExtensionRef",
+                  "CORS"
+                ],
+                "type": "string"
+              },
+              "urlRewrite": {
+                "properties": {
+                  "hostname": {
+                    "maxLength": 253,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+                    "type": "string"
+                  },
+                  "path": {
+                    "properties": {
+                      "replaceFullPath": {
+                        "maxLength": 1024,
+                        "type": "string"
+                      },
+                      "replacePrefixMatch": {
+                        "maxLength": 1024,
+                        "type": "string"
+                      },
+                      "type": {
+                        "enum": [
+                          "ReplaceFullPath",
+                          "ReplacePrefixMatch"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "replaceFullPath must be specified when type is set to 'ReplaceFullPath'",
+                        "rule": "self.type == 'ReplaceFullPath' ? has(self.replaceFullPath) : true"
+                      },
+                      {
+                        "message": "type must be 'ReplaceFullPath' when replaceFullPath is set",
+                        "rule": "has(self.replaceFullPath) ? self.type == 'ReplaceFullPath' : true"
+                      },
+                      {
+                        "message": "replacePrefixMatch must be specified when type is set to 'ReplacePrefixMatch'",
+                        "rule": "self.type == 'ReplacePrefixMatch' ? has(self.replacePrefixMatch) : true"
+                      },
+                      {
+                        "message": "type must be 'ReplacePrefixMatch' when replacePrefixMatch is set",
+                        "rule": "has(self.replacePrefixMatch) ? self.type == 'ReplacePrefixMatch' : true"
+                      }
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "type": "object",
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object",
+            "x-kubernetes-validations": [
+              {
+                "message": "filter.cors must be nil if the filter.type is not CORS",
+                "rule": "!(has(self.cors) && self.type != 'CORS')"
+              },
+              {
+                "message": "filter.cors must be specified for CORS filter.type",
+                "rule": "!(!has(self.cors) && self.type == 'CORS')"
+              },
+              {
+                "message": "filter.requestHeaderModifier must be nil if the filter.type is not RequestHeaderModifier",
+                "rule": "!(has(self.requestHeaderModifier) && self.type != 'RequestHeaderModifier')"
+              },
+              {
+                "message": "filter.requestHeaderModifier must be specified for RequestHeaderModifier filter.type",
+                "rule": "!(!has(self.requestHeaderModifier) && self.type == 'RequestHeaderModifier')"
+              },
+              {
+                "message": "filter.responseHeaderModifier must be nil if the filter.type is not ResponseHeaderModifier",
+                "rule": "!(has(self.responseHeaderModifier) && self.type != 'ResponseHeaderModifier')"
+              },
+              {
+                "message": "filter.responseHeaderModifier must be specified for ResponseHeaderModifier filter.type",
+                "rule": "!(!has(self.responseHeaderModifier) && self.type == 'ResponseHeaderModifier')"
+              },
+              {
+                "message": "filter.requestMirror must be nil if the filter.type is not RequestMirror",
+                "rule": "!(has(self.requestMirror) && self.type != 'RequestMirror')"
+              },
+              {
+                "message": "filter.requestMirror must be specified for RequestMirror filter.type",
+                "rule": "!(!has(self.requestMirror) && self.type == 'RequestMirror')"
+              },
+              {
+                "message": "filter.requestRedirect must be nil if the filter.type is not RequestRedirect",
+                "rule": "!(has(self.requestRedirect) && self.type != 'RequestRedirect')"
+              },
+              {
+                "message": "filter.requestRedirect must be specified for RequestRedirect filter.type",
+                "rule": "!(!has(self.requestRedirect) && self.type == 'RequestRedirect')"
+              },
+              {
+                "message": "filter.urlRewrite must be nil if the filter.type is not URLRewrite",
+                "rule": "!(has(self.urlRewrite) && self.type != 'URLRewrite')"
+              },
+              {
+                "message": "filter.urlRewrite must be specified for URLRewrite filter.type",
+                "rule": "!(!has(self.urlRewrite) && self.type == 'URLRewrite')"
+              },
+              {
+                "message": "filter.extensionRef must be nil if the filter.type is not ExtensionRef",
+                "rule": "!(has(self.extensionRef) && self.type != 'ExtensionRef')"
+              },
+              {
+                "message": "filter.extensionRef must be specified for ExtensionRef filter.type",
+                "rule": "!(!has(self.extensionRef) && self.type == 'ExtensionRef')"
+              }
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 16,
+          "type": "array",
+          "x-kubernetes-list-type": "atomic",
+          "x-kubernetes-validations": [
+            {
+              "message": "May specify either httpRouteFilterRequestRedirect or httpRouteFilterRequestRewrite, but not both",
+              "rule": "!(self.exists(f, f.type == 'RequestRedirect') && self.exists(f, f.type == 'URLRewrite'))"
+            },
+            {
+              "message": "CORS filter cannot be repeated",
+              "rule": "self.filter(f, f.type == 'CORS').size() <= 1"
+            },
+            {
+              "message": "RequestHeaderModifier filter cannot be repeated",
+              "rule": "self.filter(f, f.type == 'RequestHeaderModifier').size() <= 1"
+            },
+            {
+              "message": "ResponseHeaderModifier filter cannot be repeated",
+              "rule": "self.filter(f, f.type == 'ResponseHeaderModifier').size() <= 1"
+            },
+            {
+              "message": "RequestRedirect filter cannot be repeated",
+              "rule": "self.filter(f, f.type == 'RequestRedirect').size() <= 1"
+            },
+            {
+              "message": "URLRewrite filter cannot be repeated",
+              "rule": "self.filter(f, f.type == 'URLRewrite').size() <= 1"
+            }
+          ]
+        },
+        "matches": {
+          "default": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/"
+              }
+            }
+          ],
+          "items": {
+            "properties": {
+              "headers": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                      "type": "string"
+                    },
+                    "type": {
+                      "default": "Exact",
+                      "enum": [
+                        "Exact",
+                        "RegularExpression"
+                      ],
+                      "type": "string"
+                    },
+                    "value": {
+                      "maxLength": 4096,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object",
+                  "additionalProperties": false
+                },
+                "maxItems": 16,
+                "type": "array",
+                "x-kubernetes-list-map-keys": [
+                  "name"
+                ],
+                "x-kubernetes-list-type": "map"
+              },
+              "method": {
+                "enum": [
+                  "GET",
+                  "HEAD",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "CONNECT",
+                  "OPTIONS",
+                  "TRACE",
+                  "PATCH"
+                ],
+                "type": "string"
+              },
+              "path": {
+                "default": {
+                  "type": "PathPrefix",
+                  "value": "/"
+                },
+                "properties": {
+                  "type": {
+                    "default": "PathPrefix",
+                    "enum": [
+                      "Exact",
+                      "PathPrefix",
+                      "RegularExpression"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "default": "/",
+                    "maxLength": 1024,
+                    "type": "string"
+                  }
+                },
+                "type": "object",
+                "x-kubernetes-validations": [
+                  {
+                    "message": "value must be an absolute path and start with '/' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? self.value.startsWith('/') : true"
+                  },
+                  {
+                    "message": "must not contain '//' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('//') : true"
+                  },
+                  {
+                    "message": "must not contain '/./' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('/./') : true"
+                  },
+                  {
+                    "message": "must not contain '/../' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('/../') : true"
+                  },
+                  {
+                    "message": "must not contain '%2f' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('%2f') : true"
+                  },
+                  {
+                    "message": "must not contain '%2F' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('%2F') : true"
+                  },
+                  {
+                    "message": "must not contain '#' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.contains('#') : true"
+                  },
+                  {
+                    "message": "must not end with '/..' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.endsWith('/..') : true"
+                  },
+                  {
+                    "message": "must not end with '/.' when type one of ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? !self.value.endsWith('/.') : true"
+                  },
+                  {
+                    "message": "type must be one of ['Exact', 'PathPrefix', 'RegularExpression']",
+                    "rule": "self.type in ['Exact','PathPrefix'] || self.type == 'RegularExpression'"
+                  },
+                  {
+                    "message": "must only contain valid characters (matching ^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$) for types ['Exact', 'PathPrefix']",
+                    "rule": "(self.type in ['Exact','PathPrefix']) ? self.value.matches(r\"\"\"^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$\"\"\") : true"
+                  }
+                ],
+                "additionalProperties": false
+              },
+              "queryParams": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9!#$%&'*+\\-.^_\\x60|~]+$",
+                      "type": "string"
+                    },
+                    "type": {
+                      "default": "Exact",
+                      "enum": [
+                        "Exact",
+                        "RegularExpression"
+                      ],
+                      "type": "string"
+                    },
+                    "value": {
+                      "maxLength": 1024,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object",
+                  "additionalProperties": false
+                },
+                "maxItems": 16,
+                "type": "array",
+                "x-kubernetes-list-map-keys": [
+                  "name"
+                ],
+                "x-kubernetes-list-type": "map"
+              }
+            },
+            "type": "object",
+            "additionalProperties": false
+          },
+          "maxItems": 64,
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        },
+        "name": {
+          "maxLength": 253,
+          "minLength": 1,
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+          "type": "string"
+        },
+        "timeouts": {
+          "properties": {
+            "backendRequest": {
+              "pattern": "^([0-9]{1,5}(h|m|s|ms)){1,4}$",
+              "type": "string"
+            },
+            "request": {
+              "pattern": "^([0-9]{1,5}(h|m|s|ms)){1,4}$",
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "x-kubernetes-validations": [
+            {
+              "message": "backendRequest timeout cannot be longer than request timeout",
+              "rule": "!(has(self.request) && has(self.backendRequest) && duration(self.request) != duration('0s') && duration(self.backendRequest) > duration(self.request))"
+            }
+          ],
+          "additionalProperties": false
+        }
+      },
+      "type": "object",
+      "x-kubernetes-validations": [
+        {
+          "message": "RequestRedirect filter must not be used together with backendRefs",
+          "rule": "(has(self.backendRefs) && size(self.backendRefs) > 0) ? (!has(self.filters) || self.filters.all(f, !has(f.requestRedirect))): true"
+        },
+        {
+          "message": "When using RequestRedirect filter with path.replacePrefixMatch, exactly one PathPrefix match must be specified",
+          "rule": "(has(self.filters) && self.filters.exists_one(f, has(f.requestRedirect) && has(f.requestRedirect.path) && f.requestRedirect.path.type == 'ReplacePrefixMatch' && has(f.requestRedirect.path.replacePrefixMatch))) ? ((size(self.matches) != 1 || !has(self.matches[0].path) || self.matches[0].path.type != 'PathPrefix') ? false : true) : true"
+        },
+        {
+          "message": "When using URLRewrite filter with path.replacePrefixMatch, exactly one PathPrefix match must be specified",
+          "rule": "(has(self.filters) && self.filters.exists_one(f, has(f.urlRewrite) && has(f.urlRewrite.path) && f.urlRewrite.path.type == 'ReplacePrefixMatch' && has(f.urlRewrite.path.replacePrefixMatch))) ? ((size(self.matches) != 1 || !has(self.matches[0].path) || self.matches[0].path.type != 'PathPrefix') ? false : true) : true"
+        },
+        {
+          "message": "Within backendRefs, when using RequestRedirect filter with path.replacePrefixMatch, exactly one PathPrefix match must be specified",
+          "rule": "(has(self.backendRefs) && self.backendRefs.exists_one(b, (has(b.filters) && b.filters.exists_one(f, has(f.requestRedirect) && has(f.requestRedirect.path) && f.requestRedirect.path.type == 'ReplacePrefixMatch' && has(f.requestRedirect.path.replacePrefixMatch))) )) ? ((size(self.matches) != 1 || !has(self.matches[0].path) || self.matches[0].path.type != 'PathPrefix') ? false : true) : true"
+        },
+        {
+          "message": "Within backendRefs, When using URLRewrite filter with path.replacePrefixMatch, exactly one PathPrefix match must be specified",
+          "rule": "(has(self.backendRefs) && self.backendRefs.exists_one(b, (has(b.filters) && b.filters.exists_one(f, has(f.urlRewrite) && has(f.urlRewrite.path) && f.urlRewrite.path.type == 'ReplacePrefixMatch' && has(f.urlRewrite.path.replacePrefixMatch))) )) ? ((size(self.matches) != 1 || !has(self.matches[0].path) || self.matches[0].path.type != 'PathPrefix') ? false : true) : true"
+        }
+      ],
+      "additionalProperties": false
+    },
+    "workloadName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+    },
+    "hostname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253,
+      "format": "hostname",
+      "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$"
+    },
+    "domain": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/hostname"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "external"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/hostname"
+            },
+            "external": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "domainOrDomains": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/domain"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/domain"
+          }
+        }
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::[0-9]{1,5})?/(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.git$"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      }
+    },
+    "image": {
+      "type": "string",
+      "pattern": "^(?:(?:localhost|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+)(?::[0-9]{1,5})?)/(?:[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*/)*[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*@sha256:[a-f0-9]{64}$"
+    },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "domain": {
+          "$ref": "#/$defs/domainOrDomains"
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/httpRouteRule"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "rules"
+            ]
+          },
+          "then": {
+            "required": [
+              "domain"
+            ]
+          }
+        }
+      ]
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resources": {
+          "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "envFrom": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.EnvFromSource"
+          }
+        },
+        "readinessProbe": {
+          "$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.Probe"
+        },
+        "http": {
+          "$ref": "#/$defs/http"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        }
+      },
+      "dependentRequired": {
+        "source": [
+          "image"
+        ],
+        "image": [
+          "source"
+        ]
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "application",
+        "release"
+      ],
+      "properties": {
+        "application": {
+          "$ref": "#/$defs/workloadName"
+        },
+        "release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "production",
+                "testing",
+                "preview"
+              ]
+            },
+            "workload": {
+              "$ref": "#/$defs/workloadName"
+            },
+            "pullRequest": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "preview"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              "then": {
+                "required": [
+                  "workload",
+                  "pullRequest"
+                ]
+              },
+              "else": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "workload"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "pullRequest"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "$comment": "Generated with Kubernetes v1.36.3 and Gateway API v1.6.1; edit values.schema.source.json instead."
+}

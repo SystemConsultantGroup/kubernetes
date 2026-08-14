@@ -1,0 +1,8 @@
+hello-world:
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 8080
+  http:
+    port: 8080
+    domain: hello.world.scg.sh

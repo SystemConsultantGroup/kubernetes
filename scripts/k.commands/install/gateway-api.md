@@ -4,8 +4,7 @@ Installs the pinned Kubernetes Gateway API standard release.
 
 ## Description
 
-Applies the `standard-install.yaml` release for the version pinned in
-state.yaml (`gateway-api.version`) with `kubectl apply --server-side`.
+Applies the `standard-install.yaml` release for the version pinned in `state.yaml` (`gateway-api.version`) with `kubectl apply --server-side`.
 
 ## Prerequisites
 

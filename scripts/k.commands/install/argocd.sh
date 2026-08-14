@@ -4,7 +4,7 @@ argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_C
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
 zerossl_eab_hmac_key="$(read_bootstrap_secret ZEROSSL_EAB_HMAC_KEY)"
 
-argocd_dir="$ROOT_DIR/argocd/bootstrap"
+argocd_dir="$ROOT_DIR/argocd"
 require_file "$argocd_dir/values.yaml"
 require_file "$argocd_dir/root-application.yaml"
 

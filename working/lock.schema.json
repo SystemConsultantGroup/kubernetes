@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SCG immutable workload lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source",
+    "image"
+  ],
+  "properties": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::[0-9]{1,5})?/(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.git$"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      }
+    },
+    "image": {
+      "type": "string",
+      "$comment": "A fully qualified, lowercase OCI image reference pinned by sha256 digest. Tags, including tag-plus-digest references, are rejected.",
+      "pattern": "^(?:(?:localhost|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+)(?::[0-9]{1,5})?)/(?:[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*/)*[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*@sha256:[a-f0-9]{64}$"
+    }
+  }
+}
