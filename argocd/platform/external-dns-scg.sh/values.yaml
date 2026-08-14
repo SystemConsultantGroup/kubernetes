@@ -4,6 +4,8 @@ provider:
 sources:
   - gateway-httproute
 gatewayNamespace: gateway-system
+extraArgs:
+  - --gateway-listener-sets
 domainFilters:
   - scg.sh
 policy: sync
