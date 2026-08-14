@@ -66,8 +66,9 @@ metadata:
   {{- end }}
 spec:
   parentRefs:
-    - name: public
-      namespace: gateway-system
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: {{ $resourceName }}
       sectionName: {{ $listenerName }}
   hostnames:
     - {{ $hostname | quote }}
