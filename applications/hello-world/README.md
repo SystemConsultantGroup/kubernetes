@@ -1,22 +1,36 @@
 # hello-world
 
-This directory is the repository's complete managed application example. It
-contains one HTTP workload named `hello-world`.
+This directory is the repository's minimal public HTTP application example. It
+contains one workload named `hello-world`.
 
 ## Files
 
-- [`meta.yaml`](meta.yaml) configures port 8080, a readiness probe at `/`, and
-  the public hostname `hello.world.scg.sh`.
-- [`instances/production.yaml`](instances/production.yaml) pins the source
-  commit and nginx image digest for production.
+- [`meta.yaml`](meta.yaml) configures a container port of 8080 and the public
+  hostname `hello.world.scg.sh`.
+- [`instances/production.yaml`](instances/production.yaml) pins the production
+  source commit and image digest.
+- [`instances/testing.yaml`](instances/testing.yaml) pins the testing instance
+  to the same immutable build.
+- [`instances/preview/hello-world/1.yaml`](instances/preview/hello-world/1.yaml)
+  defines preview `1` using the same immutable build.
 
-The production Argo CD Application, Helm release, and namespace are named
-`hello-world-production`. The chart creates a Deployment and Service named
+The generated identities are:
+
+```text
+hello-world-production
+hello-world-testing
+hello-world-preview-hello-world-1
+```
+
+The first two names are the production and testing Argo CD Applications,
+Helm releases, and namespaces. The preview name is the corresponding preview
+identity. Each rendered instance creates a Deployment and Service named
 `hello-world-hello-world`.
 
-Use this directory as a reference for a new managed application. Replace both
-the source revision and image digest with the pair produced by the intended
-build; do not reuse this example's lock.
+Use this directory as a minimal reference when adding a managed application.
+Replace the source revision and image digest with the pair produced by the
+intended build. Testing and preview may reuse production's lock when they
+intentionally deploy the same build.
 
 The shared schema and renderer are documented in
 [`../../argocd/charts/application/`](../../argocd/charts/application/).

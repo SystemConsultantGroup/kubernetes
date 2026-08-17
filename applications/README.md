@@ -32,40 +32,32 @@ testing is optional. Preview identity comes from the preview file path.
 
 ### Minimal example
 
+The repository's minimal public HTTP example is
+[`hello-world/`](hello-world/).
+
 `applications/hello-world/meta.yaml`:
 
 ```yaml
-web:
+hello-world:
   http:
     port: 8080
-    domain: hello.example.org
+    domain: hello.world.scg.sh
 ```
 
-`applications/hello-world/instances/production.yaml`:
-
-```yaml
-web:
-  source:
-    repository: https://github.com/example/hello-world.git
-    revision: 0123456789abcdef0123456789abcdef01234567
-  image: registry.example.org/example/hello-world@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-```
-
-This creates a production Argo CD Application and namespace named:
+The production, testing, and preview lock files all use the same immutable
+source and image pair in this example. The generated identities are:
 
 ```text
 hello-world-production
+hello-world-testing
+hello-world-preview-hello-world-1
 ```
 
-The chart creates a Deployment and Service named:
-
-```text
-hello-world-web
-```
-
-The Service listens on port 80 and targets container port 8080. The production
-hostname receives HTTPS Gateway routing and a certificate. See the chart
-README for the complete naming and routing rules.
+Each instance creates a Deployment and Service named
+`hello-world-hello-world`. The Service listens on port 80 and targets container
+port 8080. Production routing uses `hello.world.scg.sh`; testing and preview
+use the platform-generated hostnames. See the chart README for the complete
+naming and routing rules.
 
 ### Full example
 
