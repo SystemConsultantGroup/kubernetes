@@ -61,7 +61,7 @@ metadata:
   labels:
     {{- include "application.commonLabels" (dict "root" $ "workload" $owner) | nindent 4 }}
   annotations:
-    link.argocd.argoproj.io/external-link: {{ printf "%s://%s" (ternary "http" "https" $external) $hostname | quote }}
+    link.argocd.argoproj.io/external-link: {{ printf "Application|%s://%s" (ternary "http" "https" $external) $hostname | quote }}
   {{- if $external }}
     external-dns.alpha.kubernetes.io/exclude: "true"
   {{- end }}
@@ -107,7 +107,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
     platform.scg.sh/instance-type: testing
   annotations:
-    link.argocd.argoproj.io/external-link: {{ printf "https://%s" (include "application.testingHostname" $) | quote }}
+    link.argocd.argoproj.io/external-link: {{ printf "Application|https://%s" (include "application.testingHostname" $) | quote }}
 spec:
   parentRefs:
     - name: public
@@ -172,7 +172,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
     platform.scg.sh/instance-type: preview
   annotations:
-    link.argocd.argoproj.io/external-link: {{ printf "https://%s" (include "application.previewHostname" $) | quote }}
+    link.argocd.argoproj.io/external-link: {{ printf "Application|https://%s" (include "application.previewHostname" $) | quote }}
 spec:
   parentRefs:
     - name: public
