@@ -1,16 +1,19 @@
 # Applications
 
 This directory contains workloads deployed by the SCG platform. Application
-owners normally change these files and submit a pull request; merging to
-`main` makes the declared state available to Argo CD.
+owners normally change these files and submit pull requests. Merging to `main`
+makes the declared state available to Argo CD.
 
-## Choose one layout
+Each application uses exactly one layout:
 
-Each application directory uses exactly one layout.
+- managed: `meta.yaml` plus instance lock files under `instances/`;
+- custom: a root `kustomization.yaml` rendered directly by Argo CD.
 
-### Managed application
+Do not mix the layouts. Do not put credentials in application files.
 
-A managed application uses the shared Helm chart:
+## Managed application
+
+A managed application has this shape:
 
 ```text
 applications/example/
@@ -23,14 +26,162 @@ applications/example/
         123.yaml
 ```
 
-`meta.yaml` defines workload names and runtime settings such as replicas,
-resources, environment variables, readiness probes, and HTTP routing. The
-production instance is required; testing is optional. Stable instance files
-contain the immutable source and image lock for each workload. A preview file
-contains one lock, while its workload and pull request number come from its
-path.
+`meta.yaml` contains workload names and runtime configuration. Stable instance
+files contain the immutable source and image locks. Production is required;
+testing is optional. Preview identity comes from the preview file path.
 
-### Custom Kustomize application
+### Minimal example
+
+`applications/hello-world/meta.yaml`:
+
+```yaml
+web:
+  http:
+    port: 8080
+    domain: hello.example.org
+```
+
+`applications/hello-world/instances/production.yaml`:
+
+```yaml
+web:
+  source:
+    repository: https://github.com/example/hello-world.git
+    revision: 0123456789abcdef0123456789abcdef01234567
+  image: registry.example.org/example/hello-world@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+```
+
+This creates a production Argo CD Application and namespace named:
+
+```text
+hello-world-production
+```
+
+The chart creates a Deployment and Service named:
+
+```text
+hello-world-web
+```
+
+The Service listens on port 80 and targets container port 8080. The production
+hostname receives HTTPS Gateway routing and a certificate. See the chart
+README for the complete naming and routing rules.
+
+### Full example
+
+`meta.yaml` can configure multiple workloads and route between them:
+
+```yaml
+web:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    - name: LOG_LEVEL
+      value: info
+    - name: PORT
+      value: "8080"
+  envFrom:
+    - configMapRef:
+        name: shop-config
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http
+    periodSeconds: 10
+  http:
+    port: 8080
+    domain:
+      name: shop.example.org
+      external: false
+    rules:
+      - name: api
+        matches:
+          - path:
+              type: PathPrefix
+              value: /api
+        backendRefs:
+          - name: api
+            port: 80
+      - name: web
+        backendRefs:
+          - name: web
+            port: 80
+
+api:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  envFrom:
+    - secretRef:
+        name: shop-api-secrets
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+  http:
+    port: 9000
+```
+
+The `api` workload has a Service but no public route because it has no domain.
+The `web` rules route `/api` to the `api` Service and all other traffic to the
+`web` Service. Backend references use workload keys; the chart expands local
+workload references to their generated Service names.
+
+The corresponding production instance must lock both workloads:
+
+```yaml
+web:
+  source:
+    repository: https://github.com/example/shop-web.git
+    revision: 0123456789abcdef0123456789abcdef01234567
+  image: registry.example.org/example/shop-web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+api:
+  source:
+    repository: https://github.com/example/shop-api.git
+    revision: fedcba9876543210fedcba9876543210fedcba98
+  image: registry.example.org/example/shop-api@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+```
+
+Each source revision must be a full lowercase 40-character Git SHA. Each image
+must be a lowercase fully qualified OCI reference pinned by a 64-character
+lowercase SHA-256 digest. The source and image should come from the same build.
+
+### Preview instances
+
+Place a preview lock at:
+
+```text
+applications/example/instances/preview/web/123.yaml
+```
+
+The file contains only the selected workload's lock:
+
+```yaml
+source:
+  repository: https://github.com/example/shop-web.git
+  revision: 0123456789abcdef0123456789abcdef01234567
+image: registry.example.org/example/shop-web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+```
+
+The generated preview identity is:
+
+```text
+<application>-preview-<workload>-<pull-request>
+```
+
+Preview deployments use one replica. A preview renders only the selected
+workload; references to other local workloads target their testing Services.
+
+## Custom Kustomize application
 
 A custom application has a standard Kustomize entrypoint at its root:
 
@@ -40,89 +191,22 @@ applications/example/
   resources.yaml
 ```
 
-Argo CD renders the directory directly. Do not add `meta.yaml` to this layout,
-and use `kustomization.yaml`, not `kustomize.yaml`.
-
-## Configure a managed workload
-
-A workload without `http` produces a Deployment only. `http.port` adds a
-ClusterIP Service on port 80 targeting the container port. `http.domain` also
-adds public Gateway API routing.
-
-A domain can be a hostname, several hostnames, or an externally managed
-hostname:
-
-```yaml
-web:
-  http:
-    port: 8080
-    domain: example.scg.sh
-```
-
-```yaml
-web:
-  http:
-    port: 8080
-    domain:
-      - example.scg.sh
-      - www.example.scg.sh
-```
-
-```yaml
-web:
-  http:
-    port: 8080
-    domain:
-      name: example.example.org
-      external: true
-```
-
-For production, an external domain uses an HTTP listener and does not create
-a certificate or an ExternalDNS record. Use it only when TLS termination and
-DNS are managed outside this platform. Testing and preview traffic uses the
-platform's wildcard listeners.
-
-`rules` are optional. Without them, the chart creates a catch-all route to the
-owning workload. Rules require `domain` and use the Gateway API `HTTPRouteRule`
-shape.
-
-## Immutable instance locks
-
-Every stable workload lock must contain:
-
-- an HTTPS Git repository URL ending in `.git`, without credentials;
-- a full lowercase 40-character commit SHA; and
-- a fully qualified lowercase OCI image reference pinned by a SHA-256 digest.
-
-The source revision and image digest should come from the same build. Do not
-use mutable image tags in an instance file.
-
-## Pull request previews
-
-Place a preview lock at:
+The generated Argo CD Application and namespace are named:
 
 ```text
-applications/example/instances/preview/web/123.yaml
+<application>
 ```
 
-The file contains only the selected workload's `source` and `image` fields:
+Use `kustomization.yaml`, not `kustomize.yaml`. Do not add `meta.yaml` to a
+custom application.
 
-```yaml
-source:
-  repository: https://github.com/example/project.git
-  revision: 0123456789abcdef0123456789abcdef01234567
-image: registry.example.org/project/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-```
+## Validation and detailed schema
 
-The path determines the workload and pull request number. Argo CD creates a
-separate preview Application and namespace, with a hostname of the form
-`<application>-<workload>-<pull-request>.preview.scg.sh`. Removing the file
-removes the generated preview resources.
+The shared chart validates workload configuration with a generated strict JSON
+schema. It accepts only the fields documented in
+[`../argocd/charts/application/README.md`](../argocd/charts/application/README.md),
+including Kubernetes-native resources, environment sources, readiness probes,
+and Gateway API HTTP route rules.
 
-## References
-
-- [`hello-world/`](hello-world/) is a complete managed application example.
-- [`../argocd/charts/application/`](../argocd/charts/application/) contains
-  the renderer and effective values schema.
-- [`../argocd/application-sets/`](../argocd/application-sets/) explains how
-  application files become Argo CD Applications.
+The ApplicationSets that turn these files into Argo CD Applications are
+explained in [`../argocd/application-sets/README.md`](../argocd/application-sets/README.md).

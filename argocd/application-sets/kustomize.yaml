@@ -17,7 +17,7 @@ spec:
           - path: applications/*/kustomization.yaml
   template:
     metadata:
-      name: 'app-{{ index .path.segments 1 }}'
+      name: '{{ index .path.segments 1 }}'
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -29,7 +29,7 @@ spec:
         path: '{{ .path.path }}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: 'app-{{ index .path.segments 1 }}'
+        namespace: '{{ index .path.segments 1 }}'
       syncPolicy:
         automated:
           prune: true

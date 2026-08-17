@@ -18,7 +18,7 @@ spec:
           - path: applications/*/instances/testing.yaml
   template:
     metadata:
-      name: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+      name: '{{ index .path.segments 1 }}-{{ trimSuffix ".yaml" .path.filename }}'
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -29,7 +29,7 @@ spec:
           targetRevision: main
           path: argocd/charts/application
           helm:
-            releaseName: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+            releaseName: '{{ index .path.segments 1 }}-{{ trimSuffix ".yaml" .path.filename }}'
             valueFiles:
               - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
               - '$values/{{ .path.path }}/{{ .path.filename }}'
@@ -43,7 +43,7 @@ spec:
           ref: values
       destination:
         server: https://kubernetes.default.svc
-        namespace: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+        namespace: '{{ index .path.segments 1 }}-{{ trimSuffix ".yaml" .path.filename }}'
       syncPolicy:
         automated:
           prune: true
@@ -77,7 +77,7 @@ spec:
           - path: applications/*/instances/preview/*/*.yaml
   template:
     metadata:
-      name: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+      name: '{{ index .path.segments 1 }}-preview-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -88,7 +88,7 @@ spec:
           targetRevision: main
           path: argocd/charts/application
           helm:
-            releaseName: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+            releaseName: '{{ index .path.segments 1 }}-preview-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
             valueFiles:
               - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
             values: |
@@ -108,7 +108,7 @@ spec:
           ref: values
       destination:
         server: https://kubernetes.default.svc
-        namespace: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+        namespace: '{{ index .path.segments 1 }}-preview-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
       syncPolicy:
         automated:
           prune: true

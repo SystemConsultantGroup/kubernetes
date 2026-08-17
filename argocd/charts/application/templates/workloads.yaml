@@ -18,11 +18,12 @@
   {{- if $render -}}
     {{- $source := required (printf "workload %q has no source lock" $name) $workload.source -}}
     {{- $image := required (printf "workload %q has no image lock" $name) $workload.image -}}
+    {{- $resourceName := include "application.workloadName" (dict "root" $ "workload" $name) -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $name }}
+  name: {{ $resourceName }}
   labels:
     {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 4 }}
   annotations:
@@ -83,7 +84,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $name }}
+  name: {{ $resourceName }}
   labels:
     {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 4 }}
 spec:
