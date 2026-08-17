@@ -5,10 +5,10 @@ Generates the Talos client configuration with `talosctl gen config`.
 ## Behavior
 
 The command uses the cluster name, endpoint, install image, and versions from
-`state.yaml`, plus decrypted `secrets/talos.yaml`. It overwrites the
-repository-root `talosconfig`, sets mode `600`, and configures the main node as
-its endpoint. Decrypted secrets are stored only in a temporary file during the
-command.
+`state.yaml`, plus decrypted `secrets/talos.yaml`.
+It overwrites the repository-root `talosconfig`, sets mode `600`, and configures
+the main node as its endpoint.
+Decrypted secrets are stored only in a temporary file during the command.
 
 ## Usage
 

@@ -1,8 +1,8 @@
 # ApplicationSets
 
-These ApplicationSets turn paths in `main` into Argo CD Applications. They are
-included by [`../kustomization.yaml`](../kustomization.yaml) and generate
-Applications in the `applications` AppProject.
+These ApplicationSets turn paths in `main` into Argo CD Applications.
+They are included by [`../kustomization.yaml`](../kustomization.yaml) and
+generate Applications in the `applications` AppProject.
 
 ## Generators
 
@@ -13,15 +13,17 @@ Applications in the `applications` AppProject.
 | `application-kustomize` | `applications/*/kustomization.yaml` | Application directory rendered directly |
 
 Managed metadata and stable instance locks are passed to the shared chart as
-separate values files. A preview lock supplies only `source` and `image`; its
-workload and pull request number come from the path.
+separate values files.
+A preview lock supplies only `source` and `image`; its workload and pull request
+number come from the path.
 
 ## Refresh behavior
 
 GitHub push webhooks refresh the Argo CD API server and the ApplicationSet
-controller immediately. The two controllers use separate webhook paths. Git
-polling remains enabled at 180 seconds as a fallback when a webhook is delayed
-or unavailable.
+controller immediately.
+The two controllers use separate webhook paths.
+Git polling remains enabled at 180 seconds as a fallback when a webhook is
+delayed or unavailable.
 
 ## Generated identities
 
@@ -39,9 +41,10 @@ Managed application resource names are documented in
 [`../charts/application/README.md`](../charts/application/README.md).
 
 Renaming an Application or destination namespace changes Argo CD identity and
-can cause the old Application and namespace to be pruned before the new ones
-are reconciled. Treat naming changes as live migration work and review the
-expected deletion and recreation behavior before merging.
+can cause the old Application and namespace to be pruned before the new ones are
+reconciled.
+Treat naming changes as live migration work and review the expected deletion and
+recreation behavior before merging.
 
 ## Editing rules
 
@@ -53,8 +56,9 @@ expected deletion and recreation behavior before merging.
   changes.
 
 Each generated Application enables automated sync, pruning, self-healing, and
-namespace creation. Application namespaces receive the labels required for
-public Gateway routes and restricted pod security.
+namespace creation.
+Application namespaces receive the labels required for public Gateway routes and
+restricted pod security.
 
 See [`../projects/README.md`](../projects/README.md) for the permissions of the
 `applications` AppProject.

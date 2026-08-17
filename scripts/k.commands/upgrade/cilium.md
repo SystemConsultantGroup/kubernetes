@@ -4,10 +4,10 @@ Upgrades Cilium to `cilium.version` in `state.yaml`.
 
 ## Behavior
 
-The command reads the installed `cilium` Helm release in `kube-system`. If its
-chart version already matches, it exits without changes. Otherwise it prompts,
-unless `--yes` is supplied, reapplies the pinned Gateway API standard release,
-and runs:
+The command reads the installed `cilium` Helm release in `kube-system`.
+If its chart version already matches, it exits without changes.
+Otherwise it prompts, unless `--yes` is supplied, reapplies the pinned Gateway
+API standard release, and runs:
 
 ```text
 cilium upgrade --version <target> --wait --wait-duration 10m

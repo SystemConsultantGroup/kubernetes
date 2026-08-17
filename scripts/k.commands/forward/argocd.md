@@ -10,10 +10,11 @@ Runs:
 kubectl port-forward service/argocd-server -n argocd 8080:443
 ```
 
-The forward maps local port 8080 to the `argocd-server` service in the
-`argocd` namespace. Argo CD is configured for HTTP behind the service, so open
-`http://localhost:8080`. The process stays in the foreground; press Ctrl+C to
-stop it.
+The forward maps local port 8080 to the `argocd-server` service in the `argocd`
+namespace.
+Argo CD is configured for HTTP behind the service, so open
+`http://localhost:8080`.
+The process stays in the foreground; press Ctrl+C to stop it.
 
 ## Usage
 

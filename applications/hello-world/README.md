@@ -1,7 +1,7 @@
 # hello-world
 
-This directory is the repository's minimal public HTTP application example. It
-contains one workload named `fe`.
+This directory is the repository's minimal public HTTP application example.
+It contains one workload named `fe`.
 
 ## Files
 
@@ -22,15 +22,16 @@ hello-world-testing
 hello-world-preview-fe-1
 ```
 
-The first two names are the production and testing Argo CD Applications,
-Helm releases, and namespaces. The preview name is the corresponding preview
-identity. Each rendered instance creates a Deployment and Service named
-`hello-world-fe`.
+The first two names are the production and testing Argo CD Applications, Helm
+releases, and namespaces.
+The preview name is the corresponding preview identity.
+Each rendered instance creates a Deployment and Service named `hello-world-fe`.
 
 Use this directory as a minimal reference when adding a managed application.
 Replace the source revision and image digest with the pair produced by the
-intended build. Testing and preview may reuse production's lock when they
-intentionally deploy the same build.
+intended build.
+Testing and preview may reuse production's lock when they intentionally deploy
+the same build.
 
 The shared schema and renderer are documented in
 [`../../argocd/charts/application/`](../../argocd/charts/application/).

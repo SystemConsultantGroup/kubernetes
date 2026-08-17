@@ -15,13 +15,15 @@ Manages the age recipients that can decrypt repository secrets.
 k secrets recipients <command> [args...]
 ```
 
-Running `k secrets recipients` lists subcommands. The `add` and `remove`
-commands update `secrets/state.yaml`, regenerate `.sops.yaml`, and run
-non-interactive SOPS rekeying for every top-level encrypted YAML file.
+Running `k secrets recipients` lists subcommands.
+The `add` and `remove` commands update `secrets/state.yaml`, regenerate
+`.sops.yaml`, and run non-interactive SOPS rekeying for every top-level
+encrypted YAML file.
 
 > [!CAUTION]
-> Adding grants access to all encrypted secrets. Removing revokes access only
-> after rekeying succeeds. Review the recipient and alias before either change.
+> Adding grants access to all encrypted secrets.
+> Removing revokes access only after rekeying succeeds.
+> Review the recipient and alias before either change.
 
 ## Prerequisites
 

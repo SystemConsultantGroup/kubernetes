@@ -7,15 +7,17 @@ pinned in `state.yaml`.
 
 The command downloads the pinned Kubernetes OpenAPI document and Gateway API
 `HTTPRoute` CRD, selects the types used by application metadata, and merges
-those definitions with the chart's source schema. It removes descriptions,
-makes structured objects strict, normalizes Kubernetes `IntOrString`, and writes:
+those definitions with the chart's source schema.
+It removes descriptions, makes structured objects strict, normalizes Kubernetes
+`IntOrString`, and writes:
 
 ```text
 argocd/charts/application/values.schema.json
 ```
 
 `--check` compares the generated result with the committed file and exits with
-an error when it is stale. It does not modify files.
+an error when it is stale.
+It does not modify files.
 
 ## Usage
 

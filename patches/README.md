@@ -14,21 +14,23 @@ Cilium patches before generating a control-plane machine configuration.
 
 The node-specific files present are `scc.yaml`, `e1s.yaml`, and `e2s.yaml`.
 Every node listed in [`../state.yaml`](../state.yaml) needs a matching file;
-commented-out nodes are ignored until enabled. The current state enables only
-`scc`.
+commented-out nodes are ignored until enabled.
+The current state enables only `scc`.
 
 ## Disk selectors
 
-`machine.install.diskSelector.wwid` selects the system disk. Verify the WWID on
-the target machine before installation or apply. Replace placeholders such as
-`REPLACE_WITH_E1S_SYSTEM_DISK_WWID` before enabling a node.
+`machine.install.diskSelector.wwid` selects the system disk.
+Verify the WWID on the target machine before installation or apply.
+Replace placeholders such as `REPLACE_WITH_E1S_SYSTEM_DISK_WWID` before enabling
+a node.
 
-Do not put credentials here. Talos secrets remain in encrypted
+Do not put credentials here.
+Talos secrets remain in encrypted
 [`../secrets/talos.yaml`](../secrets/talos.yaml).
 
 ## Applying changes
 
-`k apply` regenerates and applies a configuration to every node in
-`state.yaml`; it is a live operation with no dry-run mode. Review the target
-nodes, disk selectors, and generated intent before running it. Kubernetes
-installation uses the same patch set.
+`k apply` regenerates and applies a configuration to every node in `state.yaml`;
+it is a live operation with no dry-run mode.
+Review the target nodes, disk selectors, and generated intent before running it.
+Kubernetes installation uses the same patch set.

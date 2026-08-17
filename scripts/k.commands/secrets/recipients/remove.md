@@ -4,15 +4,15 @@ Removes a named age recipient and rekeys every encrypted repository secret.
 
 > [!CAUTION]
 > This revokes the recipient's access only after all encrypted files are
-> successfully rekeyed. The command is non-interactive and does not ask for
-> confirmation.
+> successfully rekeyed.
+> The command is non-interactive and does not ask for confirmation.
 
 ## Behavior
 
 The command rejects unknown aliases and removal of the last configured
-recipient. For a valid alias, it updates `secrets/state.yaml`, regenerates
-`.sops.yaml`, and runs `sops updatekeys --yes` for every encrypted top-level YAML
-file.
+recipient.
+For a valid alias, it updates `secrets/state.yaml`, regenerates `.sops.yaml`,
+and runs `sops updatekeys --yes` for every encrypted top-level YAML file.
 
 If rekeying fails, the recipient map, `.sops.yaml`, and secret files are
 restored from backups.

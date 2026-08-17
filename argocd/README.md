@@ -1,8 +1,8 @@
 # Argo CD configuration
 
 This directory contains the GitOps root, platform Applications, ApplicationSets,
-projects, and shared managed-application chart. Argo CD follows `main` and
-reconciles with pruning and self-healing enabled.
+projects, and shared managed-application chart.
+Argo CD follows `main` and reconciles with pruning and self-healing enabled.
 
 ## Bootstrap
 
@@ -14,16 +14,19 @@ k install argocd
 
 The command installs the pinned Argo CD chart, creates bootstrap secrets from
 encrypted values, and applies [`root-application.yaml`](root-application.yaml).
-The root Application then reconciles this directory. The initial admin secret
-is removed; access uses the GitHub OAuth configuration in [`values.yaml`](values.yaml).
+The root Application then reconciles this directory.
+The initial admin secret is removed; access uses the GitHub OAuth configuration
+in [`values.yaml`](values.yaml).
 
-`values.yaml` is used by the explicit Helm installation. Its OAuth client
-secret is read from encrypted bootstrap data and must not be committed here.
+`values.yaml` is used by the explicit Helm installation.
+Its OAuth client secret is read from encrypted bootstrap data and must not be
+committed here.
 
 ## Access and refresh
 
-The normal GitHub team has read-only Argo CD access. Application changes are
-made in Git and automated sync remains enabled for the controllers.
+The normal GitHub team has read-only Argo CD access.
+Application changes are made in Git and automated sync remains enabled for the
+controllers.
 
 GitHub push webhooks use these paths on `argocd.platform.scg.sh`:
 
@@ -32,8 +35,9 @@ GitHub push webhooks use these paths on `argocd.platform.scg.sh`:
 
 The second path is rewritten internally to the ApplicationSet webhook endpoint.
 Create both GitHub repository webhooks with the same secret and the push event.
-Git polling remains enabled at 180 seconds as a fallback. Webhook delivery uses
-`application/json` and the encrypted `ARGOCD_GITHUB_WEBHOOK_SECRET` value.
+Git polling remains enabled at 180 seconds as a fallback.
+Webhook delivery uses `application/json` and the encrypted
+`ARGOCD_GITHUB_WEBHOOK_SECRET` value.
 
 The platform wildcard is currently added alongside the existing
 `argocd.infra.scg.sh` hostname so the domain migration can be staged.
@@ -52,9 +56,11 @@ The platform wildcard is currently added alongside the existing
 
 Application owners should normally edit [`../applications/`](../applications/).
 Changes here can affect multiple workloads, namespaces, or cluster-wide
-services. Review ApplicationSet discovery, project permissions, sync waves,
-secrets, and cluster-scoped resources before merging.
+services.
+Review ApplicationSet discovery, project permissions, sync waves, secrets, and
+cluster-scoped resources before merging.
 
 Change desired state in Git rather than editing Argo CD-managed resources in the
-cluster. Re-run `k install argocd` only when explicitly changing the installed
-Argo CD configuration or recovering its bootstrap state.
+cluster.
+Re-run `k install argocd` only when explicitly changing the installed Argo CD
+configuration or recovering its bootstrap state.

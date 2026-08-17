@@ -23,5 +23,5 @@ k wait kubernetes [component]
 
 - `kubeconfig` exists and the cluster is reachable.
 
-The default component label is `Kubernetes`. The command fails when any pod
-has not reached Ready before the timeout.
+The default component label is `Kubernetes`.
+The command fails when any pod has not reached Ready before the timeout.

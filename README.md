@@ -8,27 +8,28 @@ the live cluster.
 
 ## Application owners
 
-Work in [`applications/`](applications/) and submit a pull request. Use exactly
-one layout per application:
+Work in [`applications/`](applications/) and submit a pull request.
+Use exactly one layout per application:
 
 - A managed application has `meta.yaml` and immutable files under `instances/`.
 - A custom application has a root `kustomization.yaml`.
 
-Do not mix the layouts or commit credentials. The applications documentation
-covers the file formats and deployment behavior.
+Do not mix the layouts or commit credentials.
+The applications documentation covers the file formats and deployment behavior.
 
 ## Platform operators
 
-Platform operators need Nix with flakes enabled. If Nix is not already
-available, the Determinate installer is the easiest way to set up a compatible
-configuration:
+Platform operators need Nix with flakes enabled.
+If Nix is not already available, the Determinate installer is the easiest way to
+set up a compatible configuration:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
 If Nix is already installed, enable flakes before entering the development
-shell. Then inspect the command help:
+shell.
+Then inspect the command help:
 
 ```bash
 nix develop
@@ -37,8 +38,8 @@ k <command> --help
 ```
 
 The shell provides the supported tooling and points `TALOSCONFIG` and
-`KUBECONFIG` at ignored files in the repository root. Create a local age key
-and print its recipient:
+`KUBECONFIG` at ignored files in the repository root.
+Create a local age key and print its recipient:
 
 ```bash
 k secrets recipients me

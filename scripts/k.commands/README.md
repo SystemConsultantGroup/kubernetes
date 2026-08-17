@@ -1,7 +1,8 @@
 # `k` command implementation
 
-This directory implements the command tree exposed by [`../k`](../k). The
-shell files are sourced by the dispatcher, not executed as standalone scripts.
+This directory implements the command tree exposed by [`../k`](../k).
+The shell files are sourced by the dispatcher, not executed as standalone
+scripts.
 They use shared paths, state values, validation functions, and helpers
 initialized by `k`.
 
@@ -18,13 +19,13 @@ safety properties change.
 
 ## Adding a command
 
-Add matching `.sh` and `.md` files under the appropriate path. Reuse the
-existing `require_*` helpers, return usage errors for invalid arguments, and
-preserve the repository-root working directory. Add a nested directory only
-when a command has subcommands.
+Add matching `.sh` and `.md` files under the appropriate path.
+Reuse the existing `require_*` helpers, return usage errors for invalid
+arguments, and preserve the repository-root working directory.
+Add a nested directory only when a command has subcommands.
 
-Do not duplicate dispatcher initialization or bypass shared helpers. Test help
-and shell syntax from the development shell:
+Do not duplicate dispatcher initialization or bypass shared helpers.
+Test help and shell syntax from the development shell:
 
 ```bash
 k --help

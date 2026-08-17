@@ -14,15 +14,16 @@ Generates client configuration files and the application chart schema.
 k generate <command> [args...]
 ```
 
-Running `k generate` lists subcommands. Use `k generate --help` for this page.
+Running `k generate` lists subcommands.
+Use `k generate --help` for this page.
 Each subcommand documents its own prerequisites.
 
 ## Common outputs
 
 The client configuration commands overwrite repository-root `kubeconfig` or
-`talosconfig` files and set mode `600`. These files are local credentials and
-are ignored by Git. The schema command can check committed output without
-modifying it:
+`talosconfig` files and set mode `600`.
+These files are local credentials and are ignored by Git.
+The schema command can check committed output without modifying it:
 
 ```bash
 k generate application-schemas --check

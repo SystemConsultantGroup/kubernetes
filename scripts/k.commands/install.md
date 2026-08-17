@@ -9,11 +9,11 @@ k install
 k install <command>
 ```
 
-Running `k install` with no subcommand performs the complete bootstrap. It
-requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
+Running `k install` with no subcommand performs the complete bootstrap.
+It requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
 `ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`, and
-`ZEROSSL_EAB_HMAC_KEY` in encrypted
-`secrets/bootstrap.yaml`. Set them with `k secrets edit bootstrap`.
+`ZEROSSL_EAB_HMAC_KEY` in encrypted `secrets/bootstrap.yaml`.
+Set them with `k secrets edit bootstrap`.
 
 ## Subcommands
 
@@ -36,5 +36,6 @@ source of truth for all component versions.
 ## Behavior
 
 The full command runs the subcommands in the order above and stops at the first
-failure. Individual steps can be rerun after a partial failure. These are live
-cluster-changing operations and have no confirmation prompt.
+failure.
+Individual steps can be rerun after a partial failure.
+These are live cluster-changing operations and have no confirmation prompt.

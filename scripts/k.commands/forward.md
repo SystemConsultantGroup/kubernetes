@@ -12,7 +12,8 @@ Forwards cluster services to ports on the local machine.
 k forward <command> [args...]
 ```
 
-Running `k forward` lists subcommands. Use `k forward --help` for this page.
+Running `k forward` lists subcommands.
+Use `k forward --help` for this page.
 
 ## Prerequisites
 
@@ -22,5 +23,6 @@ Running `k forward` lists subcommands. Use `k forward --help` for this page.
 
 ## Behavior
 
-Forwards run in the foreground. Press Ctrl+C to stop the active forward. The
-command does not change cluster resources.
+Forwards run in the foreground.
+Press Ctrl+C to stop the active forward.
+The command does not change cluster resources.

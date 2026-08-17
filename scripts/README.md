@@ -1,7 +1,7 @@
 # Operator commands
 
-[`k`](k) is the supported entrypoint for local cluster operations. Start in the
-repository development shell:
+[`k`](k) is the supported entrypoint for local cluster operations.
+Start in the repository development shell:
 
 ```bash
 nix develop
@@ -25,14 +25,15 @@ root.
 | `k wait` | Wait for Talos or Kubernetes health |
 | `k forward` | Forward Argo CD to localhost |
 
-Use `k <command> --help` for prerequisites, arguments, and side effects. The
-matching documents are in [`k.commands/`](k.commands/).
+Use `k <command> --help` for prerequisites, arguments, and side effects.
+The matching documents are in [`k.commands/`](k.commands/).
 
 ## Local credentials
 
 `k generate talosconfig` and `k generate kubeconfig` write client configuration
-files at the repository root. They use mode `600` and are ignored by Git. Do
-not commit, copy, or paste them into issues or pull requests.
+files at the repository root.
+They use mode `600` and are ignored by Git.
+Do not commit, copy, or paste them into issues or pull requests.
 
 ## Safety
 

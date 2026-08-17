@@ -15,8 +15,9 @@ Upgrades a component to the version already pinned in `state.yaml`.
 k upgrade <command> [--yes]
 ```
 
-Running `k upgrade` lists subcommands. Set and review the target version in
-`state.yaml` before running an upgrade; the command does not edit that file.
+Running `k upgrade` lists subcommands.
+Set and review the target version in `state.yaml` before running an upgrade; the
+command does not edit that file.
 Each subcommand checks the installed version and exits without changes when it
 already matches.
 
@@ -27,6 +28,6 @@ already matches.
 - Talos and Kubernetes upgrades have valid Talos access to the nodes.
 - Any component-specific secrets or files required by its install command exist.
 
-Unless `--yes` is supplied, an upgrade prompts with `[y/N]`. Treat `--yes` as a
-reviewed automation option: upgrades change a live cluster and may reboot
-nodes.
+Unless `--yes` is supplied, an upgrade prompts with `[y/N]`.
+Treat `--yes` as a reviewed automation option: upgrades change a live cluster
+and may reboot nodes.

@@ -28,5 +28,5 @@ k secrets check
 - The local recipient has already been added to the recipient map.
 
 The key path is `SOPS_AGE_KEY_FILE` when set; otherwise it is
-`${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt`. The command accepts no
-arguments and only creates a temporary comparison file.
+`${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt`.
+The command accepts no arguments and only creates a temporary comparison file.

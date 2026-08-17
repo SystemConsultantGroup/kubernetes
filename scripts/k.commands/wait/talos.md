@@ -5,8 +5,8 @@ Runs a Talos health check against every node in `state.yaml`.
 ## Behavior
 
 For each declared node, runs `talosctl health` and waits for Talos and
-Kubernetes health. It prints a single start message and a success message after
-all nodes pass.
+Kubernetes health.
+It prints a single start message and a success message after all nodes pass.
 
 ## Usage
 

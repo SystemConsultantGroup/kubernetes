@@ -5,12 +5,13 @@ Upgrades the Argo CD Helm chart to `argocd.version` in `state.yaml`.
 ## Behavior
 
 The command reads the installed `argocd` Helm release in the `argocd` namespace.
-If its chart version already matches, it exits without changes. Otherwise it
-prompts, unless `--yes` is supplied, and runs `k install argocd`.
+If its chart version already matches, it exits without changes.
+Otherwise it prompts, unless `--yes` is supplied, and runs `k install argocd`.
 
 That install command also refreshes bootstrap secrets and namespaces, reapplies
 the root Application, waits up to 10 minutes for Helm, and removes the initial
-admin secret. This is broader than a chart-only upgrade.
+admin secret.
+This is broader than a chart-only upgrade.
 
 ## Usage
 

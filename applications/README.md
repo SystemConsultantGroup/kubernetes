@@ -1,15 +1,16 @@
 # Applications
 
-This directory contains workloads deployed by the SCG platform. Application
-owners normally change these files and submit pull requests. Merging to `main`
-makes the declared state available to Argo CD.
+This directory contains workloads deployed by the SCG platform.
+Application owners normally change these files and submit pull requests.
+Merging to `main` makes the declared state available to Argo CD.
 
 Each application uses exactly one layout:
 
 - managed: `meta.yaml` plus instance lock files under `instances/`;
 - custom: a root `kustomization.yaml` rendered directly by Argo CD.
 
-Do not mix the layouts. Do not put credentials in application files.
+Do not mix the layouts.
+Do not put credentials in application files.
 
 ## Managed application
 
@@ -26,9 +27,10 @@ applications/example/
         123.yaml
 ```
 
-`meta.yaml` contains workload names and runtime configuration. Stable instance
-files contain the immutable source and image locks. Production is required;
-testing is optional. Preview identity comes from the preview file path.
+`meta.yaml` contains workload names and runtime configuration.
+Stable instance files contain the immutable source and image locks.
+Production is required; testing is optional.
+Preview identity comes from the preview file path.
 
 ### Minimal example
 
@@ -45,7 +47,8 @@ fe:
 ```
 
 The production, testing, and preview lock files all use the same immutable
-source and image pair in this example. The generated identities are:
+source and image pair in this example.
+The generated identities are:
 
 ```text
 hello-world-production
@@ -53,11 +56,11 @@ hello-world-testing
 hello-world-preview-fe-1
 ```
 
-Each instance creates a Deployment and Service named
-`hello-world-fe`. The Service listens on port 80 and targets container port
-8080\. Production routing uses `hello.world.scg.sh`; testing and preview
-use the platform-generated hostnames. See the chart README for the complete
-naming and routing rules.
+Each instance creates a Deployment and Service named `hello-world-fe`.
+The Service listens on port 80 and targets container port 8080.
+Production routing uses `hello.world.scg.sh`; testing and preview use the
+platform-generated hostnames.
+See the chart README for the complete naming and routing rules.
 
 ### Full example
 
@@ -124,8 +127,9 @@ api:
 
 The `api` workload has a Service but no public route because it has no domain.
 The `web` rules route `/api` to the `api` Service and all other traffic to the
-`web` Service. Backend references use workload keys; the chart expands local
-workload references to their generated Service names.
+`web` Service.
+Backend references use workload keys; the chart expands local workload
+references to their generated Service names.
 
 The corresponding production instance must lock both workloads:
 
@@ -143,9 +147,10 @@ api:
   image: registry.example.org/example/shop-api@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 ```
 
-Each source revision must be a full lowercase 40-character Git SHA. Each image
-must be a lowercase fully qualified OCI reference pinned by a 64-character
-lowercase SHA-256 digest. The source and image should come from the same build.
+Each source revision must be a full lowercase 40-character Git SHA.
+Each image must be a lowercase fully qualified OCI reference pinned by a
+64-character lowercase SHA-256 digest.
+The source and image should come from the same build.
 
 ### Preview instances
 
@@ -170,8 +175,9 @@ The generated preview identity is:
 <application>-preview-<workload>-<pull-request>
 ```
 
-Preview deployments use one replica. A preview renders only the selected
-workload; references to other local workloads target their testing Services.
+Preview deployments use one replica.
+A preview renders only the selected workload; references to other local
+workloads target their testing Services.
 
 ## Custom Kustomize application
 
@@ -189,13 +195,14 @@ The generated Argo CD Application and namespace are named:
 <application>
 ```
 
-Use `kustomization.yaml`, not `kustomize.yaml`. Do not add `meta.yaml` to a
-custom application.
+Use `kustomization.yaml`, not `kustomize.yaml`.
+Do not add `meta.yaml` to a custom application.
 
 ## Validation and detailed schema
 
 The shared chart validates workload configuration with a generated strict JSON
-schema. It accepts only the fields documented in
+schema.
+It accepts only the fields documented in
 [`../argocd/charts/application/README.md`](../argocd/charts/application/README.md),
 including Kubernetes-native resources, environment sources, readiness probes,
 and Gateway API HTTP route rules.

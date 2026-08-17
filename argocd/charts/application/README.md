@@ -1,13 +1,14 @@
 # Application chart
 
-This chart renders one managed SCG application instance. ApplicationSets combine
-three inputs:
+This chart renders one managed SCG application instance.
+ApplicationSets combine three inputs:
 
 1. application metadata from `applications/<application>/meta.yaml`;
 1. an immutable source and image lock from an instance file; and
 1. an internal `_context` describing the application and instance type.
 
-The chart is platform code. Changes can affect every managed application.
+The chart is platform code.
+Changes can affect every managed application.
 
 ## Values assembly
 
@@ -30,8 +31,8 @@ web:
 ```
 
 The metadata and instance files are merged by Helm before schema validation.
-Application owners normally keep runtime configuration in `meta.yaml` and
-locks in `instances/`.
+Application owners normally keep runtime configuration in `meta.yaml` and locks
+in `instances/`.
 
 `source` and `image` are technically part of the final workload schema, but
 should not normally be placed in `meta.yaml`.
@@ -61,8 +62,9 @@ Service:    shop-web
 ```
 
 Names are truncated to Kubernetes' 63-character name limit where the chart
-controls the name. ApplicationSet names, namespaces, and generated hostnames do
-not currently add a separate `app-` prefix.
+controls the name.
+ApplicationSet names, namespaces, and generated hostnames do not currently add a
+separate `app-` prefix.
 
 ## Schema rules
 
@@ -76,8 +78,9 @@ The generated `values.schema.json` is strict:
   workload that it renders.
 
 The JSON schema is generated from
-[`values.schema.source.json`](values.schema.source.json), Kubernetes definitions,
-and Gateway API definitions. The pinned source versions are in `state.yaml`.
+[`values.schema.source.json`](values.schema.source.json), Kubernetes
+definitions, and Gateway API definitions.
+The pinned source versions are in `state.yaml`.
 
 ## Workload names
 
@@ -87,9 +90,10 @@ Each top-level workload key must be 1 to 63 characters and match:
 ^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$
 ```
 
-Names may contain lowercase letters, digits, and hyphens. They must start and
-end with a lowercase letter or digit. The name is used as the workload identity
-in metadata, labels, backend references, and generated resource names.
+Names may contain lowercase letters, digits, and hyphens.
+They must start and end with a lowercase letter or digit.
+The name is used as the workload identity in metadata, labels, backend
+references, and generated resource names.
 
 ## Workload fields
 
@@ -116,8 +120,9 @@ fields.
 replicas: 3
 ```
 
-The value must be an integer greater than or equal to `1`. Production and testing
-Deployments use this value. Preview Deployments always use one replica.
+The value must be an integer greater than or equal to `1`.
+Production and testing Deployments use this value.
+Preview Deployments always use one replica.
 
 ## `resources`
 
@@ -187,8 +192,8 @@ env:
         fieldPath: metadata.name
 ```
 
-Environment values are strings. Quote values that would otherwise be parsed by
-YAML as numbers or booleans.
+Environment values are strings.
+Quote values that would otherwise be parsed by YAML as numbers or booleans.
 
 The chart does not create volumes, so `fileKeyRef` cannot reference a volume
 created through application metadata alone.
@@ -214,8 +219,8 @@ The values are passed directly to the container's Kubernetes `envFrom` field.
 
 ## `readinessProbe`
 
-`readinessProbe` is a Kubernetes `Probe` rendered on the container. The chart
-supports the following timing fields:
+`readinessProbe` is a Kubernetes `Probe` rendered on the container.
+The chart supports the following timing fields:
 
 - `initialDelaySeconds`;
 - `periodSeconds`;
@@ -281,8 +286,8 @@ readinessProbe:
 
 `grpc.port` is required. `service` is optional.
 
-The chart does not expose liveness or startup probes. Kubernetes applies its
-normal defaults and semantic validation to the probe.
+The chart does not expose liveness or startup probes.
+Kubernetes applies its normal defaults and semantic validation to the probe.
 
 ## `http`
 
@@ -312,8 +317,8 @@ A domain is either:
 - a non-empty, unique list of either form.
 
 Hostnames must be 1 to 253 characters, use lowercase DNS labels, and have no
-wildcards, underscores, uppercase letters, or trailing dot. Each label is at
-most 63 characters.
+wildcards, underscores, uppercase letters, or trailing dot.
+Each label is at most 63 characters.
 
 String form:
 
@@ -358,9 +363,10 @@ For each workload and hostname, the chart uses the first eight characters of
 <application>-<workload>-<sha256-hostname-prefix>
 ```
 
-The result is truncated to 63 characters. The ListenerSet and HTTPRoute use
-that name. A non-external domain also creates a Certificate and TLS Secret with
-`-tls` appended.
+The result is truncated to 63 characters.
+The ListenerSet and HTTPRoute use that name.
+A non-external domain also creates a Certificate and TLS Secret with `-tls`
+appended.
 
 An external domain uses:
 
@@ -374,8 +380,8 @@ platform.
 
 ### Testing and preview domains
 
-Testing and preview instances use the platform's wildcard HTTPS listeners. The
-domain value determines whether a workload participates in routing, but the
+Testing and preview instances use the platform's wildcard HTTPS listeners.
+The domain value determines whether a workload participates in routing, but the
 configured hostname is not used directly:
 
 ```text
@@ -430,8 +436,8 @@ shop-web-1
 
 ### Matches
 
-`matches` may contain up to 64 entries. If omitted, Gateway API defaults to a
-catch-all path-prefix match for `/`.
+`matches` may contain up to 64 entries.
+If omitted, Gateway API defaults to a catch-all path-prefix match for `/`.
 
 Each match may contain:
 
@@ -440,12 +446,12 @@ Each match may contain:
 - `queryParams`; and
 - `method`.
 
-`path.type` is one of `Exact`, `PathPrefix`, or `RegularExpression`. The default
-is `PathPrefix` with value `/`.
+`path.type` is one of `Exact`, `PathPrefix`, or `RegularExpression`.
+The default is `PathPrefix` with value `/`.
 
-Headers and query parameters contain required `name` and `value` fields. Their
-type is `Exact` or `RegularExpression`, defaulting to `Exact`. Each list allows
-up to 16 entries.
+Headers and query parameters contain required `name` and `value` fields.
+Their type is `Exact` or `RegularExpression`, defaulting to `Exact`.
+Each list allows up to 16 entries.
 
 `method` supports:
 
@@ -483,16 +489,17 @@ The chart converts that to the generated Service name:
 <application>-api
 ```
 
-It also defaults the local Service port to `80`. References with an explicit
-namespace, non-empty group, or non-`Service` kind are passed through unchanged.
+It also defaults the local Service port to `80`.
+References with an explicit namespace, non-empty group, or non-`Service` kind
+are passed through unchanged.
 
 If `backendRefs` is omitted and the rule is not redirect-only, the chart
 creates a reference to the owning workload's Service on port `80`.
 
 ### Filters
 
-A rule may contain up to 16 filters. Each filter requires `type` and supports
-one of:
+A rule may contain up to 16 filters.
+Each filter requires `type` and supports one of:
 
 - `RequestHeaderModifier`;
 - `ResponseHeaderModifier`;
@@ -536,8 +543,9 @@ CORS supports:
 - `maxAge`, default `5`.
 
 The wildcard value cannot be combined with other values in the relevant CORS
-lists. Filter types cannot be repeated, and `RequestRedirect` cannot be used
-together with `URLRewrite`.
+lists.
+Filter types cannot be repeated, and `RequestRedirect` cannot be used together
+with `URLRewrite`.
 
 A rule containing `RequestRedirect` without `backendRefs` remains redirect-only;
 the chart does not add its default Service backend.
@@ -550,9 +558,10 @@ timeouts:
   backendRequest: 25s
 ```
 
-Supported fields are `request` and `backendRequest`. Values use Gateway API
-duration syntax, such as `10s`, `1m`, or `1m30s`. When both are supplied,
-`backendRequest` cannot exceed `request` unless the request timeout is zero.
+Supported fields are `request` and `backendRequest`.
+Values use Gateway API duration syntax, such as `10s`, `1m`, or `1m30s`.
+When both are supplied, `backendRequest` cannot exceed `request` unless the
+request timeout is zero.
 
 ## Immutable locks
 
@@ -566,9 +575,9 @@ source:
 
 `source` requires exactly `repository` and `revision`.
 
-The repository must be an HTTPS URL ending in `.git`, without credentials,
-query parameters, or fragments. The revision must be a full lowercase
-40-character hexadecimal Git SHA.
+The repository must be an HTTPS URL ending in `.git`, without credentials, query
+parameters, or fragments.
+The revision must be a full lowercase 40-character hexadecimal Git SHA.
 
 ### `image`
 
@@ -610,8 +619,8 @@ instance:
 ```
 
 `workload` must be a valid workload name. `pullRequest` must be an integer at
-least `1`. Production and testing contexts must not include `workload` or
-`pullRequest`.
+least `1`.
+Production and testing contexts must not include `workload` or `pullRequest`.
 
 ## Rendering by instance type
 
@@ -653,13 +662,14 @@ helm template hello-world-production argocd/charts/application \
 ```
 
 Inspect Deployments, Services, routes, certificates, namespaces, and image
-locks. Do not apply rendered output to a cluster for ordinary validation.
+locks.
+Do not apply rendered output to a cluster for ordinary validation.
 
 ## Generated schema
 
-Do not edit `values.schema.json` directly. Edit
-[`values.schema.source.json`](values.schema.source.json), then regenerate and
-check the output:
+Do not edit `values.schema.json` directly.
+Edit [`values.schema.source.json`](values.schema.source.json), then regenerate
+and check the output:
 
 ```bash
 k generate application-schemas

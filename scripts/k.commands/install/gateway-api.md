@@ -5,8 +5,8 @@ Installs the pinned Kubernetes Gateway API standard CRDs.
 ## Behavior
 
 Applies `standard-install.yaml` for `gateway-api.version` in `state.yaml` with
-server-side apply. The manifest is fetched from the Kubernetes Gateway API
-GitHub release.
+server-side apply.
+The manifest is fetched from the Kubernetes Gateway API GitHub release.
 
 ## Usage
 

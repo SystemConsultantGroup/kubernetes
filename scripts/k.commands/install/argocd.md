@@ -16,9 +16,10 @@ The command:
 1. removes `argocd-initial-admin-secret`.
 
 Secrets come from encrypted `secrets/bootstrap.yaml` and are passed through
-standard input rather than committed to values files. The command waits up to
-10 minutes for the Argo CD Helm release and has no confirmation prompt. The
-GitHub webhook secret is also used by the ApplicationSet webhook.
+standard input rather than committed to values files.
+The command waits up to 10 minutes for the Argo CD Helm release and has no
+confirmation prompt.
+The GitHub webhook secret is also used by the ApplicationSet webhook.
 
 ## Usage
 
@@ -35,5 +36,6 @@ k install argocd
 - [`argocd/values.yaml`](../../../argocd/values.yaml) and
   [`argocd/root-application.yaml`](../../../argocd/root-application.yaml) exist.
 
-This is a live operation. After bootstrap, change desired state in Git rather
-than editing Argo CD resources directly in the cluster.
+This is a live operation.
+After bootstrap, change desired state in Git rather than editing Argo CD
+resources directly in the cluster.

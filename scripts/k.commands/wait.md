@@ -13,7 +13,8 @@ Waits for Talos or Kubernetes health checks to succeed.
 k wait <command> [args...]
 ```
 
-Running `k wait` lists subcommands. Use `k wait --help` for this page.
+Running `k wait` lists subcommands.
+Use `k wait --help` for this page.
 
 ## Prerequisites
 
