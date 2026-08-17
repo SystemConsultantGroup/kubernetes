@@ -1,27 +1,25 @@
 # talosconfig
 
-Generates the talosconfig with talosctl gen config.
+Generates the Talos client configuration with `talosctl gen config`.
 
-## Description
+## Behavior
 
-Runs `talosctl gen config` with the cluster name, endpoint, install image and
-versions from `state.yaml`, using the decrypted secrets from
-`secrets/talos.yaml` (`--with-secrets`). Writes `talosconfig` to the repo root
-with mode 600 and sets the main node as its endpoint. Existing files are
-overwritten (`--force`).
+The command uses the cluster name, endpoint, install image, and versions from
+`state.yaml`, plus decrypted `secrets/talos.yaml`. It overwrites the
+repository-root `talosconfig`, sets mode `600`, and configures the main node as
+its endpoint. Decrypted secrets are stored only in a temporary file during the
+command.
 
 ## Usage
 
-```
+```bash
 k generate talosconfig
 ```
 
 ## Prerequisites
 
-- `state.yaml` defines the cluster name, endpoint and versions.
-- `secrets/talos.yaml` is sops-encrypted and decodable with your age key.
+- `state.yaml` defines the cluster name, endpoint, and versions.
+- `secrets/talos.yaml` is decryptable with the local age key.
 
-## Notes
-
-- Takes no arguments.
-- Re-run automatically by `k reset` when `talosconfig` is missing.
+The command accepts no arguments. `k reset` generates this file automatically
+when it is missing.

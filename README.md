@@ -1,38 +1,32 @@
 # SCG Kubernetes
 
-This repository defines application deployments and operates the single `scg`
-Kubernetes cluster. The platform uses Talos Linux, Cilium, Argo CD, and
-SOPS-encrypted secrets.
+This repository is the desired state for the single `scg` Kubernetes cluster.
+It defines application deployments and the Talos, Cilium, and Argo CD platform.
+Argo CD follows `main` with pruning and self-healing enabled, so merging a
+change under [`applications/`](applications/) or [`argocd/`](argocd/) can change
+the live cluster.
 
-Argo CD follows `main`, automatically applies the declared state, and removes
-resources that are no longer declared.
+## Application owners
 
-## Deploy an application
+Work in [`applications/`](applications/) and submit a pull request. Use exactly
+one layout per application:
 
-Application owners normally work only in [`applications/`](applications/) and
-do not need cluster credentials.
+- A managed application has `meta.yaml` and immutable files under `instances/`.
+- A custom application has a root `kustomization.yaml`.
 
-An application uses one of two layouts:
+Do not mix the layouts or commit credentials. The applications documentation
+covers the file formats and deployment behavior.
 
-- A managed application has `meta.yaml` for workload configuration and
-  `instances/production.yaml` for immutable source and image versions. Testing
-  and pull request preview instances are optional.
-- A custom application has a standard `kustomization.yaml` entrypoint.
+## Platform operators
 
-Use exactly one layout per application. Never commit credentials or other
-secret values. Submit changes through a pull request; merging to `main` makes
-them eligible for automatic deployment.
-
-## Operate the cluster
-
-Install Nix if needed:
+Platform operators should install Determinate Nix if it is not already
+available:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
-Enter the repository development environment and inspect the available
-commands:
+Enter the development shell and inspect the command help:
 
 ```bash
 nix develop
@@ -40,40 +34,45 @@ k --help
 k <command> --help
 ```
 
-Operators who need access to encrypted configuration can create or inspect
-their local age recipient with:
+The shell provides the supported tooling and points `TALOSCONFIG` and
+`KUBECONFIG` at ignored files in the repository root. Create a local age key
+and print its recipient:
 
 ```bash
 k secrets recipients me
 ```
 
-An existing operator must add that recipient before `k secrets check` can
-decrypt and validate the repository secrets.
-
-Cluster-changing operations include:
+Ask an existing operator to add that recipient before checking encrypted
+secrets:
 
 ```bash
+k secrets check
+```
+
+The following commands can change the cluster:
+
+```text
 k install
 k apply
 k upgrade <talos|kubernetes|cilium|argocd>
-k reset [node]
+k reset [--yes] [node]
 ```
 
 > [!CAUTION]
-> Review `state.yaml`, the node addresses, and disk selectors in `patches/`
-> before changing the cluster. `k reset` wipes the selected node's Talos
-> `STATE` and `EPHEMERAL` data.
+> Review [`state.yaml`](state.yaml), node addresses, and disk selectors in
+> [`patches/`](patches/) before an operation. `k reset` wipes the selected
+> node's Talos `STATE` and `EPHEMERAL` partitions.
+
+Change Argo CD-managed resources in Git, not with direct cluster edits.
 
 ## Repository map
 
 - [`applications/`](applications/) contains application metadata, immutable
-  deployment instances, and custom Kustomizations.
+  instance locks, and custom Kustomizations.
 - [`argocd/`](argocd/) contains the GitOps root, ApplicationSets, platform
   components, projects, and the shared application chart.
-- [`patches/`](patches/) contains shared and node-specific Talos machine
-  configuration.
-- [`scripts/`](scripts/) provides the `k` operator command and its built-in
-  command documentation.
-- [`secrets/`](secrets/) contains the public recipient registry and
-  SOPS-encrypted cluster configuration.
-- [`state.yaml`](state.yaml) declares cluster topology and component versions.
+- [`patches/`](patches/) contains shared and node-specific Talos patches.
+- [`scripts/`](scripts/) provides the `k` operator command and its help.
+- [`secrets/`](secrets/) contains the public recipient registry and encrypted
+  cluster configuration.
+- [`state.yaml`](state.yaml) is authoritative for cluster topology and versions.

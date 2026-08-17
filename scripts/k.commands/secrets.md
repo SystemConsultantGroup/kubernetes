@@ -1,32 +1,33 @@
 # secrets
 
-Manages SOPS-encrypted repository secrets and their age recipients.
-
-## Description
-
-Dispatches commands for encrypted YAML files under `secrets/` and the recipient
-map in `secrets/state.yaml`. Secret editing and recipient changes
-synchronize the generated root `.sops.yaml` with that map; `check` verifies the
-same relationship.
-
-## Usage
-
-```
-k secrets <command> [args...]
-```
-
-## Prerequisites
-
-- `state.yaml` must contain the values required by the `k` dispatcher.
-- The repository's `yq`, `sops`, `age`, and `age-keygen` commands must be available.
+Manages SOPS-encrypted YAML files and their age recipients.
 
 ## Subcommands
 
-- `check` — Verifies the local age recipient, SOPS configuration, and encrypted secret files.
-- `edit <secret>` — Opens one encrypted secret with `sops`.
-- `recipients` — Manages configured age recipients.
+- `check` verifies the local recipient, `.sops.yaml`, and every encrypted secret.
+- `edit <secret>` opens `secrets/<secret>.yaml` with SOPS.
+- `recipients` manages the configured age recipients.
 
-## Notes
+## Usage
 
-- Run `k secrets` without a command to print the subcommand list.
-- The legacy `k secrets recipient` spelling is accepted as an alias for `recipients`.
+```bash
+k secrets <command> [args...]
+```
+
+Running `k secrets` lists subcommands. The legacy singular spelling
+`k secrets recipient` remains an alias for `recipients`.
+
+## Prerequisites
+
+Run inside `nix develop`, which supplies `yq`, `sops`, `age`, and `age-keygen`.
+The dispatcher also requires the cluster values in `state.yaml`.
+
+## Behavior
+
+`secrets/state.yaml` is the public recipient map. The command derives the root
+[`.sops.yaml`](../../.sops.yaml) from that map and the encrypted files. Editing a
+secret synchronizes the generated configuration; adding or removing a recipient
+also rekeys every encrypted top-level YAML file under `secrets/`.
+
+Do not print decrypted values or run recipient changes without an explicit
+access change being approved.

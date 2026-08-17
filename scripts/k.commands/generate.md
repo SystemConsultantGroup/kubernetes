@@ -1,29 +1,29 @@
 # generate
 
-Generates kubeconfig and talosconfig files for the cluster.
-
-## Description
-
-`k generate` groups commands that produce repository and client configuration artifacts. Run `k generate` alone to list the available subcommands, or `k generate help` for this page.
+Generates client configuration files and the application chart schema.
 
 ## Commands
 
-- `application-schemas` — vendors the application API types pinned by `state.yaml` and generates the chart values schema.
-- `kubeconfig` — generates the cluster kubeconfig with `talosctl kubeconfig`.
-- `talosconfig` — generates the talosconfig with `talosctl gen config`.
+- `application-schemas` generates or checks the committed chart schema.
+- `kubeconfig` writes the cluster kubeconfig.
+- `talosconfig` writes the Talos client configuration.
 
 ## Usage
 
-```
+```text
 k generate <command> [args...]
 ```
 
-## Prerequisites
+Running `k generate` lists subcommands. Use `k generate --help` for this page.
+Each subcommand documents its own prerequisites.
 
-- `state.yaml` defines the cluster name, endpoint and versions.
-- `secrets/talos.yaml` is sops-encrypted and decodable with your age key.
+## Common outputs
 
-## Notes
+The client configuration commands overwrite repository-root `kubeconfig` or
+`talosconfig` files and set mode `600`. These files are local credentials and
+are ignored by Git. The schema command can check committed output without
+modifying it:
 
-- Generated client configuration files are chmod 600.
-- Application schemas are committed and can be checked with `k generate application-schemas --check`.
+```bash
+k generate application-schemas --check
+```

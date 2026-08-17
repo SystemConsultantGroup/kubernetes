@@ -1,29 +1,26 @@
 # talos
 
-Upgrades Talos OS on every node to the version pinned in state.yaml.
+Upgrades Talos on every declared node to `talos.version` in `state.yaml`.
 
-## Description
+## Behavior
 
-For each node in state.yaml, compares the running Talos version
-(`talosctl version --short`) with the `talos.version` pinned in state.yaml.
-Nodes already on the target version are reported and skipped. If any node
-needs an upgrade, prompts for confirmation (or applies with `--yes`), then
-runs `talosctl upgrade` per node with the pinned installer image and
-`--wait`, and finally waits for Talos and Kubernetes health on every node
-(`k wait talos`).
-
-## Prerequisites
-
-- Nodes reachable from the repo-root talosconfig.
-- state.yaml pins the Talos version and schematic.
+The command checks each node and skips nodes already at the target. If any node
+needs an upgrade, it prompts once, unless `--yes` is supplied, then upgrades the
+remaining nodes one at a time in `state.yaml` order with the pinned installer
+image and `--wait`. It finishes with `k wait talos`.
 
 ## Usage
 
-```
+```bash
 k upgrade talos [--yes]
 ```
 
-## Notes
+## Prerequisites
 
-- The installer image is `factory.talos.dev/installer/<schematic>:<version>` from state.yaml.
-- Nodes are upgraded one at a time, in state.yaml order.
+- Every node in `state.yaml` is reachable through the repository talosconfig.
+- `state.yaml` contains the target Talos version and schematic.
+- The target installer image is available.
+
+The installer image has the form
+`factory.talos.dev/installer/<schematic>:<version>`. Nodes may reboot during
+the upgrade; do not interrupt the one-at-a-time sequence.

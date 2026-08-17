@@ -1,29 +1,23 @@
 # wait
 
-Waits for cluster components to become healthy.
+Waits for Talos or Kubernetes health checks to succeed.
 
-## Description
+## Subcommands
 
-`k wait` groups commands that block until parts of the cluster report healthy.
-Run `k wait` alone to list the available subcommands, or `k wait help` for this
-page.
-
-## Commands
-
-- `kubernetes` — waits until all pods in every namespace are Ready.
-- `talos` — runs a Talos health check on every node.
+- `kubernetes` waits for every pod in every namespace to become Ready.
+- `talos` runs a Talos health check for every declared node.
 
 ## Usage
 
-```
+```text
 k wait <command> [args...]
 ```
 
+Running `k wait` lists subcommands. Use `k wait --help` for this page.
+
 ## Prerequisites
 
-- `kubernetes` needs a reachable cluster via `kubeconfig`.
-- `talos` needs `talosconfig` at the repo root.
+- `kubernetes` needs a reachable repository kubeconfig.
+- `talos` needs a repository talosconfig and reachable declared nodes.
 
-## Notes
-
-- Both commands fail (non-zero) if their checks time out or report unhealthy.
+Both commands return a non-zero status if their checks fail or time out.

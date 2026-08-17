@@ -1,28 +1,29 @@
 # argocd
 
-Upgrades the Argo CD Helm chart to the version pinned in state.yaml.
+Upgrades the Argo CD Helm chart to `argocd.version` in `state.yaml`.
 
-## Description
+## Behavior
 
-Reads the installed chart version via `helm list` in the `argocd` namespace
-and compares it to the `argocd.version` pinned in state.yaml. If they match,
-prints the current version and exits without changes. Otherwise prompts for
-confirmation (or applies with `--yes`) and runs `k install argocd` to
-reinstall the chart at the pinned version.
+The command reads the installed `argocd` Helm release in the `argocd` namespace.
+If its chart version already matches, it exits without changes. Otherwise it
+prompts, unless `--yes` is supplied, and runs `k install argocd`.
 
-## Prerequisites
-
-- Argo CD installed as a Helm release named `argocd` in the `argocd` namespace.
-- state.yaml pins `argocd.version` (the chart version).
-- `secrets/bootstrap.yaml` is decodable, as `k install argocd` requires it.
+That install command also refreshes bootstrap secrets and namespaces, reapplies
+the root Application, waits up to 10 minutes for Helm, and removes the initial
+admin secret. This is broader than a chart-only upgrade.
 
 ## Usage
 
-```
+```bash
 k upgrade argocd [--yes]
 ```
 
-## Notes
+## Prerequisites
 
-- Fails if the `argocd` Helm release is not found.
-- `k install argocd` also refreshes the OAuth secret, namespaces and bootstrap Application, not just the chart.
+- The `argocd` Helm release exists in the `argocd` namespace.
+- `state.yaml` contains `argocd.version`.
+- `secrets/bootstrap.yaml` is decryptable and contains the required bootstrap
+  values.
+- The cluster is reachable.
+
+The command fails when the Argo CD release is not found.

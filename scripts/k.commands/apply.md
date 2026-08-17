@@ -1,27 +1,33 @@
 # apply
 
-Applies the generated Talos machine configs to every node in state.yaml.
+Applies a generated Talos machine configuration to every node in `state.yaml`.
 
-## Description
+## Behavior
 
-Generates a controlplane machine config per node, patched with `patches/<node>.yaml`,
-`patches/worker.yaml` and `patches/cilium.yaml`, then applies it live with
-`talosctl apply-config`. Nodes that are not yet reachable are configured with
-`--insecure` on first boot.
+For each declared node, the command:
 
-## Prerequisites
+1. decrypts `secrets/talos.yaml` into a temporary file;
+1. generates a control-plane configuration from `state.yaml`;
+1. applies the node patch, shared worker patch, and shared Cilium patch; and
+1. applies the result to that node before continuing to the next one.
 
-- `state.yaml` defines the cluster name, versions and nodes.
-- `secrets/talos.yaml` is sops-encrypted and decodable with your age key.
-- `patches/<node>.yaml` exists for every node in state.yaml.
+A reachable node uses the normal Talos connection. An unreachable node uses
+`--insecure`, which supports first-boot configuration. The command has no
+confirmation prompt or dry-run mode and always targets every declared node.
 
 ## Usage
 
-```
+```bash
 k apply
 ```
 
-## Notes
+## Prerequisites
 
-- Reconfigures **all** nodes in state.yaml, one after the other.
-- Safe to re-run; nodes already running the same config are simply re-applied.
+- Run inside `nix develop`.
+- `state.yaml` defines the cluster, versions, endpoint, and nodes.
+- `secrets/talos.yaml` is decryptable with the local age key.
+- `patches/<node>.yaml`, `patches/worker.yaml`, and `patches/cilium.yaml` exist.
+
+Review node addresses, disk selectors, and the intended version changes before
+running this live operation. Temporary decrypted and generated files are
+removed when the command exits.

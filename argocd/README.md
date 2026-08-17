@@ -1,45 +1,42 @@
 # Argo CD configuration
 
-This directory contains the GitOps resources that connect the repository to
-the cluster. Argo CD follows the `main` branch and reconciles the root
-Application with pruning and self-healing enabled.
+This directory contains the GitOps root, platform Applications, ApplicationSets,
+projects, and shared managed-application chart. Argo CD follows `main` and
+reconciles with pruning and self-healing enabled.
 
-## Bootstrap lifecycle
+## Bootstrap
 
-`k install argocd` installs the pinned Argo CD chart, creates the bootstrap
-secrets from encrypted repository values, and applies
-[`root-application.yaml`](root-application.yaml). The root Application then
-reconciles this directory.
+After Kubernetes and Cilium are available, an operator runs:
 
-[`values.yaml`](values.yaml) is used by the explicit Helm installation. It
-contains Argo CD URL, GitHub OAuth, and RBAC configuration. The OAuth client
-secret is supplied from encrypted bootstrap data and must not be added to this
-file.
+```bash
+k install argocd
+```
 
-After bootstrap, change desired state in Git rather than editing Argo CD or
-platform resources directly in the cluster.
+The command installs the pinned Argo CD chart, creates bootstrap secrets from
+encrypted values, and applies [`root-application.yaml`](root-application.yaml).
+The root Application then reconciles this directory. The initial admin secret
+is removed; access uses the GitHub OAuth configuration in [`values.yaml`](values.yaml).
+
+`values.yaml` is used by the explicit Helm installation. Its OAuth client
+secret is read from encrypted bootstrap data and must not be committed here.
 
 ## Directory map
 
 - [`application-sets/`](application-sets/) discovers managed, preview, and
   custom applications.
-- [`charts/`](charts/) contains the shared Helm chart for managed applications.
-- [`platform/`](platform/) defines Argo CD Applications for cluster platform
-  components.
-- [`projects/`](projects/) defines Argo CD source, destination, and resource
-  permissions.
+- [`charts/`](charts/) contains the shared managed-application renderer.
+- [`platform/`](platform/) defines Applications for cluster services.
+- [`projects/`](projects/) defines source, destination, and resource permissions.
 - [`kustomization.yaml`](kustomization.yaml) assembles the root resources.
-- [`root-application.yaml`](root-application.yaml) is the initial root
-  Application applied during Argo CD installation.
+- [`root-application.yaml`](root-application.yaml) is applied during bootstrap.
 
 ## Change guidance
 
-Application owners should normally edit [`../applications/`](../applications/)
-rather than this directory. Changes to ApplicationSets, projects, the shared
-chart, or platform Applications affect multiple workloads or cluster-wide
-services and require operator review.
+Application owners should normally edit [`../applications/`](../applications/).
+Changes here can affect multiple workloads, namespaces, or cluster-wide
+services. Review ApplicationSet discovery, project permissions, sync waves,
+secrets, and cluster-scoped resources before merging.
 
-Changes to [`values.yaml`](values.yaml) are bootstrap changes. Re-run
-`k install argocd` only when explicitly changing the installed Argo CD
-configuration; ordinary GitOps resources should be changed through Git and
-allowed to reconcile.
+Change desired state in Git rather than editing Argo CD-managed resources in the
+cluster. Re-run `k install argocd` only when explicitly changing the installed
+Argo CD configuration or recovering its bootstrap state.

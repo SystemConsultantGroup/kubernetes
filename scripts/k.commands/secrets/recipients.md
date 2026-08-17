@@ -1,34 +1,32 @@
 # recipients
 
-Manages the age recipients used to encrypt repository secrets.
-
-## Description
-
-Reads and updates the recipient map in `secrets/state.yaml`. Recipient
-changes regenerate the root `.sops.yaml` and rekey every encrypted secret file
-under `secrets/`.
-
-## Usage
-
-```
-k secrets recipients <command> [args...]
-```
-
-## Prerequisites
-
-- `state.yaml` must contain the values required by the `k` dispatcher.
-- `yq` and the required `age`/`sops` commands must be available.
-- `add`, `list`, and `remove` require `secrets/state.yaml`; `add` and
-  `remove` also require `.sops.yaml`.
+Manages the age recipients that can decrypt repository secrets.
 
 ## Subcommands
 
-- `add <name> <age1...>` — Adds a recipient and rekeys all encrypted secrets.
-- `list` — Lists recipients and marks the local one with `(me)` when available.
-- `me` — Ensures a local age key exists and prints its recipient and aliases.
-- `remove <name>` — Removes a recipient and rekeys all encrypted secrets.
+- `add <name> <recipient>` adds a recipient and rekeys every encrypted secret.
+- `list` lists aliases and marks the local recipient with `(me)`.
+- `me` creates or inspects the local age key and prints its recipient.
+- `remove <name>` removes a recipient and rekeys every encrypted secret.
 
-## Notes
+## Usage
 
-- Run `k secrets recipients` without a command to print the subcommand list.
-- Recipient changes use `sops updatekeys --yes`; they are not interactive.
+```bash
+k secrets recipients <command> [args...]
+```
+
+Running `k secrets recipients` lists subcommands. The `add` and `remove`
+commands update `secrets/state.yaml`, regenerate `.sops.yaml`, and run
+non-interactive SOPS rekeying for every top-level encrypted YAML file.
+
+> [!CAUTION]
+> Adding grants access to all encrypted secrets. Removing revokes access only
+> after rekeying succeeds. Review the recipient and alias before either change.
+
+## Prerequisites
+
+- Run inside `nix develop`.
+- `secrets/state.yaml` exists for `add`, `list`, and `remove`.
+- `.sops.yaml` exists for `add` and `remove`.
+- The local age key can decrypt and rekey the existing secrets for `add` and
+  `remove`.

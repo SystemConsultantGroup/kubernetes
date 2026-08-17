@@ -1,34 +1,32 @@
 # check
 
-Checks the local age recipient, generated SOPS configuration, and encrypted secrets.
+Checks the local age recipient, generated SOPS configuration, and encrypted
+secret files.
 
-## Description
+## Behavior
 
-Verifies that:
+The command verifies that:
 
-- the recipient derived from the local age key is configured in `secrets/state.yaml`;
-- the generated configuration matches the root `.sops.yaml`; and
-- every encrypted `secrets/*.yaml` file decrypts successfully with `sops`.
+- the recipient derived from the local age key is in `secrets/state.yaml`;
+- `.sops.yaml` matches the generated configuration; and
+- every encrypted top-level `secrets/*.yaml` file decrypts successfully.
 
-Each decrypted file is reported as `OK: <path>`, followed by the local
-`Recipient` line.
+It prints `OK: <path>` for each decrypted file and the local `Recipient` at the
+end. `secrets/state.yaml` itself is excluded from the encrypted-file scan.
 
 ## Usage
 
-```
+```bash
 k secrets check
 ```
 
 ## Prerequisites
 
-- `state.yaml` must contain the values required by the `k` dispatcher.
-- `secrets/state.yaml`, `.sops.yaml`, and the local age key must exist.
-- At least one encrypted secret YAML file must exist under `secrets/`.
-- `yq`, `sops`, and `age-keygen` must be available.
+- Run inside `nix develop`.
+- `secrets/state.yaml`, `.sops.yaml`, and the local age key exist.
+- At least one encrypted YAML file exists under `secrets/`.
+- The local recipient has already been added to the recipient map.
 
-## Notes
-
-- The key path is `SOPS_AGE_KEY_FILE` when set; otherwise it is
-  `${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt`.
-- `secrets/state.yaml` is excluded from the encrypted-secret scan.
-- The command accepts no arguments and only creates a temporary comparison file.
+The key path is `SOPS_AGE_KEY_FILE` when set; otherwise it is
+`${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt`. The command accepts no
+arguments and only creates a temporary comparison file.

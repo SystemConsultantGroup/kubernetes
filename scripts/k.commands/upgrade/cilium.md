@@ -1,26 +1,28 @@
 # cilium
 
-Upgrades Cilium to the version pinned in state.yaml.
+Upgrades Cilium to `cilium.version` in `state.yaml`.
 
-## Description
+## Behavior
 
-Reads the installed chart version via `helm list` in the `kube-system`
-namespace and compares it to the `cilium.version` pinned in state.yaml. If
-they match, prints the current version and exits without changes. Otherwise
-prompts for confirmation (or applies with `--yes`), runs `k install gateway-api` to keep the Gateway API in sync, then `cilium upgrade` at the
-pinned version with `--wait --wait-duration 10m`.
+The command reads the installed `cilium` Helm release in `kube-system`. If its
+chart version already matches, it exits without changes. Otherwise it prompts,
+unless `--yes` is supplied, reapplies the pinned Gateway API standard release,
+and runs:
 
-## Prerequisites
-
-- Cilium installed as a Helm release named `cilium` in the `kube-system` namespace.
-- state.yaml pins `cilium.version`.
+```text
+cilium upgrade --version <target> --wait --wait-duration 10m
+```
 
 ## Usage
 
-```
+```bash
 k upgrade cilium [--yes]
 ```
 
-## Notes
+## Prerequisites
 
-- Fails if the `cilium` Helm release is not found.
+- The `cilium` Helm release exists in `kube-system`.
+- `state.yaml` contains `cilium.version` and `gateway-api.version`.
+- The cluster and the Cilium CLI are reachable and available.
+
+The command fails when the Cilium release is not found.

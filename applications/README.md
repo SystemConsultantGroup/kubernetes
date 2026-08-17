@@ -1,12 +1,12 @@
 # Applications
 
-This directory contains the workloads deployed by the SCG platform. Application
-owners normally make changes here and submit them through a pull request.
-Merging to `main` makes the declared application state available to Argo CD.
+This directory contains workloads deployed by the SCG platform. Application
+owners normally change these files and submit a pull request; merging to
+`main` makes the declared state available to Argo CD.
 
-## Choose an application layout
+## Choose one layout
 
-Each application directory uses exactly one of these layouts.
+Each application directory uses exactly one layout.
 
 ### Managed application
 
@@ -23,19 +23,16 @@ applications/example/
         123.yaml
 ```
 
-`meta.yaml` maps workload names to runtime configuration. A workload can
-specify replicas, resources, environment variables, environment sources, a
-readiness probe, and optional HTTP configuration.
-
-Stable instance files map the same workload names to immutable source and image
-locks. `production.yaml` is required; `testing.yaml` is optional. A preview
-file contains one lock, and its workload and pull request number come from its
+`meta.yaml` defines workload names and runtime settings such as replicas,
+resources, environment variables, readiness probes, and HTTP routing. The
+production instance is required; testing is optional. Stable instance files
+contain the immutable source and image lock for each workload. A preview file
+contains one lock, while its workload and pull request number come from its
 path.
 
 ### Custom Kustomize application
 
-A custom application has a standard `kustomization.yaml` at the application
-root:
+A custom application has a standard Kustomize entrypoint at its root:
 
 ```text
 applications/example/
@@ -43,18 +40,17 @@ applications/example/
   resources.yaml
 ```
 
-The directory is rendered directly by Argo CD. It must not also contain
-`meta.yaml`, and the entrypoint must be named `kustomization.yaml`, not
-`kustomize.yaml`.
+Argo CD renders the directory directly. Do not add `meta.yaml` to this layout,
+and use `kustomization.yaml`, not `kustomize.yaml`.
 
-## Managed application configuration
+## Configure a managed workload
 
-A workload without `http` is treated as a worker and receives no Service. A
-workload with `http.port` receives a ClusterIP Service whose port 80 targets
-that container port. Adding `http.domain` also creates public routing through
-the platform Gateway.
+A workload without `http` produces a Deployment only. `http.port` adds a
+ClusterIP Service on port 80 targeting the container port. `http.domain` also
+adds public Gateway API routing.
 
-Use a string for a platform-managed hostname:
+A domain can be a hostname, several hostnames, or an externally managed
+hostname:
 
 ```yaml
 web:
@@ -63,7 +59,14 @@ web:
     domain: example.scg.sh
 ```
 
-Use an object when DNS is managed elsewhere:
+```yaml
+web:
+  http:
+    port: 8080
+    domain:
+      - example.scg.sh
+      - www.example.scg.sh
+```
 
 ```yaml
 web:
@@ -74,37 +77,52 @@ web:
       external: true
 ```
 
-Rules are optional. When omitted, the chart creates a catch-all route to the
-owning workload. Rules require a domain and use the standard Gateway API
-`HTTPRouteRule` shape.
+For production, an external domain uses an HTTP listener and does not create
+a certificate or an ExternalDNS record. Use it only when TLS termination and
+DNS are managed outside this platform. Testing and preview traffic uses the
+platform's wildcard listeners.
+
+`rules` are optional. Without them, the chart creates a catch-all route to the
+owning workload. Rules require `domain` and use the Gateway API `HTTPRouteRule`
+shape.
 
 ## Immutable instance locks
 
-Each stable workload lock must contain:
+Every stable workload lock must contain:
 
-- a credential-free HTTPS Git repository URL ending in `.git`;
-- a full lowercase 40-character commit SHA;
+- an HTTPS Git repository URL ending in `.git`, without credentials;
+- a full lowercase 40-character commit SHA; and
 - a fully qualified lowercase OCI image reference pinned by a SHA-256 digest.
 
-The source commit and image digest are expected to describe the same build.
-Do not use mutable image tags in an instance file.
+The source revision and image digest should come from the same build. Do not
+use mutable image tags in an instance file.
 
 ## Pull request previews
 
-A preview file is placed at:
+Place a preview lock at:
 
 ```text
 applications/example/instances/preview/web/123.yaml
 ```
 
-It contains only the `source` and `image` lock for `web`. Argo CD creates a
-separate preview application and namespace from that path. Removing the file
-removes the generated preview application and namespace.
+The file contains only the selected workload's `source` and `image` fields:
+
+```yaml
+source:
+  repository: https://github.com/example/project.git
+  revision: 0123456789abcdef0123456789abcdef01234567
+image: registry.example.org/project/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+```
+
+The path determines the workload and pull request number. Argo CD creates a
+separate preview Application and namespace, with a hostname of the form
+`<application>-<workload>-<pull-request>.preview.scg.sh`. Removing the file
+removes the generated preview resources.
 
 ## References
 
 - [`hello-world/`](hello-world/) is a complete managed application example.
-- [`../argocd/charts/application/`](../argocd/charts/application/) contains the
-  shared renderer and its effective values schema.
-- [`../argocd/application-sets/`](../argocd/application-sets/) documents how
+- [`../argocd/charts/application/`](../argocd/charts/application/) contains
+  the renderer and effective values schema.
+- [`../argocd/application-sets/`](../argocd/application-sets/) explains how
   application files become Argo CD Applications.

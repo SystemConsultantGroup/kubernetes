@@ -1,26 +1,29 @@
 # argocd
 
-Port-forwards the Argo CD server to http://localhost:8080.
+Forwards the Argo CD server to `http://localhost:8080`.
 
-## Description
+## Behavior
 
-Runs `kubectl port-forward service/argocd-server -n argocd 8080:443`, mapping
-local port 8080 to the `argocd-server` service in the `argocd` namespace. The
-forward runs in the foreground and stops when you press Ctrl+C.
+Runs:
+
+```bash
+kubectl port-forward service/argocd-server -n argocd 8080:443
+```
+
+The forward maps local port 8080 to the `argocd-server` service in the
+`argocd` namespace. Argo CD is configured for HTTP behind the service, so open
+`http://localhost:8080`. The process stays in the foreground; press Ctrl+C to
+stop it.
 
 ## Usage
 
-```
+```bash
 k forward argocd
 ```
 
 ## Prerequisites
 
-- Cluster reachable via `kubeconfig` (generate with `k generate kubeconfig`).
-- Argo CD installed and the `argocd-server` service healthy.
+- `kubeconfig` exists and the cluster is reachable.
+- Argo CD is installed and its `argocd-server` service is healthy.
 
-## Notes
-
-- Takes no arguments.
-- Prints `Forwarding Argo CD at http://localhost:8080. Press Ctrl+C to stop.`
-  while running.
+The command accepts no arguments.

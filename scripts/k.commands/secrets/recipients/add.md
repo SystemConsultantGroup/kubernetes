@@ -1,31 +1,33 @@
 # add
 
-Adds a named age recipient and rekeys all encrypted repository secrets.
+Adds a named age recipient and rekeys every encrypted repository secret.
 
-## Description
+> [!CAUTION]
+> This command changes who can decrypt all repository secrets. It is
+> non-interactive and does not ask for confirmation.
 
-Validates the name and the supplied age recipient, then adds the mapping to
-`secrets/state.yaml`. It regenerates `.sops.yaml` and runs
-`sops updatekeys --yes` for every encrypted secret file. Duplicate names or
-recipients are rejected, except an existing name with the same recipient,
-which is reported as already configured.
+## Behavior
+
+The command validates the alias and `age1...` recipient, rejects duplicate
+aliases or recipients, updates `secrets/state.yaml`, regenerates `.sops.yaml`,
+and runs `sops updatekeys --yes` for every encrypted top-level YAML file. An
+existing alias with the same recipient is reported as already configured.
+
+If any rekey step fails, the recipient map, `.sops.yaml`, and secret files are
+restored from backups.
 
 ## Usage
 
-```
+```bash
 k secrets recipients add <name> <age1...>
 ```
 
+`<name>` starts with a lowercase letter or digit and may contain lowercase
+letters, digits, `.`, `_`, and `-`. The command accepts exactly two arguments.
+
 ## Prerequisites
 
-- `state.yaml` must contain the values required by the `k` dispatcher.
-- `secrets/state.yaml` and `.sops.yaml` must exist.
-- Encrypted secret YAML files, `yq`, `age`, and `sops` must be available.
-- SOPS must be able to decrypt and rekey the existing secrets with your age key.
-
-## Notes
-
-- `<name>` starts with a lowercase letter or digit and may contain lowercase
-  letters, digits, `.`, `_`, or `-`.
-- The command accepts exactly one recipient argument and no flags.
-- If rekeying fails, the recipient map, `.sops.yaml`, and secret files are restored.
+- Run inside `nix develop`.
+- `secrets/state.yaml` and `.sops.yaml` exist.
+- At least one encrypted secret exists, and SOPS can decrypt and rekey it with
+  the local age key.

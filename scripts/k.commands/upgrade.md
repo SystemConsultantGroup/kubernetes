@@ -1,33 +1,32 @@
 # upgrade
 
-Upgrades Argo CD, Cilium, Kubernetes and Talos to the versions pinned in state.yaml.
-
-## Description
-
-Runs the subcommand for the given component. Each subcommand compares the
-currently installed version with the version pinned in state.yaml, reports
-when nothing needs to change, otherwise prompts for confirmation (or applies
-with `--yes`) and performs the upgrade.
-
-## Prerequisites
-
-- A working cluster; Talos and Kubernetes upgrades need talosctl access to the nodes.
-- The target version is bumped first in state.yaml.
-
-## Usage
-
-```
-k upgrade <command> [--yes]
-```
+Upgrades a component to the version already pinned in `state.yaml`.
 
 ## Subcommands
 
-- `argocd` — upgrades the Argo CD Helm chart to the version pinned in state.yaml
-- `cilium` — upgrades Cilium to the version pinned in state.yaml
-- `kubernetes` — upgrades the Kubernetes control plane to the version pinned in state.yaml
-- `talos` — upgrades Talos OS on every node to the version pinned in state.yaml
+- `argocd` upgrades the Argo CD Helm chart.
+- `cilium` upgrades Cilium and reapplies the Gateway API release.
+- `kubernetes` upgrades the Kubernetes control plane.
+- `talos` upgrades Talos on every declared node.
 
-## Notes
+## Usage
 
-- `k upgrade` with no argument lists the available subcommands.
-- Each subcommand prompts `[y/N]` unless `--yes` is passed.
+```bash
+k upgrade <command> [--yes]
+```
+
+Running `k upgrade` lists subcommands. Set and review the target version in
+`state.yaml` before running an upgrade; the command does not edit that file.
+Each subcommand checks the installed version and exits without changes when it
+already matches.
+
+## Prerequisites
+
+- Run inside `nix develop`.
+- The target component is installed and the cluster is reachable.
+- Talos and Kubernetes upgrades have valid Talos access to the nodes.
+- Any component-specific secrets or files required by its install command exist.
+
+Unless `--yes` is supplied, an upgrade prompts with `[y/N]`. Treat `--yes` as a
+reviewed automation option: upgrades change a live cluster and may reboot
+nodes.

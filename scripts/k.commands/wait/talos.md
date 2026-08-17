@@ -1,24 +1,24 @@
 # talos
 
-Runs a Talos health check on every node.
+Runs a Talos health check against every node in `state.yaml`.
 
-## Description
+## Behavior
 
-Runs `talosctl health` against every node in `state.yaml`, waiting for Talos
-and Kubernetes to be healthy on each. Prints `Waiting for Talos and Kubernetes...` before the checks and `Talos and Kubernetes are ready` when all
-nodes pass.
+For each declared node, runs `talosctl health` and waits for Talos and
+Kubernetes health. It prints a single start message and a success message after
+all nodes pass.
 
 ## Usage
 
-```
+```bash
 k wait talos
 ```
 
 ## Prerequisites
 
-- `talosconfig` at the repo root (create with `k generate talosconfig`).
-- All nodes in `state.yaml` reachable from the local machine.
+- `talosconfig` exists at the repository root; create it with
+  `k generate talosconfig`.
+- Every node in `state.yaml` is reachable.
 
-## Notes
-
-- Takes no arguments.
+The command accepts no arguments and returns a non-zero status when a health
+check fails.

@@ -1,14 +1,13 @@
 # Helm charts
 
-This directory contains Helm charts used by Argo CD. The current chart is
-[`application/`](application/), the shared renderer for managed application
-instances.
+This directory contains Helm charts used by Argo CD. The current chart,
+[`application/`](application/), renders managed application instances from
+application metadata and immutable locks.
 
-The chart is not a general-purpose application chart. Its values are assembled
-from application metadata, an immutable instance lock, and an Argo CD context
-by the ApplicationSets.
+The chart is platform code, not a general-purpose application chart. Its values
+are assembled by the ApplicationSets with an internal Argo CD context. A
+change can affect every managed application.
 
-Changes here can affect every managed application. Render the affected chart
-locally and inspect the resulting Kubernetes resources before opening a pull
-request. Do not apply test output to a live cluster as part of ordinary chart
-work.
+Render the affected chart locally and inspect its Deployments, Services, routes,
+and image locks before opening a pull request. Do not apply rendered output to
+a live cluster for ordinary chart validation.

@@ -1,28 +1,27 @@
 # kubernetes
 
-Upgrades the Kubernetes control plane to the version pinned in state.yaml.
+Upgrades the Kubernetes control plane to `kubernetes.version` in `state.yaml`.
 
-## Description
+## Behavior
 
-Compares the server version reported by `kubectl version` with the
-`kubernetes.version` pinned in state.yaml. If they match, prints the current
-version and exits without changes. Otherwise runs `talosctl upgrade-k8s --dry-run` against the main node, prompts for confirmation (or applies with
-`--yes`), applies the upgrade with `talosctl upgrade-k8s`, and finally waits
-for Talos and Kubernetes health on every node (`k wait talos`).
-
-## Prerequisites
-
-- Cluster reachable via the repo-root kubeconfig.
-- state.yaml pins `kubernetes.version`.
-- Talos supports the target Kubernetes version.
+The command compares the Kubernetes server version with the target. If they
+match, it exits without changes. Otherwise it runs a Talos dry run against the
+main node, prompts, unless `--yes` is supplied, applies the upgrade against
+that node, and waits for Talos and Kubernetes health on every declared node.
+The dry run must succeed before the prompt appears.
 
 ## Usage
 
-```
+```bash
 k upgrade kubernetes [--yes]
 ```
 
-## Notes
+## Prerequisites
 
-- Runs against the main node only (`MAIN_IP` from state.yaml).
-- The dry-run must succeed before the confirmation prompt appears.
+- The cluster is reachable through the repository kubeconfig.
+- `talosconfig` can reach the main node selected by `state.yaml`.
+- `state.yaml` contains `kubernetes.version`.
+- Talos supports the target Kubernetes version.
+
+The command does not change `state.yaml`; update and review the pinned version
+before running it.

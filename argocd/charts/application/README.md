@@ -1,39 +1,39 @@
 # Application chart
 
-This chart renders one managed SCG application instance. Argo CD supplies
-values from the application's `meta.yaml`, its instance lock, and an internal
-`_context` object.
+This chart renders one managed SCG application instance. ApplicationSets supply
+`meta.yaml`, an immutable instance lock, and an internal `_context` value.
 
 ## Inputs
 
 The context contains:
 
-- `_context.application`, the application name;
-- `_context.instance.type`, one of `production`, `testing`, or `preview`;
-- preview context also contains `workload` and `pullRequest`.
+- `application`, the application name;
+- `instance.type`, one of `production`, `testing`, or `preview`; and
+- for previews, `instance.workload` and `instance.pullRequest`.
 
-Each workload value combines runtime metadata with an immutable `source` and
-`image` lock. The generated values schema rejects unknown fields and validates
+Each workload combines runtime metadata with a required `source` and `image`
+lock. The generated schema rejects unknown fields and validates the selected
 Kubernetes and Gateway API structures.
 
 ## Outputs
 
-For each rendered workload the chart creates a Deployment. A workload with
-`http` also receives a ClusterIP Service on port 80. Public domains produce
-Gateway API resources according to the instance type:
+Each rendered workload produces a Deployment. A workload with `http` also gets
+a ClusterIP Service on port 80. Public routing depends on the instance:
 
-- production uses the declared hostname;
-- testing uses the application's testing hostname;
-- preview uses the preview hostname and renders only the selected workload,
-  routing other declared backends to testing when needed.
+- production uses each declared domain and creates certificates unless the
+  domain is marked external;
+- testing uses `<application>.testing.scg.sh`; and
+- preview uses
+  `<application>-<workload>-<pull-request>.preview.scg.sh` and renders only the
+  selected workload.
 
-The chart applies the platform's baseline pod security settings, labels, image
-policy, and source metadata. Application metadata controls only the fields
-exposed by the application schema.
+Preview routes that reference another local workload target that workload's
+testing Service. The chart also applies baseline pod security, labels, image pull policy, and
+source metadata. Application metadata controls only schema-exposed fields.
 
 ## Local rendering
 
-Render the example production instance from the repository root with:
+From the repository root, render the example production instance:
 
 ```bash
 helm template app-production-hello-world argocd/charts/application \
@@ -43,20 +43,20 @@ helm template app-production-hello-world argocd/charts/application \
   --set _context.instance.type=production
 ```
 
-Inspect the output for correct namespaces, routes, services, and image locks.
-Do not apply it to a cluster for local validation.
+Inspect namespaces, routes, Services, and image locks. Do not apply the output
+to a cluster for local validation.
 
 ## Generated schema
 
-`values.schema.json` is generated from
-[`values.schema.source.json`](values.schema.source.json), the pinned Kubernetes
-and Gateway API definitions, and the chart's effective values schema. Do not
-edit `values.schema.json` directly. Regenerate it with:
+[`values.schema.json`](values.schema.json) is generated from
+[`values.schema.source.json`](values.schema.source.json) and version-pinned
+Kubernetes and Gateway API definitions. Edit the source file, not the generated
+file:
 
 ```bash
 k generate application-schemas
 k generate application-schemas --check
 ```
 
-The chart's templates and generated schema are shared platform code; changes
-require operator review even when they are motivated by one application.
+Templates and the generated schema are shared platform code and require
+operator review.

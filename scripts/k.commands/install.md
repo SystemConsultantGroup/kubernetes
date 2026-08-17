@@ -1,35 +1,39 @@
 # install
 
-Bootstraps the cluster end to end: Kubernetes, Cilium, then Argo CD.
-
-## Description
-
-Runs `k install kubernetes`, `k install cilium` and `k install argocd` in
-order. Fails fast unless the sops-encrypted `secrets/bootstrap.yaml` contains
-real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`
-and `ZEROSSL_EAB_HMAC_KEY` (set them with `k secrets edit bootstrap`).
-
-## Prerequisites
-
-- `secrets/talos.yaml` and `secrets/bootstrap.yaml` are sops-encrypted and decodable with your age key.
-- `patches/<node>.yaml` exists for every node in state.yaml, plus `patches/worker.yaml` and `patches/cilium.yaml`.
-- state.yaml pins the versions used by each subcommand.
+Bootstraps the cluster in order: Kubernetes, Cilium, then Argo CD.
 
 ## Usage
 
-```
+```bash
 k install
 k install <command>
 ```
 
+Running `k install` with no subcommand performs the complete bootstrap. It
+requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
+`CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY` in encrypted
+`secrets/bootstrap.yaml`. Set them with `k secrets edit bootstrap`.
+
 ## Subcommands
 
-- `argocd` — installs Argo CD with GitHub OAuth and bootstraps the cluster GitOps configuration
-- `cilium` — installs the pinned Cilium release with kubeProxyReplacement and the gateway API
-- `gateway-api` — installs the pinned Kubernetes Gateway API standard release
-- `kubernetes` — installs the Kubernetes cluster on the Talos nodes: generate configs, apply, bootstrap etcd, wait, and write a kubeconfig
+- `kubernetes` installs Talos configuration, Kubernetes, etcd, and kubeconfig.
+- `gateway-api` installs the pinned Gateway API standard CRDs.
+- `cilium` installs Gateway API support and the pinned Cilium release.
+- `argocd` installs Argo CD and bootstraps the GitOps root.
 
-## Notes
+## Prerequisites
 
-- `k install` with no arguments runs the full bootstrap; individual steps can be re-run via the subcommands.
-- Subcommands are idempotent, so the full bootstrap can be re-run after a partial failure.
+For the full bootstrap:
+
+- both encrypted files under `secrets/` are decryptable with the local age key;
+- every declared node has `patches/<node>.yaml`; and
+- `patches/worker.yaml` and `patches/cilium.yaml` exist.
+
+Individual subcommands document additional requirements. `state.yaml` is the
+source of truth for all component versions.
+
+## Behavior
+
+The full command runs the subcommands in the order above and stops at the first
+failure. Individual steps can be rerun after a partial failure. These are live
+cluster-changing operations and have no confirmation prompt.

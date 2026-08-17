@@ -1,34 +1,39 @@
 # ApplicationSets
 
-These ApplicationSets turn repository paths into Argo CD Applications. They
-are included by [`../kustomization.yaml`](../kustomization.yaml) and reconcile
-from the repository's `main` branch.
+These ApplicationSets turn paths in `main` into Argo CD Applications. They are
+included by [`../kustomization.yaml`](../kustomization.yaml) and generate
+Applications in the `applications` AppProject.
 
 ## Generators
 
-| Resource | Discovers | Rendering |
+| Resource | Files discovered | Result |
 | --- | --- | --- |
-| `application-instances-static` in `instances.yaml` | `applications/*/instances/production.yaml` and `testing.yaml` | The shared application Helm chart |
-| `application-instances-dynamic` in `instances.yaml` | `applications/*/instances/preview/*/*.yaml` | The shared chart with one preview workload |
-| `application-kustomize` in `kustomize.yaml` | `applications/*/kustomization.yaml` | The application directory directly |
+| `application-instances-static` | `applications/*/instances/production.yaml` and `testing.yaml` | Shared application chart |
+| `application-instances-dynamic` | `applications/*/instances/preview/*/*.yaml` | Shared chart with one preview workload |
+| `application-kustomize` | `applications/*/kustomization.yaml` | Application directory rendered directly |
 
-Managed application metadata and stable instance locks are passed to the
-shared chart as separate values files. Preview identity comes from the path;
-the preview file supplies only its workload lock.
+Managed metadata and stable instance locks are passed to the shared chart as
+separate values files. A preview lock supplies only `source` and `image`; its
+workload and pull request number come from the path.
 
-All generated Applications use automated sync, pruning, self-healing, and
-managed namespaces. A custom application receives an `app-<application>`
-namespace. Stable and preview managed applications use names that include their
-instance identity.
+Generated names and namespaces are deterministic:
+
+- stable managed instances use `app-<instance>-<application>`;
+- previews use `app-preview-<application>-<workload>-<pull-request>`; and
+- custom applications use `app-<application>`.
+
+Each generated Application enables automated sync, pruning, self-healing, and
+namespace creation. Application namespaces receive the labels required for
+public Gateway routes and restricted pod security.
 
 ## Editing rules
 
-- Preserve the exact discovery patterns unless the application layout changes
-  deliberately.
-- Keep the repository URL and target revision aligned with the GitOps policy.
-- Do not add a second ApplicationSet that discovers the same path.
-- Treat generator, namespace, project, and sync-policy changes as platform-wide
+- Keep each application in one layout; do not let two generators discover the
+  same path.
+- Preserve the repository URL and `main` revision unless the GitOps policy
+  changes deliberately.
+- Treat generator, project, namespace, and sync-policy changes as platform-wide
   changes.
 
-The generated Applications belong to the `applications` AppProject. See
-[`../projects/README.md`](../projects/README.md) for its permissions.
+See [`../projects/README.md`](../projects/README.md) for the permissions of the
+`applications` AppProject.
