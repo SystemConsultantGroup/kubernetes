@@ -16,6 +16,13 @@ Managed metadata and stable instance locks are passed to the shared chart as
 separate values files. A preview lock supplies only `source` and `image`; its
 workload and pull request number come from the path.
 
+## Refresh behavior
+
+GitHub push webhooks refresh the Argo CD API server and the ApplicationSet
+controller immediately. The two controllers use separate webhook paths. Git
+polling remains enabled at 180 seconds as a fallback when a webhook is delayed
+or unavailable.
+
 ## Generated identities
 
 The application name is the first component of every generated identity.

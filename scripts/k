@@ -226,7 +226,7 @@ decrypt_talos_secrets() {
 read_bootstrap_secret() {
   local name="$1"
   case "$name" in
-  ARGOCD_GITHUB_OAUTH_CLIENT_SECRET | CLOUDFLARE_API_TOKEN | ZEROSSL_EAB_HMAC_KEY) ;;
+  ARGOCD_GITHUB_OAUTH_CLIENT_SECRET | ARGOCD_GITHUB_WEBHOOK_SECRET | CLOUDFLARE_API_TOKEN | ZEROSSL_EAB_HMAC_KEY) ;;
   *)
     echo "Unknown bootstrap secret: $name" >&2
     return 2
@@ -238,7 +238,7 @@ read_bootstrap_secret() {
 
 require_bootstrap_secrets() {
   local name value
-  for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET CLOUDFLARE_API_TOKEN ZEROSSL_EAB_HMAC_KEY; do
+  for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET ARGOCD_GITHUB_WEBHOOK_SECRET CLOUDFLARE_API_TOKEN ZEROSSL_EAB_HMAC_KEY; do
     value="$(read_bootstrap_secret "$name")"
     [[ -n $value && $value != REPLACE_ME ]] || {
       echo "Set $name with: k secrets edit bootstrap" >&2

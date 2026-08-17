@@ -20,6 +20,24 @@ is removed; access uses the GitHub OAuth configuration in [`values.yaml`](values
 `values.yaml` is used by the explicit Helm installation. Its OAuth client
 secret is read from encrypted bootstrap data and must not be committed here.
 
+## Access and refresh
+
+The normal GitHub team has read-only Argo CD access. Application changes are
+made in Git and automated sync remains enabled for the controllers.
+
+GitHub push webhooks use these paths on `argocd.platform.scg.sh`:
+
+- `/api/webhook` refreshes the Argo CD API server;
+- `/applicationset-webhook` refreshes the ApplicationSet controller.
+
+The second path is rewritten internally to the ApplicationSet webhook endpoint.
+Create both GitHub repository webhooks with the same secret and the push event.
+Git polling remains enabled at 180 seconds as a fallback. Webhook delivery uses
+`application/json` and the encrypted `ARGOCD_GITHUB_WEBHOOK_SECRET` value.
+
+The platform wildcard is currently added alongside the existing
+`argocd.infra.scg.sh` hostname so the domain migration can be staged.
+
 ## Directory map
 
 - [`application-sets/`](application-sets/) discovers managed, preview, and

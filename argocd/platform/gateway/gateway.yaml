@@ -26,6 +26,20 @@ spec:
           selector:
             matchLabels:
               gateway.scg.sh/public: "true"
+    - name: platform-https
+      hostname: "*.platform.scg.sh"
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: platform-wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway.scg.sh/public: "true"
     - name: testing-https
       hostname: "*.testing.scg.sh"
       port: 443

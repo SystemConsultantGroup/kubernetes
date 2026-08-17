@@ -23,7 +23,7 @@ k upgrade argocd [--yes]
 - The `argocd` Helm release exists in the `argocd` namespace.
 - `state.yaml` contains `argocd.version`.
 - `secrets/bootstrap.yaml` is decryptable and contains the required bootstrap
-  values.
+  values, including `ARGOCD_GITHUB_WEBHOOK_SECRET`.
 - The cluster is reachable.
 
 The command fails when the Argo CD release is not found.

@@ -1,6 +1,7 @@
 require_no_args "k install argocd" "$@"
 require_bootstrap_secrets
 argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_CLIENT_SECRET)"
+argocd_github_webhook_secret="$(read_bootstrap_secret ARGOCD_GITHUB_WEBHOOK_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
 zerossl_eab_hmac_key="$(read_bootstrap_secret ZEROSSL_EAB_HMAC_KEY)"
 
@@ -14,6 +15,11 @@ printf '%s' "$argocd_github_oauth_client_secret" |
     --from-file=github.oauth.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n argocd label secret argocd-github-oauth app.kubernetes.io/part-of=argocd --overwrite
 unset argocd_github_oauth_client_secret
+printf '%s' "$argocd_github_webhook_secret" |
+  kubectl -n argocd create secret generic argocd-github-webhook \
+    --from-file=webhook.github.secret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n argocd label secret argocd-github-webhook app.kubernetes.io/part-of=argocd --overwrite
+unset argocd_github_webhook_secret
 
 helm upgrade --install argocd \
   oci://ghcr.io/argoproj/argo-helm/argo-cd \
@@ -22,6 +28,9 @@ helm upgrade --install argocd \
   --values "$argocd_dir/values.yaml" \
   --wait \
   --timeout 10m
+
+kubectl -n argocd rollout restart deployment/argocd-applicationset-controller
+kubectl -n argocd rollout status deployment/argocd-applicationset-controller --timeout 10m
 
 for namespace in cert-manager external-dns; do
   kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -

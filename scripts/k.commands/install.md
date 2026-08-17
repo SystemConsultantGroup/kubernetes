@@ -11,7 +11,8 @@ k install <command>
 
 Running `k install` with no subcommand performs the complete bootstrap. It
 requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
-`CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY` in encrypted
+`ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`, and
+`ZEROSSL_EAB_HMAC_KEY` in encrypted
 `secrets/bootstrap.yaml`. Set them with `k secrets edit bootstrap`.
 
 ## Subcommands

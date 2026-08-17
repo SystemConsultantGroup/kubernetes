@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-wildcard
+  namespace: gateway-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  secretName: platform-wildcard-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: zerossl-cloudflare
+  dnsNames:
+    - "*.platform.scg.sh"

@@ -1,10 +1,13 @@
 global:
-  domain: argocd.infra.scg.sh
+  domain: argocd.platform.scg.sh
 configs:
   params:
     server.insecure: true
   cm:
-    url: https://argocd.infra.scg.sh
+    url: https://argocd.platform.scg.sh
+    webhook.maxPayloadSizeMB: "10"
+    timeout.reconciliation: 120s
+    timeout.reconciliation.jitter: 60s
     admin.enabled: false
     dex.config: |
       connectors:
@@ -19,8 +22,34 @@ configs:
                 teams:
                   - active
             teamNameField: slug
+  secret:
+    githubSecret: '$argocd-github-webhook:webhook.github.secret'
   rbac:
     policy.csv: |
-      g, SystemConsultantGroup:active, role:admin
+      g, SystemConsultantGroup:active, role:readonly
     policy.default: role:readonly
     scopes: '[groups]'
+applicationSet:
+  httproute:
+    enabled: true
+    parentRefs:
+      - name: public
+        namespace: gateway-system
+        sectionName: argocd-https
+      - name: public
+        namespace: gateway-system
+        sectionName: platform-https
+    hostnames:
+      - argocd.infra.scg.sh
+      - argocd.platform.scg.sh
+    rules:
+      - matches:
+          - path:
+              type: Exact
+              value: /applicationset-webhook
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /api/webhook

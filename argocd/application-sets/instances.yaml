@@ -13,6 +13,7 @@ spec:
     - git:
         repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
         revision: main
+        requeueAfterSeconds: 180
         files:
           - path: applications/*/instances/production.yaml
           - path: applications/*/instances/testing.yaml
@@ -73,6 +74,7 @@ spec:
     - git:
         repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
         revision: main
+        requeueAfterSeconds: 180
         files:
           - path: applications/*/instances/preview/*/*.yaml
   template:

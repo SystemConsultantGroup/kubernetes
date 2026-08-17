@@ -9,7 +9,7 @@ and the generated root [`.sops.yaml`](../.sops.yaml).
 | File | Contents |
 | --- | --- |
 | `state.yaml` | Public recipient aliases and age recipients; no secret values |
-| `bootstrap.yaml` | Encrypted Argo CD OAuth, Cloudflare, and ZeroSSL bootstrap values |
+| `bootstrap.yaml` | Encrypted Argo CD OAuth and webhook, Cloudflare, and ZeroSSL bootstrap values |
 | `talos.yaml` | Encrypted Talos cluster secrets |
 
 Keep `bootstrap.yaml` and `talos.yaml` encrypted in Git. Do not hand-edit
@@ -51,8 +51,9 @@ k secrets edit talos
 ```
 
 Before `k install` can complete, `bootstrap.yaml` must contain real values for
-`ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`, and
-`ZEROSSL_EAB_HMAC_KEY`. The Cloudflare token must be allowed to read the
+`ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `ARGOCD_GITHUB_WEBHOOK_SECRET`,
+`CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`. The Cloudflare token must
+be allowed to read the
 relevant zone and edit its DNS records.
 
 Never print decrypted values, commit plaintext, or put credentials in
