@@ -29,9 +29,9 @@ gateway.scg.sh/public: "true"
 
 The active ExternalDNS instance observes Gateway HTTPRoutes and manages `scg.sh`
 records through Cloudflare.
-Testing and preview listeners use wildcard certificates from cert-manager.
-Production domains marked external are excluded from this DNS and certificate
-flow.
+Testing and preview listeners use wildcard DNS records and certificates from
+ExternalDNS and cert-manager. Production domains marked external are excluded
+from this DNS and certificate flow.
 
 ## Changes
 

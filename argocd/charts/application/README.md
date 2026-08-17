@@ -380,16 +380,19 @@ platform.
 
 ### Testing and preview domains
 
-Testing and preview instances use the platform's wildcard HTTPS listeners.
-The domain value determines whether a workload participates in routing, but the
-configured hostname is not used directly:
+Testing and preview instances use the platform's wildcard DNS records and
+wildcard HTTPS listeners. Their routes retain instance-specific hostnames for
+Gateway matching, but ExternalDNS publishes only the platform wildcard:
 
 ```text
-Testing: <application>.testing.scg.sh
-Preview: <application>-<workload>-<pull-request>.preview.scg.sh
+Testing route: <application>.testing.scg.sh
+Testing DNS:   *.testing.scg.sh
+Preview route: <application>-<workload>-<pull-request>.preview.scg.sh
+Preview DNS:   *.preview.scg.sh
 ```
 
-The `external` value does not change testing or preview listener behavior.
+No per-instance Certificate is created. The `external` value does not change
+testing or preview listener behavior.
 
 ## `http.rules`
 

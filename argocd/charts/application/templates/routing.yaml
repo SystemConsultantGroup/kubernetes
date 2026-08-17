@@ -107,6 +107,8 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
     platform.scg.sh/instance-type: testing
   annotations:
+    external-dns.alpha.kubernetes.io/gateway-hostname-source: annotation-only
+    external-dns.alpha.kubernetes.io/hostname: "*.testing.scg.sh"
     link.argocd.argoproj.io/external-link: {{ printf "Application|https://%s" (include "application.testingHostname" $) | quote }}
 spec:
   parentRefs:
@@ -172,6 +174,8 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
     platform.scg.sh/instance-type: preview
   annotations:
+    external-dns.alpha.kubernetes.io/gateway-hostname-source: annotation-only
+    external-dns.alpha.kubernetes.io/hostname: "*.preview.scg.sh"
     link.argocd.argoproj.io/external-link: {{ printf "Application|https://%s" (include "application.previewHostname" $) | quote }}
 spec:
   parentRefs:
