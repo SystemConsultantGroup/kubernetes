@@ -19,14 +19,16 @@ covers the file formats and deployment behavior.
 
 ## Platform operators
 
-Platform operators should install Determinate Nix if it is not already
-available:
+Platform operators need Nix with flakes enabled. If Nix is not already
+available, the Determinate installer is the easiest way to set up a compatible
+configuration:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
-Enter the development shell and inspect the command help:
+If Nix is already installed, enable flakes before entering the development
+shell. Then inspect the command help:
 
 ```bash
 nix develop
