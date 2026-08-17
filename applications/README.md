@@ -38,7 +38,7 @@ The repository's minimal public HTTP example is
 `applications/hello-world/meta.yaml`:
 
 ```yaml
-hello-world:
+fe:
   http:
     port: 8080
     domain: hello.world.scg.sh
@@ -50,12 +50,12 @@ source and image pair in this example. The generated identities are:
 ```text
 hello-world-production
 hello-world-testing
-hello-world-preview-hello-world-1
+hello-world-preview-fe-1
 ```
 
 Each instance creates a Deployment and Service named
-`hello-world-hello-world`. The Service listens on port 80 and targets container
-port 8080. Production routing uses `hello.world.scg.sh`; testing and preview
+`hello-world-fe`. The Service listens on port 80 and targets container port
+8080\. Production routing uses `hello.world.scg.sh`; testing and preview
 use the platform-generated hostnames. See the chart README for the complete
 naming and routing rules.
 

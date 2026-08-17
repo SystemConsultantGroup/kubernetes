@@ -1,4 +1,4 @@
-hello-world:
+fe:
   source:
     repository: https://github.com/nginx/docker-nginx-unprivileged.git
     revision: "c4edb2fc1a693a7bdae4ab2bbc1c7fe63622290f"

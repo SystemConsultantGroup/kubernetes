@@ -1,7 +1,7 @@
 # hello-world
 
 This directory is the repository's minimal public HTTP application example. It
-contains one workload named `hello-world`.
+contains one workload named `fe`.
 
 ## Files
 
@@ -11,21 +11,21 @@ contains one workload named `hello-world`.
   source commit and image digest.
 - [`instances/testing.yaml`](instances/testing.yaml) pins the testing instance
   to the same immutable build.
-- [`instances/preview/hello-world/1.yaml`](instances/preview/hello-world/1.yaml)
-  defines preview `1` using the same immutable build.
+- [`instances/preview/fe/1.yaml`](instances/preview/fe/1.yaml) defines preview
+  `1` using the same immutable build.
 
 The generated identities are:
 
 ```text
 hello-world-production
 hello-world-testing
-hello-world-preview-hello-world-1
+hello-world-preview-fe-1
 ```
 
 The first two names are the production and testing Argo CD Applications,
 Helm releases, and namespaces. The preview name is the corresponding preview
 identity. Each rendered instance creates a Deployment and Service named
-`hello-world-hello-world`.
+`hello-world-fe`.
 
 Use this directory as a minimal reference when adding a managed application.
 Replace the source revision and image digest with the pair produced by the
