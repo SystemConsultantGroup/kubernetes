@@ -8,7 +8,7 @@ Uses `SOPS_AGE_KEY_FILE` when set, or
 `${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt` by default. If the key is
 missing, creates its parent directory and generates the key with `age-keygen`.
 It then prints the derived recipient and any matching aliases from
-`secrets/recipients.yaml`.
+`secrets/state.yaml`.
 
 ## Usage
 

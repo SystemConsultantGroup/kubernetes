@@ -5,7 +5,7 @@ Manages SOPS-encrypted repository secrets and their age recipients.
 ## Description
 
 Dispatches commands for encrypted YAML files under `secrets/` and the recipient
-map in `secrets/recipients.yaml`. Secret editing and recipient changes
+map in `secrets/state.yaml`. Secret editing and recipient changes
 synchronize the generated root `.sops.yaml` with that map; `check` verifies the
 same relationship.
 

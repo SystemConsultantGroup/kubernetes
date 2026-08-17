@@ -4,7 +4,7 @@ Manages the age recipients used to encrypt repository secrets.
 
 ## Description
 
-Reads and updates the recipient map in `secrets/recipients.yaml`. Recipient
+Reads and updates the recipient map in `secrets/state.yaml`. Recipient
 changes regenerate the root `.sops.yaml` and rekey every encrypted secret file
 under `secrets/`.
 
@@ -18,7 +18,7 @@ k secrets recipients <command> [args...]
 
 - `state.yaml` must contain the values required by the `k` dispatcher.
 - `yq` and the required `age`/`sops` commands must be available.
-- `add`, `list`, and `remove` require `secrets/recipients.yaml`; `add` and
+- `add`, `list`, and `remove` require `secrets/state.yaml`; `add` and
   `remove` also require `.sops.yaml`.
 
 ## Subcommands

@@ -45,7 +45,7 @@ k secrets edit bootstrap
 k secrets edit talos
 ```
 
-`bootstrap` must contain `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`. The Cloudflare token needs Zone Read and DNS Edit access to `scg.sh`. Generate the reusable ZeroSSL EAB credentials in the [ZeroSSL developer console](https://app.zerossl.com/developer); its key ID is public configuration, while its HMAC key remains SOPS-encrypted. Recipient aliases are public in `secrets/recipients.yaml`; secret values remain SOPS-encrypted.
+`bootstrap` must contain `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`. The Cloudflare token needs Zone Read and DNS Edit access to `scg.sh`. Generate the reusable ZeroSSL EAB credentials in the [ZeroSSL developer console](https://app.zerossl.com/developer); its key ID is public configuration, while its HMAC key remains SOPS-encrypted. Recipient aliases are public in `secrets/state.yaml`; secret values remain SOPS-encrypted.
 
 ## Deployments
 

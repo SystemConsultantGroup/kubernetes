@@ -4,7 +4,7 @@ Lists configured age recipients and marks the local recipient when available.
 
 ## Description
 
-Reads recipients from `secrets/recipients.yaml`, sorts them by alias, and
+Reads recipients from `secrets/state.yaml`, sorts them by alias, and
 prints each alias with its age recipient. When the local key derives a matching
 recipient, the line ends with `(me)`.
 
@@ -17,7 +17,7 @@ k secrets recipients list
 ## Prerequisites
 
 - `state.yaml` must contain the values required by the `k` dispatcher.
-- `secrets/recipients.yaml` and `yq` must be available.
+- `secrets/state.yaml` and `yq` must be available.
 - If the local key file exists, `age-keygen` must be available to derive its recipient.
 
 ## Notes

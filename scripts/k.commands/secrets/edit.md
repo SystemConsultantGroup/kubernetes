@@ -6,8 +6,8 @@ Opens a named encrypted secret for editing with `sops`.
 
 The secret name maps to `secrets/<secret>.yaml` after validation. Names must
 use lowercase letters, digits, `.`, `_`, or `-`, must not start with `.`, and
-cannot be `recipients`. Before opening the file, the command synchronizes the
-root `.sops.yaml` from `secrets/recipients.yaml`.
+cannot be `state`. Before opening the file, the command synchronizes the
+root `.sops.yaml` from `secrets/state.yaml`.
 
 ## Usage
 
@@ -18,7 +18,7 @@ k secrets edit <secret>
 ## Prerequisites
 
 - `state.yaml` must contain the values required by the `k` dispatcher.
-- The selected `secrets/<secret>.yaml` and `secrets/recipients.yaml` must exist.
+- The selected `secrets/<secret>.yaml` and `secrets/state.yaml` must exist.
 - At least one encrypted secret YAML file and the `sops` and `yq` commands are required.
 
 ## Notes

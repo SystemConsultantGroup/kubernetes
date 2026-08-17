@@ -9,7 +9,7 @@ COMMAND_DIR="$SCRIPT_DIR/k.commands"
 PATCH_DIR="$ROOT_DIR/patches"
 SECRETS_DIR="$ROOT_DIR/secrets"
 STATE_FILE="$ROOT_DIR/state.yaml"
-RECIPIENTS_FILE="$SECRETS_DIR/recipients.yaml"
+RECIPIENTS_FILE="$SECRETS_DIR/state.yaml"
 SOPS_CONFIG_FILE="$ROOT_DIR/.sops.yaml"
 TALOS_SECRETS_FILE="$SECRETS_DIR/talos.yaml"
 BOOTSTRAP_SECRETS_FILE="$SECRETS_DIR/bootstrap.yaml"
@@ -119,7 +119,7 @@ secret_files() {
 
 secret_file() {
     local name="$1" file
-    if [[ "$name" == *[!a-z0-9._-]* || "$name" == .* || -z "$name" || "$name" == recipients ]]; then
+    if [[ "$name" == *[!a-z0-9._-]* || "$name" == .* || -z "$name" || "$name" == state ]]; then
         echo "Invalid secret name: $name" >&2
         return 2
     fi
@@ -179,7 +179,7 @@ rekey_secrets() {
     local backup file success=1
     backup="$(mktemp -d)"
     mkdir "$backup/secrets"
-    cp "$RECIPIENTS_FILE" "$backup/recipients.yaml"
+    cp "$RECIPIENTS_FILE" "$backup/state.yaml"
     cp "$SOPS_CONFIG_FILE" "$backup/.sops.yaml"
     while IFS= read -r file; do
         cp "$file" "$backup/secrets/"
@@ -198,7 +198,7 @@ rekey_secrets() {
         fi
     fi
 
-    cp "$backup/recipients.yaml" "$RECIPIENTS_FILE"
+    cp "$backup/state.yaml" "$RECIPIENTS_FILE"
     cp "$backup/.sops.yaml" "$SOPS_CONFIG_FILE"
     cp "$backup/secrets/"*.yaml "$SECRETS_DIR/"
     rm -rf "$backup"

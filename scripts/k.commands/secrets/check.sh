@@ -14,7 +14,7 @@ expected="$(mktemp)"
 trap 'rm -f "$expected"' EXIT
 write_sops_config "$expected"
 cmp -s "$expected" "$SOPS_CONFIG_FILE" || {
-    echo ".sops.yaml is out of sync with secrets/recipients.yaml" >&2
+    echo ".sops.yaml is out of sync with secrets/state.yaml" >&2
     return 1
 }
 
