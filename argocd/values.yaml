@@ -12,7 +12,7 @@ configs:
           id: github
           name: GitHub
           config:
-            clientID: Ov23liOiPk0ECCc9Wfgk # gitleaks:allow (OAuth client ID, not a secret)
+            clientID: Ov23liOiPk0ECCc9Wfgk
             clientSecret: $argocd-github-oauth:github.oauth.clientSecret
             orgs:
               - name: SystemConsultantGroup
