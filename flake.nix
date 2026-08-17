@@ -60,7 +60,6 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               age
-              #              bashInteractive
               cilium-cli
               glow
               kubectl
