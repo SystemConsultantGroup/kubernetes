@@ -35,12 +35,8 @@ applicationSet:
     parentRefs:
       - name: public
         namespace: gateway-system
-        sectionName: argocd-https
-      - name: public
-        namespace: gateway-system
         sectionName: platform-https
     hostnames:
-      - argocd.infra.scg.sh
       - argocd.platform.scg.sh
     rules:
       - matches:

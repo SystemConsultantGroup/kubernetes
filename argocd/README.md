@@ -39,9 +39,6 @@ Git polling remains enabled at 180 seconds as a fallback.
 Webhook delivery uses `application/json` and the encrypted
 `ARGOCD_GITHUB_WEBHOOK_SECRET` value.
 
-The platform wildcard is currently added alongside the existing
-`argocd.infra.scg.sh` hostname so the domain migration can be staged.
-
 ## Directory map
 
 - [`application-sets/`](application-sets/) discovers managed, preview, and
