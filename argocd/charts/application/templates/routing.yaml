@@ -1,7 +1,7 @@
 {{- $context := .Values._context -}}
 {{- $application := $context.application -}}
-{{- $releaseType := $context.release.type -}}
-{{- $previewWorkload := $context.release.workload | default "" -}}
+{{- $instanceType := $context.instance.type -}}
+{{- $previewWorkload := $context.instance.workload | default "" -}}
 {{- $workloads := omit .Values "_context" -}}
 {{- $allGroups := list -}}
 {{- range $owner, $workload := $workloads -}}
@@ -10,7 +10,7 @@
   {{- end -}}
 {{- end -}}
 
-{{- if eq $releaseType "production" -}}
+{{- if eq $instanceType "production" -}}
   {{- range $group := $allGroups -}}
     {{- $owner := $group.owner -}}
     {{- $http := $group.http -}}
@@ -92,7 +92,7 @@ spec:
 {{ end }}
 {{ end }}
 {{ end }}
-{{ else if eq $releaseType "testing" -}}
+{{ else if eq $instanceType "testing" -}}
   {{- if gt (len $allGroups) 0 -}}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -104,7 +104,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name | quote }}
     app.kubernetes.io/part-of: {{ $application | quote }}
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
-    platform.scg.sh/release: testing
+    platform.scg.sh/instance-type: testing
 spec:
   parentRefs:
     - name: public
@@ -115,7 +115,7 @@ spec:
   rules:
     {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" $allGroups) | nindent 4 }}
   {{- end }}
-{{- else if eq $releaseType "preview" -}}
+{{- else if eq $instanceType "preview" -}}
   {{- $previewGroups := list -}}
   {{- range $group := $allGroups -}}
     {{- $targetsPreview := false -}}
@@ -167,7 +167,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name | quote }}
     app.kubernetes.io/part-of: {{ $application | quote }}
     app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
-    platform.scg.sh/release: preview
+    platform.scg.sh/instance-type: preview
 spec:
   parentRefs:
     - name: public
@@ -182,7 +182,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: ReferenceGrant
 metadata:
-  name: {{ printf "%s-%s-%v" $application $previewWorkload $context.release.pullRequest | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s-%v" $application $previewWorkload $context.instance.pullRequest | trunc 63 | trimSuffix "-" }}
   namespace: {{ include "application.testingNamespace" $ }}
 spec:
   from:

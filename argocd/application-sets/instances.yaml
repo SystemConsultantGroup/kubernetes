@@ -1,0 +1,124 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-instances-static
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        revision: main
+        files:
+          - path: applications/*/instances/production.yaml
+          - path: applications/*/instances/testing.yaml
+  template:
+    metadata:
+      name: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: applications
+      sources:
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          path: argocd/charts/application
+          helm:
+            releaseName: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+            valueFiles:
+              - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
+              - '$values/{{ .path.path }}/{{ .path.filename }}'
+            values: |
+              _context:
+                application: '{{ index .path.segments 1 }}'
+                instance:
+                  type: '{{ trimSuffix ".yaml" .path.filename }}'
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'app-{{ trimSuffix ".yaml" .path.filename }}-{{ index .path.segments 1 }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            gateway.scg.sh/public: "true"
+            platform.scg.sh/application: '{{ index .path.segments 1 }}'
+            platform.scg.sh/instance-type: '{{ trimSuffix ".yaml" .path.filename }}'
+            pod-security.kubernetes.io/enforce: restricted
+            pod-security.kubernetes.io/enforce-version: latest
+        syncOptions:
+          - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-instances-dynamic
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        revision: main
+        files:
+          - path: applications/*/instances/preview/*/*.yaml
+  template:
+    metadata:
+      name: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: applications
+      sources:
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          path: argocd/charts/application
+          helm:
+            releaseName: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+            valueFiles:
+              - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
+            values: |
+              _context:
+                application: '{{ index .path.segments 1 }}'
+                instance:
+                  type: preview
+                  workload: '{{ index .path.segments 4 }}'
+                  pullRequest: {{ trimSuffix ".yaml" .path.filename }}
+              '{{ index .path.segments 4 }}':
+                source:
+                  repository: '{{ .source.repository }}'
+                  revision: '{{ .source.revision }}'
+                image: '{{ .image }}'
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'app-preview-{{ index .path.segments 1 }}-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            gateway.scg.sh/public: "true"
+            platform.scg.sh/application: '{{ index .path.segments 1 }}'
+            platform.scg.sh/instance-type: preview
+            pod-security.kubernetes.io/enforce: restricted
+            pod-security.kubernetes.io/enforce-version: latest
+        syncOptions:
+          - CreateNamespace=true

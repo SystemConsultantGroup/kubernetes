@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "SCG production or testing release",
+  "title": "SCG production or testing instance",
   "type": "object",
   "minProperties": 1,
   "propertyNames": {

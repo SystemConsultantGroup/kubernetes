@@ -122,10 +122,10 @@
     "context": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["application", "release"],
+      "required": ["application", "instance"],
       "properties": {
         "application": {"$ref": "#/$defs/workloadName"},
-        "release": {
+        "instance": {
           "type": "object",
           "additionalProperties": false,
           "required": ["type"],

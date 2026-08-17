@@ -3,8 +3,7 @@ kind: Kustomization
 resources:
   - projects/platform.yaml
   - projects/applications.yaml
-  - application-sets/releases.yaml
-  - application-sets/previews.yaml
+  - application-sets/instances.yaml
   - application-sets/kustomize.yaml
   - platform/argocd/application.yaml
   - platform/cert-manager/application.yaml

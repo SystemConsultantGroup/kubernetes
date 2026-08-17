@@ -38,7 +38,7 @@ spec:
           labels:
             gateway.scg.sh/public: "true"
             platform.scg.sh/application: '{{ index .path.segments 1 }}'
-            platform.scg.sh/release: custom
+            platform.scg.sh/instance-type: custom
             pod-security.kubernetes.io/enforce: restricted
             pod-security.kubernetes.io/enforce-version: latest
         syncOptions:

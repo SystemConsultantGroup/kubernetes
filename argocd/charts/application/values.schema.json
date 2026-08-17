@@ -2014,13 +2014,13 @@
       "additionalProperties": false,
       "required": [
         "application",
-        "release"
+        "instance"
       ],
       "properties": {
         "application": {
           "$ref": "#/$defs/workloadName"
         },
-        "release": {
+        "instance": {
           "type": "object",
           "additionalProperties": false,
           "required": [

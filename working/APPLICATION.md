@@ -4,7 +4,7 @@ Status: design draft. These schemas replace the previous contents of `working/` 
 
 ## Purpose
 
-The configuration repository records only runtime intent and immutable release state. It does not register source repositories, branches, or workflow ownership in application metadata.
+The configuration repository records only runtime intent and immutable instance state. It does not register source repositories, branches, or workflow ownership in application metadata.
 
 Application repository workflows decide which configuration path to propose changing. Acceptance and authorization remain responsibilities of the configuration repository's review and CI policy.
 
@@ -14,7 +14,7 @@ Application repository workflows decide which configuration path to propose chan
 | --- | --- |
 | `meta.schema.json` | Application workload and HTTP configuration |
 | `lock.schema.json` | One workload's immutable source/image pair; validates preview files directly |
-| `stable-release.schema.json` | Production or testing locks for every workload |
+| `stable-instance.schema.json` | Production or testing locks for every workload |
 | `types/kubernetes.schema.json` | Vendored Kubernetes types used by workload metadata |
 | `types/httprouterule.schema.json` | Vendored complete standard `HTTPRouteRule` |
 | `../argocd/charts/application/values.schema.json` | Generated schema for effective merged Helm values |
@@ -29,7 +29,7 @@ The standard Gateway API CRD channel is used. Features accepted by the API but u
 applications/
   <application>/
     meta.yaml
-    releases/
+    instances/
       production.yaml
       testing.yaml                     # optional
       preview/
@@ -45,12 +45,12 @@ Each `applications/<application>/` directory uses exactly one of two mutually ex
 
 ### Chart-managed application
 
-A conventional application contains `meta.yaml` and `releases/`:
+A conventional application contains `meta.yaml` and `instances/`:
 
 ```text
 applications/example/
   meta.yaml
-  releases/
+  instances/
     production.yaml
     testing.yaml
     preview/
@@ -58,7 +58,7 @@ applications/example/
         42.yaml
 ```
 
-Its release files are discovered by an ApplicationSet, and every generated Argo CD Application renders the central Helm chart. Metadata and release schemas, platform defaults, testing, and single-workload previews apply to this mode.
+Its instance files are discovered by an ApplicationSet, and every generated Argo CD Application renders the central Helm chart. Metadata and instance schemas, platform defaults, testing, and single-workload previews apply to this mode.
 
 ### Kustomize-managed application
 
@@ -70,7 +70,7 @@ applications/example/
   resources.yaml
 ```
 
-A separate ApplicationSet scans the exact one-level pattern `applications/*/kustomization.yaml` and points Argo CD directly at the containing directory. Nested Kustomizations are not independently discovered. The central metadata and release schemas do not apply, and the directory owns its manifest, image, and environment conventions.
+A separate ApplicationSet scans the exact one-level pattern `applications/*/kustomization.yaml` and points Argo CD directly at the containing directory. Nested Kustomizations are not independently discovered. The central metadata and instance schemas do not apply, and the directory owns its manifest, image, and environment conventions.
 
 Kustomize-managed applications initially represent one directly rendered Application. Testing and production overlay conventions will be added only when a real application demonstrates the requirement.
 
@@ -195,7 +195,7 @@ The chart supplies defaults only when fields are absent:
 - a redirect-only rule remains backendless;
 - explicit fields always win.
 
-For declared workload Service references with no explicit namespace, the renderer chooses the release namespace. Explicit namespaces and non-Service references are preserved and remain subject to Gateway API `ReferenceGrant`, admission, and controller policy.
+For declared workload Service references with no explicit namespace, the renderer chooses the instance namespace. Explicit namespaces and non-Service references are preserved and remain subject to Gateway API `ReferenceGrant`, admission, and controller policy.
 
 Because AppProjects cannot constrain nested HTTPRoute fields, arbitrary extension references, mirrors, and cross-namespace references require separate admission and `ReferenceGrant` controls.
 
@@ -216,7 +216,7 @@ The image is a fully qualified lowercase OCI reference pinned by a SHA-256 diges
 
 CI must verify that image provenance binds the digest to the declared repository and revision. The Helm chart can derive a provider-specific commit URL and add it as an Argo CD external link on each rendered Deployment.
 
-## Stable releases
+## Stable instances
 
 Production and testing files map every metadata workload to its lock:
 
@@ -234,14 +234,14 @@ be:
   image: ghcr.io/systemconsultantgroup/backend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 ```
 
-`production.yaml` is required. `testing.yaml` is optional. Cross-file validation requires each stable release's workload keys to equal the keys in `meta.yaml` exactly.
+`production.yaml` is required. `testing.yaml` is optional. Cross-file validation requires each stable instance's workload keys to equal the keys in `meta.yaml` exactly.
 
-## Preview releases
+## Preview instances
 
 A preview is inherently single-workload. Application, workload, and pull-request identity come from its path:
 
 ```text
-applications/example/releases/preview/fe/42.yaml
+applications/example/instances/preview/fe/42.yaml
 ```
 
 The file therefore contains only one lock and is validated directly by `lock.schema.json`:
@@ -261,20 +261,20 @@ A preview Application deploys only that workload. For every HTTP rule relevant t
 
 For example, an `fe` preview routes `/` to preview `fe` and `/api` to testing `be`. A `be` preview routes `/` to testing `fe` and `/api` to preview `be`.
 
-Cross-namespace testing backends require narrowly scoped Gateway API `ReferenceGrant` resources. A preview depending on sibling workloads requires a valid testing release for those workloads.
+Cross-namespace testing backends require narrowly scoped Gateway API `ReferenceGrant` resources. A preview depending on sibling workloads requires a valid testing instance for those workloads.
 
 Deleting the preview file removes its generated Argo CD Application and namespace.
 
 ## ApplicationSet and Helm flow
 
 ```text
-meta.yaml + one release file
+meta.yaml + one instance file
             |
             v
 ApplicationSet Git file generator
             |
             v
-one Argo CD Application per release file
+one Argo CD Application per instance file
             |
             v
 central Helm application chart
@@ -286,12 +286,12 @@ Deployment, optional Service, and optional HTTPRoute resources
 The ApplicationSets use these discovery patterns:
 
 ```text
-applications/*/releases/production.yaml
-applications/*/releases/testing.yaml
-applications/*/releases/preview/*/*.yaml
+applications/*/instances/production.yaml
+applications/*/instances/testing.yaml
+applications/*/instances/preview/*/*.yaml
 ```
 
-No generated global release index is required. Production and testing files produce one Application each; every preview file produces one Application.
+No generated global instance index is required. Production and testing files produce one Application each; every preview file produces one Application.
 
 The source schemas describe independent repository files. The chart's generated `values.schema.json` validates their effective merged values. The preview ApplicationSet carries path-derived identity and the single preview lock into those values without duplicating identity in the preview file.
 
@@ -300,9 +300,9 @@ The source schemas describe independent repository files. The chart's generated 
 JSON Schema validates individual files. CI must additionally reject:
 
 - duplicate YAML mapping keys before schema validation;
-- stable release workload sets that differ from metadata;
+- stable instance workload sets that differ from metadata;
 - preview workload paths that do not exist in metadata;
-- missing production releases;
+- missing production instances;
 - duplicate domains across the complete registry;
 - backend references to declared workloads that lack `http`;
 - conflicting rules after multiple production domains collapse onto one testing or preview hostname;

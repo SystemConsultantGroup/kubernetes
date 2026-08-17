@@ -1,5 +1,5 @@
 apiVersion: v2
 name: application
-description: Renders an SCG application release from metadata and immutable workload locks
+description: Renders an SCG application instance from metadata and immutable workload locks
 type: application
 version: 0.1.0

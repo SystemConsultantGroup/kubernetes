@@ -1,20 +1,20 @@
 {{- $context := required "_context is required" .Values._context -}}
 {{- $application := required "_context.application is required" $context.application -}}
-{{- $release := required "_context.release is required" $context.release -}}
-{{- $releaseType := required "_context.release.type is required" $release.type -}}
+{{- $instance := required "_context.instance is required" $context.instance -}}
+{{- $instanceType := required "_context.instance.type is required" $instance.type -}}
 {{- $workloads := omit .Values "_context" -}}
 {{- if eq (len $workloads) 0 -}}
   {{- fail "at least one workload is required" -}}
 {{- end -}}
-{{- if eq $releaseType "preview" -}}
-  {{- $previewWorkload := required "preview release workload is required" $release.workload -}}
+{{- if eq $instanceType "preview" -}}
+  {{- $previewWorkload := required "preview instance workload is required" $instance.workload -}}
   {{- if not (hasKey $workloads $previewWorkload) -}}
     {{- fail (printf "preview workload %q does not exist" $previewWorkload) -}}
   {{- end -}}
 {{- end -}}
 
 {{- range $name, $workload := $workloads -}}
-  {{- $render := or (ne $releaseType "preview") (eq $name $release.workload) -}}
+  {{- $render := or (ne $instanceType "preview") (eq $name $instance.workload) -}}
   {{- if $render -}}
     {{- $source := required (printf "workload %q has no source lock" $name) $workload.source -}}
     {{- $image := required (printf "workload %q has no image lock" $name) $workload.image -}}
@@ -32,7 +32,7 @@ metadata:
     link.argocd.argoproj.io/source: {{ printf "%s/commit/%s" (trimSuffix ".git" $source.repository) $source.revision | quote }}
     {{- end }}
 spec:
-  replicas: {{ ternary 1 ($workload.replicas | default 1) (eq $releaseType "preview") }}
+  replicas: {{ ternary 1 ($workload.replicas | default 1) (eq $instanceType "preview") }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ $name | quote }}

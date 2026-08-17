@@ -3,7 +3,7 @@ app.kubernetes.io/name: {{ .workload | quote }}
 app.kubernetes.io/instance: {{ .root.Release.Name | quote }}
 app.kubernetes.io/part-of: {{ .root.Values._context.application | quote }}
 app.kubernetes.io/managed-by: {{ .root.Release.Service | quote }}
-platform.scg.sh/release: {{ .root.Values._context.release.type | quote }}
+platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{- end }}
 
 {{- define "application.testingNamespace" -}}
@@ -11,7 +11,7 @@ platform.scg.sh/release: {{ .root.Values._context.release.type | quote }}
 {{- end }}
 
 {{- define "application.previewHostname" -}}
-{{- printf "%s-%s-%v.preview.scg.sh" .Values._context.application .Values._context.release.workload .Values._context.release.pullRequest -}}
+{{- printf "%s-%s-%v.preview.scg.sh" .Values._context.application .Values._context.instance.workload .Values._context.instance.pullRequest -}}
 {{- end }}
 
 {{- define "application.testingHostname" -}}
@@ -31,8 +31,8 @@ platform.scg.sh/release: {{ .root.Values._context.release.type | quote }}
 {{- define "application.rules" -}}
 {{- $root := .root -}}
 {{- $workloads := .workloads -}}
-{{- $releaseType := $root.Values._context.release.type -}}
-{{- $previewWorkload := $root.Values._context.release.workload | default "" -}}
+{{- $instanceType := $root.Values._context.instance.type -}}
+{{- $previewWorkload := $root.Values._context.instance.workload | default "" -}}
 {{- $testingNamespace := include "application.testingNamespace" $root -}}
 {{- range $group := .groups -}}
   {{- $owner := $group.owner -}}
@@ -58,7 +58,7 @@ platform.scg.sh/release: {{ .root.Values._context.release.type | quote }}
           {{- if not (hasKey $backend "port") -}}
             {{- $_ := set $backend "port" 80 -}}
           {{- end -}}
-          {{- if and (eq $releaseType "preview") (ne $name $previewWorkload) -}}
+          {{- if and (eq $instanceType "preview") (ne $name $previewWorkload) -}}
             {{- $_ := set $backend "namespace" $testingNamespace -}}
           {{- end -}}
         {{- end -}}
