@@ -1,6 +1,6 @@
 # Enable workloads on control plane per https://docs.siderolabs.com/talos/v1.13/deploy-and-manage-workloads/workloads-on-controlplane
 machine:
-    nodeLabels:
-        node.kubernetes.io/exclude-from-external-load-balancers: ""
+  nodeLabels:
+    node.kubernetes.io/exclude-from-external-load-balancers: ""
 cluster:
-    allowSchedulingOnControlPlanes: true
+  allowSchedulingOnControlPlanes: true

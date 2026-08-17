@@ -18,20 +18,20 @@ export KUBECONFIG="$ROOT_DIR/kubeconfig"
 cd "$ROOT_DIR"
 
 state_value() {
-    local value
-    if ! value="$(yq -r "$1" "$STATE_FILE" 2>/dev/null)" || [[ -z "$value" || "$value" == null ]]; then
-        echo "Missing or invalid state value: $1" >&2
-        return 1
-    fi
-    printf '%s\n' "$value"
+  local value
+  if ! value="$(yq -r "$1" "$STATE_FILE" 2>/dev/null)" || [[ -z $value || $value == null ]]; then
+    echo "Missing or invalid state value: $1" >&2
+    return 1
+  fi
+  printf '%s\n' "$value"
 }
 
 CLUSTER_NAME="$(state_value '.name')"
 TALOS_SCHEMATIC="$(state_value '.talos.schematic')"
 TALOS_VERSION="$(state_value '.talos.version')"
-[[ "$TALOS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-    echo "Invalid Talos version in state.yaml: $TALOS_VERSION" >&2
-    exit 1
+[[ $TALOS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+  echo "Invalid Talos version in state.yaml: $TALOS_VERSION" >&2
+  exit 1
 }
 TALOS_VERSION="v$TALOS_VERSION"
 KUBERNETES_VERSION="$(state_value '.kubernetes.version')"
@@ -47,331 +47,340 @@ mapfile -t NODES <<<"$NODES_STATE"
 unset NODES_STATE
 
 require_file() {
-    if [[ ! -f "$1" ]]; then
-        echo "Missing required file: ${1#"$ROOT_DIR/"}" >&2
-        return 1
-    fi
+  if [[ ! -f $1 ]]; then
+    echo "Missing required file: ${1#"$ROOT_DIR/"}" >&2
+    return 1
+  fi
 }
 
 require_no_args() {
-    local usage="$1"
-    shift
-    if (($#)); then
-        echo "Usage: $usage" >&2
-        return 2
-    fi
+  local usage="$1"
+  shift
+  if (($#)); then
+    echo "Usage: $usage" >&2
+    return 2
+  fi
 }
 
 require_optional_yes() {
-    local usage="$1"
-    shift
-    if (($# > 1)) || (($# == 1)) && [[ "$1" != --yes ]]; then
-        echo "Usage: $usage" >&2
-        return 2
-    fi
+  local usage="$1"
+  shift
+  if (($# > 1)) || (($# == 1)) && [[ $1 != --yes ]]; then
+    echo "Usage: $usage" >&2
+    return 2
+  fi
 }
 
 confirm_action() {
-    local usage="$1" prompt="$2" answer
-    shift 2
-    require_optional_yes "$usage" "$@"
-    [[ "${1:-}" != --yes ]] || return 0
-    printf '%s [y/N] ' "$prompt"
-    if ! read -r answer || [[ ! "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-        echo "Cancelled"
-        return 1
-    fi
+  local usage="$1" prompt="$2" answer
+  shift 2
+  require_optional_yes "$usage" "$@"
+  [[ ${1:-} != --yes ]] || return 0
+  printf '%s [y/N] ' "$prompt"
+  if ! read -r answer || [[ ! $answer =~ ^[Yy]([Ee][Ss])?$ ]]; then
+    echo "Cancelled"
+    return 1
+  fi
 }
 
 resolve_node() {
-    local requested="$1" node
-    for node in "${NODES[@]}"; do
-        if [[ "${node%%:*}" == "$requested" ]]; then
-            printf '%s\n' "${node#*:}"
-            return
-        fi
-    done
-    echo "Unknown node: $requested" >&2
-    return 2
+  local requested="$1" node
+  for node in "${NODES[@]}"; do
+    if [[ ${node%%:*} == "$requested" ]]; then
+      printf '%s\n' "${node#*:}"
+      return
+    fi
+  done
+  echo "Unknown node: $requested" >&2
+  return 2
 }
 
 age_key_file() {
-    if [[ -n "${SOPS_AGE_KEY_FILE:-}" ]]; then
-        printf '%s\n' "$SOPS_AGE_KEY_FILE"
-    else
-        printf '%s/sops/age/keys.txt\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
-    fi
+  if [[ -n ${SOPS_AGE_KEY_FILE:-} ]]; then
+    printf '%s\n' "$SOPS_AGE_KEY_FILE"
+  else
+    printf '%s/sops/age/keys.txt\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
+  fi
 }
 
 local_age_recipient() {
-    local key_file
-    key_file="$(age_key_file)"
-    require_file "$key_file"
-    age-keygen -y "$key_file"
+  local key_file
+  key_file="$(age_key_file)"
+  require_file "$key_file"
+  age-keygen -y "$key_file"
 }
 
 secret_files() {
-    local file
-    for file in "$SECRETS_DIR"/*.yaml; do
-        [[ -f "$file" && "$file" != "$RECIPIENTS_FILE" ]] && printf '%s\n' "$file"
-    done
+  local file
+  for file in "$SECRETS_DIR"/*.yaml; do
+    [[ -f $file && $file != "$RECIPIENTS_FILE" ]] && printf '%s\n' "$file"
+  done
 }
 
 secret_file() {
-    local name="$1" file
-    if [[ "$name" == *[!a-z0-9._-]* || "$name" == .* || -z "$name" || "$name" == state ]]; then
-        echo "Invalid secret name: $name" >&2
-        return 2
-    fi
-    file="$SECRETS_DIR/$name.yaml"
-    require_file "$file"
-    printf '%s\n' "$file"
+  local name="$1" file
+  if [[ $name == *[!a-z0-9._-]* || $name == .* || -z $name || $name == state ]]; then
+    echo "Invalid secret name: $name" >&2
+    return 2
+  fi
+  file="$SECRETS_DIR/$name.yaml"
+  require_file "$file"
+  printf '%s\n' "$file"
 }
 
 write_sops_config() {
-    local output="$1" file name pattern recipient
-    local -a names=()
-    require_file "$RECIPIENTS_FILE"
+  local output="$1" file name pattern recipient
+  local -a names=()
+  require_file "$RECIPIENTS_FILE"
 
-    while IFS= read -r file; do
-        name="$(basename "$file" .yaml)"
-        [[ "$name" =~ ^[a-z0-9][a-z0-9._-]*$ ]] || {
-            echo "Invalid secret filename: $file" >&2
-            return 1
-        }
-        names+=("${name//./\\.}")
-    done < <(secret_files)
-    ((${#names[@]})) || { echo "No encrypted secret files found" >&2; return 1; }
-    pattern="$(IFS='|'; echo "${names[*]}")"
-
-    {
-        echo "# Generated by k secrets; edit recipients with k secrets recipients."
-        echo "creation_rules:"
-        printf '  - path_regex: ^secrets/(%s)\\.yaml$\n' "$pattern"
-        echo "    age:"
-        while IFS= read -r recipient; do
-            [[ -n "$recipient" ]] && printf '      - %s\n' "$recipient"
-        done < <(yq -r '.recipients | to_entries | sort_by(.key) | .[].value' "$RECIPIENTS_FILE")
-    } >"$output"
-    grep -q '^      - age1' "$output" || {
-        rm -f "$output"
-        echo "No recipients configured" >&2
-        return 1
+  while IFS= read -r file; do
+    name="$(basename "$file" .yaml)"
+    [[ $name =~ ^[a-z0-9][a-z0-9._-]*$ ]] || {
+      echo "Invalid secret filename: $file" >&2
+      return 1
     }
+    names+=("${name//./\\.}")
+  done < <(secret_files)
+  ((${#names[@]})) || {
+    echo "No encrypted secret files found" >&2
+    return 1
+  }
+  pattern="$(
+    IFS='|'
+    echo "${names[*]}"
+  )"
+
+  {
+    echo "# Generated by k secrets; edit recipients with k secrets recipients."
+    echo "creation_rules:"
+    printf '  - path_regex: ^secrets/(%s)\\.yaml$\n' "$pattern"
+    echo "    age:"
+    while IFS= read -r recipient; do
+      [[ -n $recipient ]] && printf '      - %s\n' "$recipient"
+    done < <(yq -r '.recipients | to_entries | sort_by(.key) | .[].value' "$RECIPIENTS_FILE")
+  } >"$output"
+  grep -q '^      - age1' "$output" || {
+    rm -f "$output"
+    echo "No recipients configured" >&2
+    return 1
+  }
 }
 
 sync_sops_config() {
-    local generated
-    generated="$(mktemp "$ROOT_DIR/.sops.XXXXXX")"
-    if ! write_sops_config "$generated"; then
-        rm -f "$generated"
-        return 1
-    fi
-    chmod 644 "$generated"
-    if cmp -s "$generated" "$SOPS_CONFIG_FILE"; then
-        rm -f "$generated"
-    else
-        mv "$generated" "$SOPS_CONFIG_FILE"
-    fi
+  local generated
+  generated="$(mktemp "$ROOT_DIR/.sops.XXXXXX")"
+  if ! write_sops_config "$generated"; then
+    rm -f "$generated"
+    return 1
+  fi
+  chmod 644 "$generated"
+  if cmp -s "$generated" "$SOPS_CONFIG_FILE"; then
+    rm -f "$generated"
+  else
+    mv "$generated" "$SOPS_CONFIG_FILE"
+  fi
 }
 
 rekey_secrets() {
-    local backup file success=1
-    backup="$(mktemp -d)"
-    mkdir "$backup/secrets"
-    cp "$RECIPIENTS_FILE" "$backup/state.yaml"
-    cp "$SOPS_CONFIG_FILE" "$backup/.sops.yaml"
+  local backup file success=1
+  backup="$(mktemp -d)"
+  mkdir "$backup/secrets"
+  cp "$RECIPIENTS_FILE" "$backup/state.yaml"
+  cp "$SOPS_CONFIG_FILE" "$backup/.sops.yaml"
+  while IFS= read -r file; do
+    cp "$file" "$backup/secrets/"
+  done < <(secret_files)
+
+  if "$@" && sync_sops_config; then
     while IFS= read -r file; do
-        cp "$file" "$backup/secrets/"
+      if ! sops updatekeys --yes "$file"; then
+        success=0
+        break
+      fi
     done < <(secret_files)
-
-    if "$@" && sync_sops_config; then
-        while IFS= read -r file; do
-            if ! sops updatekeys --yes "$file"; then
-                success=0
-                break
-            fi
-        done < <(secret_files)
-        if ((success)); then
-            rm -rf "$backup"
-            return
-        fi
+    if ((success)); then
+      rm -rf "$backup"
+      return
     fi
+  fi
 
-    cp "$backup/state.yaml" "$RECIPIENTS_FILE"
-    cp "$backup/.sops.yaml" "$SOPS_CONFIG_FILE"
-    cp "$backup/secrets/"*.yaml "$SECRETS_DIR/"
-    rm -rf "$backup"
-    echo "Recipient update failed; restored previous files" >&2
-    return 1
+  cp "$backup/state.yaml" "$RECIPIENTS_FILE"
+  cp "$backup/.sops.yaml" "$SOPS_CONFIG_FILE"
+  cp "$backup/secrets/"*.yaml "$SECRETS_DIR/"
+  rm -rf "$backup"
+  echo "Recipient update failed; restored previous files" >&2
+  return 1
 }
 
 decrypt_talos_secrets() {
-    local output
-    require_file "$TALOS_SECRETS_FILE"
-    output="$(mktemp)"
-    if ! sops decrypt --output "$output" "$TALOS_SECRETS_FILE"; then
-        rm -f "$output"
-        return 1
-    fi
-    printf '%s\n' "$output"
+  local output
+  require_file "$TALOS_SECRETS_FILE"
+  output="$(mktemp)"
+  if ! sops decrypt --output "$output" "$TALOS_SECRETS_FILE"; then
+    rm -f "$output"
+    return 1
+  fi
+  printf '%s\n' "$output"
 }
 
 read_bootstrap_secret() {
-    local name="$1"
-    case "$name" in
-        ARGOCD_GITHUB_OAUTH_CLIENT_SECRET|CLOUDFLARE_API_TOKEN|ZEROSSL_EAB_HMAC_KEY) ;;
-        *) echo "Unknown bootstrap secret: $name" >&2; return 2 ;;
-    esac
-    require_file "$BOOTSTRAP_SECRETS_FILE"
-    sops decrypt --extract "[\"$name\"]" "$BOOTSTRAP_SECRETS_FILE"
+  local name="$1"
+  case "$name" in
+  ARGOCD_GITHUB_OAUTH_CLIENT_SECRET | CLOUDFLARE_API_TOKEN | ZEROSSL_EAB_HMAC_KEY) ;;
+  *)
+    echo "Unknown bootstrap secret: $name" >&2
+    return 2
+    ;;
+  esac
+  require_file "$BOOTSTRAP_SECRETS_FILE"
+  sops decrypt --extract "[\"$name\"]" "$BOOTSTRAP_SECRETS_FILE"
 }
 
 require_bootstrap_secrets() {
-    local name value
-    for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET CLOUDFLARE_API_TOKEN ZEROSSL_EAB_HMAC_KEY; do
-        value="$(read_bootstrap_secret "$name")"
-        [[ -n "$value" && "$value" != REPLACE_ME ]] || {
-            echo "Set $name with: k secrets edit bootstrap" >&2
-            return 1
-        }
-    done
+  local name value
+  for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET CLOUDFLARE_API_TOKEN ZEROSSL_EAB_HMAC_KEY; do
+    value="$(read_bootstrap_secret "$name")"
+    [[ -n $value && $value != REPLACE_ME ]] || {
+      echo "Set $name with: k secrets edit bootstrap" >&2
+      return 1
+    }
+  done
 }
 
 validate_talos_inputs() {
-    local node node_name node_ip
-    require_file "$TALOS_SECRETS_FILE"
-    require_file "$PATCH_DIR/worker.yaml"
-    require_file "$PATCH_DIR/cilium.yaml"
-    for node in "${NODES[@]}"; do
-        node_name="${node%%:*}"
-        node_ip="${node#*:}"
-        [[ "$node_name" =~ ^[a-z0-9][a-z0-9-]*$ && "$node_ip" != null && "$node_ip" != REPLACE_* && "$node_ip" != *[[:space:]]* ]] || {
-            echo "Invalid node in state.yaml: $node" >&2
-            return 1
-        }
-        require_file "$PATCH_DIR/$node_name.yaml"
-    done
+  local node node_name node_ip
+  require_file "$TALOS_SECRETS_FILE"
+  require_file "$PATCH_DIR/worker.yaml"
+  require_file "$PATCH_DIR/cilium.yaml"
+  for node in "${NODES[@]}"; do
+    node_name="${node%%:*}"
+    node_ip="${node#*:}"
+    [[ $node_name =~ ^[a-z0-9][a-z0-9-]*$ && $node_ip != null && $node_ip != REPLACE_* && $node_ip != *[[:space:]]* ]] || {
+      echo "Invalid node in state.yaml: $node" >&2
+      return 1
+    }
+    require_file "$PATCH_DIR/$node_name.yaml"
+  done
 }
 
 summary_of() {
-    local file="$1"
-    [[ -f "$file" ]] || return 0
-    awk 'NR > 1 && !/^#/ && NF { print; exit }' "$file"
+  local file="$1"
+  [[ -f $file ]] || return 0
+  awk 'NR > 1 && !/^#/ && NF { print; exit }' "$file"
 }
 
 usage_for() {
-    local directory="$1" prefix="$2" path name summary found=0
-    printf 'Usage: %s <command> [args...]\n\nCommands:\n' "$prefix"
-    for path in "$directory"/*.sh; do
-        [[ -f "$path" ]] || continue
-        name="$(basename "$path" .sh)"
-        summary="$(summary_of "${path%.sh}.md")"
-        if [[ -n "$summary" ]]; then
-            printf '  %-24s %s\n' "$name" "$summary"
-        else
-            printf '  %s\n' "$name"
-        fi
-        found=1
-    done
-    ((found)) || echo "  (none)"
+  local directory="$1" prefix="$2" path name summary found=0
+  printf 'Usage: %s <command> [args...]\n\nCommands:\n' "$prefix"
+  for path in "$directory"/*.sh; do
+    [[ -f $path ]] || continue
+    name="$(basename "$path" .sh)"
+    summary="$(summary_of "${path%.sh}.md")"
+    if [[ -n $summary ]]; then
+      printf '  %-24s %s\n' "$name" "$summary"
+    else
+      printf '  %s\n' "$name"
+    fi
+    found=1
+  done
+  ((found)) || echo "  (none)"
 }
 
 show_doc() {
-    local doc="$1"
-    [[ -f "$doc" ]] || return 0
-    if command -v glow >/dev/null 2>&1 && [[ -t 1 ]]; then
-        glow "$doc"
-    else
-        md_style "$doc"
-    fi
+  local doc="$1"
+  [[ -f $doc ]] || return 0
+  if command -v glow >/dev/null 2>&1 && [[ -t 1 ]]; then
+    glow "$doc"
+  else
+    md_style "$doc"
+  fi
 }
 
 # Minimal ANSI markdown renderer: strips ATX heading markers (glow leaves
 # raw '#' when stdout is not a TTY) and dims code blocks.
 md_style() {
-    local in_code=0 line
-    while IFS= read -r line; do
-        if [[ "$line" == '```'* ]]; then
-            in_code=$((1 - in_code))
-            printf '\n'
-            continue
-        fi
-        if ((in_code)); then
-            printf '\033[2m%s\033[0m\n' "$line"
-        elif [[ "$line" =~ ^#{1,6}[[:space:]]+(.*)$ ]]; then
-            printf '\033[1;4m%s\033[0m\n' "${BASH_REMATCH[1]}"
-        elif [[ "$line" =~ ^[[:space:]]*[-*][[:space:]]+(.*)$ ]]; then
-            printf '  \033[1m\xE2\x80\xA2\033[0m %s\n' "${BASH_REMATCH[1]}"
-        else
-            printf '%s\n' "$line"
-        fi
-    done < "$1"
+  local in_code=0 line
+  while IFS= read -r line; do
+    if [[ $line == '```'* ]]; then
+      in_code=$((1 - in_code))
+      printf '\n'
+      continue
+    fi
+    if ((in_code)); then
+      printf '\033[2m%s\033[0m\n' "$line"
+    elif [[ $line =~ ^#{1,6}[[:space:]]+(.*)$ ]]; then
+      printf '\033[1;4m%s\033[0m\n' "${BASH_REMATCH[1]}"
+    elif [[ $line =~ ^[[:space:]]*[-*][[:space:]]+(.*)$ ]]; then
+      printf '  \033[1m\xE2\x80\xA2\033[0m %s\n' "${BASH_REMATCH[1]}"
+    else
+      printf '%s\n' "$line"
+    fi
+  done <"$1"
 }
 
 run_from() (
-    local directory="$1" prefix="$2"
-    shift 2
+  local directory="$1" prefix="$2"
+  shift 2
 
-    if (($# == 0)); then
-        usage_for "$directory" "$prefix"
-        return 2
+  if (($# == 0)); then
+    usage_for "$directory" "$prefix"
+    return 2
+  fi
+
+  local command="$1"
+  shift
+  case "$command" in
+  help)
+    if (($#)); then
+      run_from "$directory" "$prefix" "$@" --help
+    else
+      usage_for "$directory" "$prefix"
     fi
-
-    local command="$1"
-    shift
-    case "$command" in
-        help)
-            if (($#)); then
-                run_from "$directory" "$prefix" "$@" --help
-            else
-                usage_for "$directory" "$prefix"
-            fi
-            return
-            ;;
-        -h|--help)
-            if [[ -f "$directory.md" ]]; then
-                show_doc "$directory.md"
-            else
-                usage_for "$directory" "$prefix"
-            fi
-            return
-            ;;
-        *[!a-z0-9-]*|'')
-            echo "Invalid command: $command" >&2
-            return 2
-            ;;
-    esac
-
-    # Keep the old singular spelling working while presenting the natural plural command.
-    [[ "$directory" != "$COMMAND_DIR/secrets" || "$command" != recipient ]] || command=recipients
-
-    local script="$directory/$command.sh"
-    if [[ ! -f "$script" ]]; then
-        echo "Unknown command: $prefix $command" >&2
-        usage_for "$directory" "$prefix" >&2
-        return 2
+    return
+    ;;
+  -h | --help)
+    if [[ -f "$directory.md" ]]; then
+      show_doc "$directory.md"
+    else
+      usage_for "$directory" "$prefix"
     fi
-    if [[ "${1:-}" == -h || "${1:-}" == --help ]] && [[ ! -d "$directory/$command" ]]; then
-        if [[ -f "${script%.sh}.md" ]]; then
-            show_doc "${script%.sh}.md"
-        else
-            echo "Usage: $prefix $command [args...]"
-        fi
-        return
-    fi
+    return
+    ;;
+  *[!a-z0-9-]* | '')
+    echo "Invalid command: $command" >&2
+    return 2
+    ;;
+  esac
 
-    source "$script" "$@"
+  # Keep the old singular spelling working while presenting the natural plural command.
+  [[ $directory != "$COMMAND_DIR/secrets" || $command != recipient ]] || command=recipients
+
+  local script="$directory/$command.sh"
+  if [[ ! -f $script ]]; then
+    echo "Unknown command: $prefix $command" >&2
+    usage_for "$directory" "$prefix" >&2
+    return 2
+  fi
+  if [[ ${1:-} == -h || ${1:-} == --help ]] && [[ ! -d "$directory/$command" ]]; then
+    if [[ -f "${script%.sh}.md" ]]; then
+      show_doc "${script%.sh}.md"
+    else
+      echo "Usage: $prefix $command [args...]"
+    fi
+    return
+  fi
+
+  source "$script" "$@"
 )
 
 run() {
-    run_from "$COMMAND_DIR" k "$@"
+  run_from "$COMMAND_DIR" k "$@"
 }
 
 run_group() {
-    local group="$1"
-    shift
-    run_from "$COMMAND_DIR/$group" "k $group" "$@"
+  local group="$1"
+  shift
+  run_from "$COMMAND_DIR/$group" "k $group" "$@"
 }
 
 run "$@"

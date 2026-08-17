@@ -1,7 +1,7 @@
 # Cilium prerequisites per https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium#machine-configuration-prerequisites
 cluster:
-    network:
-        cni:
-            name: none
-    proxy:
-        disabled: true
+  network:
+    cni:
+      name: none
+  proxy:
+    disabled: true

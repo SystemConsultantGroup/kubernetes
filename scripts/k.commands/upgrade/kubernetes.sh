@@ -1,9 +1,9 @@
 require_optional_yes "k upgrade kubernetes [--yes]" "$@"
 
 current="$(kubectl version -o json | yq -p=json -r '.serverVersion.gitVersion')"
-if [[ "${current#v}" == "$KUBERNETES_VERSION" ]]; then
-    echo "Kubernetes already runs $current"
-    return
+if [[ ${current#v} == "$KUBERNETES_VERSION" ]]; then
+  echo "Kubernetes already runs $current"
+  return
 fi
 
 talosctl upgrade-k8s --nodes "$MAIN_IP" --to "$KUBERNETES_VERSION" --dry-run

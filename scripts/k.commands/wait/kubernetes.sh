@@ -1,6 +1,6 @@
 if (($# > 1)); then
-    echo "Usage: k wait kubernetes [component]" >&2
-    return 2
+  echo "Usage: k wait kubernetes [component]" >&2
+  return 2
 fi
 
 component="${1:-Kubernetes}"

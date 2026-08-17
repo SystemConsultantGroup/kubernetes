@@ -1,8 +1,8 @@
 # Engineering 2 Server node specific patches
 machine:
-    install:
-        diskSelector:
-            wwid: REPLACE_WITH_E2S_SYSTEM_DISK_WWID
+  install:
+    diskSelector:
+      wwid: REPLACE_WITH_E2S_SYSTEM_DISK_WWID
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig

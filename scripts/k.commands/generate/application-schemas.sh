@@ -1,25 +1,25 @@
-if (($# > 1)) || (($# == 1)) && [[ "$1" != --check ]]; then
-    echo "Usage: k generate application-schemas [--check]" >&2
-    return 2
+if (($# > 1)) || (($# == 1)) && [[ $1 != --check ]]; then
+  echo "Usage: k generate application-schemas [--check]" >&2
+  return 2
 fi
 
 check=0
-[[ "${1:-}" != --check ]] || check=1
+[[ ${1:-} != --check ]] || check=1
 
 generate_application_schemas() (
-    set -euo pipefail
+  set -euo pipefail
 
-    local tmp kubernetes_url gateway_url
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
+  local tmp kubernetes_url gateway_url
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
 
-    kubernetes_url="https://raw.githubusercontent.com/kubernetes/kubernetes/v$KUBERNETES_VERSION/api/openapi-spec/swagger.json"
-    gateway_url="https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v$GATEWAY_API_VERSION/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml"
+  kubernetes_url="https://raw.githubusercontent.com/kubernetes/kubernetes/v$KUBERNETES_VERSION/api/openapi-spec/swagger.json"
+  gateway_url="https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v$GATEWAY_API_VERSION/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml"
 
-    curl -fsSL "$kubernetes_url" -o "$tmp/kubernetes.json"
-    curl -fsSL "$gateway_url" -o "$tmp/httproute.yaml"
+  curl -fsSL "$kubernetes_url" -o "$tmp/kubernetes.json"
+  curl -fsSL "$gateway_url" -o "$tmp/httproute.yaml"
 
-    jq --argjson roots '[
+  jq --argjson roots '[
             "io.k8s.api.core.v1.EnvVar",
             "io.k8s.api.core.v1.EnvFromSource",
             "io.k8s.api.core.v1.ResourceRequirements",
@@ -76,12 +76,12 @@ generate_application_schemas() (
           }
     ' "$tmp/kubernetes.json" >"$tmp/kubernetes-definitions.json"
 
-    yq -o=json '
+  yq -o=json '
         .spec.versions[]
         | select(.name == "v1")
         | .schema.openAPIV3Schema.properties.spec.properties.rules.items
-    ' "$tmp/httproute.yaml" \
-        | jq '
+    ' "$tmp/httproute.yaml" |
+    jq '
             def normalize:
                 walk(
                     if type == "object" then
@@ -102,10 +102,10 @@ generate_application_schemas() (
               end
         ' >"$tmp/httprouterule.json"
 
-    jq -n \
-        --arg version "$KUBERNETES_VERSION" \
-        --arg source "$kubernetes_url" \
-        --slurpfile definitions "$tmp/kubernetes-definitions.json" '
+  jq -n \
+    --arg version "$KUBERNETES_VERSION" \
+    --arg source "$kubernetes_url" \
+    --slurpfile definitions "$tmp/kubernetes-definitions.json" '
         {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "title": ("Selected Kubernetes v" + $version + " API types"),
@@ -114,9 +114,9 @@ generate_application_schemas() (
         }
     ' >"$tmp/kubernetes.schema.json"
 
-    jq \
-        --arg version "$GATEWAY_API_VERSION" \
-        --arg source "$gateway_url" '
+  jq \
+    --arg version "$GATEWAY_API_VERSION" \
+    --arg source "$gateway_url" '
         {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "title": ("Gateway API v" + $version + " HTTPRouteRule"),
@@ -124,11 +124,11 @@ generate_application_schemas() (
         } + .
     ' "$tmp/httprouterule.json" >"$tmp/httprouterule.schema.json"
 
-    jq \
-        --arg kubernetes "$KUBERNETES_VERSION" \
-        --arg gateway "$GATEWAY_API_VERSION" \
-        --slurpfile definitions "$tmp/kubernetes-definitions.json" \
-        --slurpfile rule "$tmp/httprouterule.json" '
+  jq \
+    --arg kubernetes "$KUBERNETES_VERSION" \
+    --arg gateway "$GATEWAY_API_VERSION" \
+    --slurpfile definitions "$tmp/kubernetes-definitions.json" \
+    --slurpfile rule "$tmp/httprouterule.json" '
         def embedded_refs:
             walk(
                 if type == "object"
@@ -146,27 +146,27 @@ generate_application_schemas() (
         | .["$defs"].kubernetesDefinitions = ($definitions[0] | embedded_refs)
         | .["$defs"].httpRouteRule = $rule[0]
     ' "$ROOT_DIR/argocd/charts/application/values.schema.source.json" \
-        >"$tmp/values.schema.json"
+    >"$tmp/values.schema.json"
 
-    write_generated() {
-        local source="$1" destination="$2"
-        if [[ -f "$destination" ]] && cmp -s "$source" "$destination"; then
-            return
-        fi
-        if ((check)); then
-            echo "Stale generated schema: ${destination#"$ROOT_DIR/"}" >&2
-            return 1
-        fi
-        mkdir -p "$(dirname "$destination")"
-        cp "$source" "$destination"
-        echo "Generated ${destination#"$ROOT_DIR/"}"
-    }
+  write_generated() {
+    local source="$1" destination="$2"
+    if [[ -f $destination ]] && cmp -s "$source" "$destination"; then
+      return
+    fi
+    if ((check)); then
+      echo "Stale generated schema: ${destination#"$ROOT_DIR/"}" >&2
+      return 1
+    fi
+    mkdir -p "$(dirname "$destination")"
+    cp "$source" "$destination"
+    echo "Generated ${destination#"$ROOT_DIR/"}"
+  }
 
-    local valid=0
-    write_generated "$tmp/kubernetes.schema.json" "$ROOT_DIR/working/types/kubernetes.schema.json" || valid=1
-    write_generated "$tmp/httprouterule.schema.json" "$ROOT_DIR/working/types/httprouterule.schema.json" || valid=1
-    write_generated "$tmp/values.schema.json" "$ROOT_DIR/argocd/charts/application/values.schema.json" || valid=1
-    return "$valid"
+  local valid=0
+  write_generated "$tmp/kubernetes.schema.json" "$ROOT_DIR/working/types/kubernetes.schema.json" || valid=1
+  write_generated "$tmp/httprouterule.schema.json" "$ROOT_DIR/working/types/httprouterule.schema.json" || valid=1
+  write_generated "$tmp/values.schema.json" "$ROOT_DIR/argocd/charts/application/values.schema.json" || valid=1
+  return "$valid"
 )
 
 generate_application_schemas

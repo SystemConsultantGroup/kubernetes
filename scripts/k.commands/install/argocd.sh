@@ -9,30 +9,30 @@ require_file "$argocd_dir/values.yaml"
 require_file "$argocd_dir/root-application.yaml"
 
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-printf '%s' "$argocd_github_oauth_client_secret" | \
-    kubectl -n argocd create secret generic argocd-github-oauth \
-        --from-file=github.oauth.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+printf '%s' "$argocd_github_oauth_client_secret" |
+  kubectl -n argocd create secret generic argocd-github-oauth \
+    --from-file=github.oauth.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n argocd label secret argocd-github-oauth app.kubernetes.io/part-of=argocd --overwrite
 unset argocd_github_oauth_client_secret
 
 helm upgrade --install argocd \
-    oci://ghcr.io/argoproj/argo-helm/argo-cd \
-    --version "$ARGOCD_VERSION" \
-    --namespace argocd \
-    --values "$argocd_dir/values.yaml" \
-    --wait \
-    --timeout 10m
+  oci://ghcr.io/argoproj/argo-helm/argo-cd \
+  --version "$ARGOCD_VERSION" \
+  --namespace argocd \
+  --values "$argocd_dir/values.yaml" \
+  --wait \
+  --timeout 10m
 
 for namespace in cert-manager external-dns; do
-    kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
-    printf '%s' "$cloudflare_api_token" | \
-        kubectl -n "$namespace" create secret generic cloudflare-api-token \
-            --from-file=api-token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
+  printf '%s' "$cloudflare_api_token" |
+    kubectl -n "$namespace" create secret generic cloudflare-api-token \
+      --from-file=api-token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 done
 unset cloudflare_api_token namespace
-printf '%s' "$zerossl_eab_hmac_key" | \
-    kubectl -n cert-manager create secret generic zerossl-eab \
-        --from-file=hmac-key=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+printf '%s' "$zerossl_eab_hmac_key" |
+  kubectl -n cert-manager create secret generic zerossl-eab \
+    --from-file=hmac-key=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 unset zerossl_eab_hmac_key
 
 kubectl apply -f "$argocd_dir/root-application.yaml"

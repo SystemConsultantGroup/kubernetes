@@ -1,10 +1,8 @@
 global:
   domain: argocd.infra.scg.sh
-
 configs:
   params:
     server.insecure: true
-
   cm:
     url: https://argocd.infra.scg.sh
     admin.enabled: false
@@ -21,7 +19,6 @@ configs:
                 teams:
                   - active
             teamNameField: slug
-
   rbac:
     policy.csv: |
       g, SystemConsultantGroup:active, role:admin

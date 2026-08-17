@@ -1,6 +1,6 @@
 if (($#)); then
-    run_group install "$@"
-    return
+  run_group install "$@"
+  return
 fi
 
 require_bootstrap_secrets

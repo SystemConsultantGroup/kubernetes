@@ -5,8 +5,7 @@ Runs a Talos health check on every node.
 ## Description
 
 Runs `talosctl health` against every node in `state.yaml`, waiting for Talos
-and Kubernetes to be healthy on each. Prints `Waiting for Talos and
-Kubernetes...` before the checks and `Talos and Kubernetes are ready` when all
+and Kubernetes to be healthy on each. Prints `Waiting for Talos and Kubernetes...` before the checks and `Talos and Kubernetes are ready` when all
 nodes pass.
 
 ## Usage
