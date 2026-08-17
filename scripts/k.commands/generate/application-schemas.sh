@@ -162,11 +162,7 @@ generate_application_schemas() (
     echo "Generated ${destination#"$ROOT_DIR/"}"
   }
 
-  local valid=0
-  write_generated "$tmp/kubernetes.schema.json" "$ROOT_DIR/working/types/kubernetes.schema.json" || valid=1
-  write_generated "$tmp/httprouterule.schema.json" "$ROOT_DIR/working/types/httprouterule.schema.json" || valid=1
-  write_generated "$tmp/values.schema.json" "$ROOT_DIR/argocd/charts/application/values.schema.json" || valid=1
-  return "$valid"
+  write_generated "$tmp/values.schema.json" "$ROOT_DIR/argocd/charts/application/values.schema.json"
 )
 
 generate_application_schemas

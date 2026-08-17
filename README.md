@@ -1,102 +1,79 @@
 # SCG Kubernetes
 
-Configuration and tooling for the single `scg` cluster: Talos, Cilium, Argo CD, and SOPS-managed secrets.
+This repository defines application deployments and operates the single `scg`
+Kubernetes cluster. The platform uses Talos Linux, Cilium, Argo CD, and
+SOPS-encrypted secrets.
 
-## Bootstrap
+Argo CD follows `main`, automatically applies the declared state, and removes
+resources that are no longer declared.
 
-Install Nix (if you don't have it):
+## Deploy an application
+
+Application owners normally work only in [`applications/`](applications/) and
+do not need cluster credentials.
+
+An application uses one of two layouts:
+
+- A managed application has `meta.yaml` for workload configuration and
+  `instances/production.yaml` for immutable source and image versions. Testing
+  and pull request preview instances are optional.
+- A custom application has a standard `kustomization.yaml` entrypoint.
+
+Use exactly one layout per application. Never commit credentials or other
+secret values. Submit changes through a pull request; merging to `main` makes
+them eligible for automatic deployment.
+
+## Operate the cluster
+
+Install Nix if needed:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
-Then:
+Enter the repository development environment and inspect the available
+commands:
 
 ```bash
 nix develop
-k secrets check
-k install
+k --help
+k <command> --help
 ```
 
-`state.yaml` selects the endpoint, nodes, and component versions. Every declared node needs a matching `patches/<node>.yaml`.
-
-> [!WARNING]
-> `k install` configures the declared machines. Confirm `state.yaml` and the disk selectors in `patches/` before running it.
-
-## Secrets
-
-Create an age identity and send its printed recipient to an existing operator:
+Operators who need access to encrypted configuration can create or inspect
+their local age recipient with:
 
 ```bash
 k secrets recipients me
 ```
 
-The existing operator grants access with:
+An existing operator must add that recipient before `k secrets check` can
+decrypt and validate the repository secrets.
+
+Cluster-changing operations include:
 
 ```bash
-k secrets recipients add <person-device> <age1...>
-```
-
-Validate or edit encrypted values:
-
-```bash
-k secrets check
-k secrets edit bootstrap
-k secrets edit talos
-```
-
-`bootstrap` must contain `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`. The Cloudflare token needs Zone Read and DNS Edit access to `scg.sh`. Generate the reusable ZeroSSL EAB credentials in the [ZeroSSL developer console](https://app.zerossl.com/developer); its key ID is public configuration, while its HMAC key remains SOPS-encrypted. Recipient aliases are public in `secrets/state.yaml`; secret values remain SOPS-encrypted.
-
-## Deployments
-
-Argo CD follows `main` and discovers:
-
-- shared cluster components from `argocd/platform/*/meta.yaml`
-- applications from directories under `applications/`
-
-An application directory is also its namespace. Add a Kustomization, push to `main`, and Argo CD creates and reconciles it.
-
-Bootstrap-only Argo CD configuration lives in `argocd/bootstrap/`; reconcile it explicitly after changing it:
-
-```bash
-k install argocd
-```
-
-Namespaces attached to the public Gateway must carry:
-
-```yaml
-gateway.scg.sh/public: "true"
-```
-
-ExternalDNS publishes `HTTPRoute.spec.hostnames` under `scg.sh` through Cloudflare. The inactive RFC2136 configuration for `scg.skku.ac.kr` is kept in `argocd/platform/external-dns-scg.skku.ac.kr/` as `*.example` files.
-
-## Operations
-
-Apply Talos patch changes:
-
-```bash
+k install
 k apply
-```
-
-Change a version in `state.yaml`, then run its upgrade:
-
-```bash
 k upgrade <talos|kubernetes|cilium|argocd>
-```
-
-Reset a node:
-
-```bash
-k reset [--yes] [node]
+k reset [node]
 ```
 
 > [!CAUTION]
-> Reset wipes Talos `STATE` and `EPHEMERAL` data.
+> Review `state.yaml`, the node addresses, and disk selectors in `patches/`
+> before changing the cluster. `k reset` wipes the selected node's Talos
+> `STATE` and `EPHEMERAL` data.
 
-For local Argo CD access or command discovery:
+## Repository map
 
-```bash
-k forward argocd
-k --help
-k <command> --help
-```
+- [`applications/`](applications/) contains application metadata, immutable
+  deployment instances, and custom Kustomizations.
+- [`argocd/`](argocd/) contains the GitOps root, ApplicationSets, platform
+  components, projects, and the shared application chart.
+- [`patches/`](patches/) contains shared and node-specific Talos machine
+  configuration.
+- [`scripts/`](scripts/) provides the `k` operator command and its built-in
+  command documentation.
+- [`secrets/`](secrets/) contains the public recipient registry and
+  SOPS-encrypted cluster configuration.
+- [`state.yaml`](state.yaml) declares cluster topology and component versions.
