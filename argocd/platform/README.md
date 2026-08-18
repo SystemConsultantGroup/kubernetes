@@ -12,12 +12,21 @@ AppProject.
 | [`argocd/`](argocd/) | Argo CD namespace resources and its public route |
 | [`cert-manager/`](cert-manager/) | ZeroSSL Cloudflare issuer and platform certificates |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
+| [`external-secrets/`](external-secrets/) | Synchronizes external values into namespaced Kubernetes Secrets |
 | [`gateway/`](gateway/) | Cilium public Gateway and `gateway-system` namespace |
+| [`local-path-provisioner/`](local-path-provisioner/) | Dynamic node-local volumes from Talos user storage |
+| [`reloader/`](reloader/) | Rolls managed workloads when referenced Secrets change |
+| [`vault/`](vault/) | Staged Vault server configuration; intentionally inactive |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
 
 Active components use automated sync, pruning, and self-healing.
 Bootstrap credentials are created by `k install argocd` from encrypted values;
 never put tokens in platform values files.
+
+The Vault Application is not included by the root until `local-data` is verified
+and Vault's TLS, initialization, recovery, and scoped authentication are ready.
+Its activation requirements and the managed secret contract are recorded in
+[`../../working/VAULT.md`](../../working/VAULT.md).
 
 ## Public routing
 

@@ -1,0 +1,46 @@
+fullnameOverride: local-path-provisioner
+helperImage:
+  tag: "1.37.0"
+storageClass:
+  defaultClass: false
+  defaultVolumeType: hostPath
+  name: local-data
+  reclaimPolicy: Retain
+  volumeBindingMode: WaitForFirstConsumer
+  allowedTopologies:
+    - matchLabelExpressions:
+        - key: kubernetes.io/hostname
+          values:
+            - k8s
+nodePathMap:
+  - node: k8s
+    paths:
+      - /var/mnt/data
+  - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+    paths: []
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+helperPod:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      memory: 64Mi

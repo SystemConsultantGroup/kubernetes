@@ -2,6 +2,8 @@
 {{- $application := required "_context.application is required" $context.application -}}
 {{- $instance := required "_context.instance is required" $context.instance -}}
 {{- $instanceType := required "_context.instance.type is required" $instance.type -}}
+{{- $secrets := $context.secrets | default (dict) -}}
+{{- $secretsEnabled := $secrets.enabled | default false -}}
 {{- $workloads := omit .Values "_context" -}}
 {{- if eq (len $workloads) 0 -}}
   {{- fail "at least one workload is required" -}}
@@ -29,6 +31,7 @@ metadata:
   annotations:
     platform.scg.sh/source-repository: {{ $source.repository | quote }}
     platform.scg.sh/source-revision: {{ $source.revision | quote }}
+    reloader.stakater.com/auto: "true"
     {{- if hasPrefix "https://github.com/" $source.repository }}
     link.argocd.argoproj.io/source: {{ printf "%s/commit/%s" (trimSuffix ".git" $source.repository) $source.revision | quote }}
     {{- end }}
@@ -67,9 +70,16 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with $workload.envFrom }}
+          {{- if or $secretsEnabled $workload.envFrom }}
           envFrom:
+            {{- if $secretsEnabled }}
+            - secretRef:
+                name: {{ include "application.secretName" (dict "root" $ "workload" $name) }}
+                optional: true
+            {{- end }}
+            {{- with $workload.envFrom }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with $workload.resources }}
           resources:

@@ -10,6 +10,11 @@ platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{- printf "%s-%s" .root.Values._context.application .workload | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
+{{- define "application.secretName" -}}
+{{- $workloadName := include "application.workloadName" . | trunc 51 | trimSuffix "-" -}}
+{{- printf "%s-environment" $workloadName -}}
+{{- end }}
+
 {{- define "application.testingNamespace" -}}
 {{- printf "%s-testing" .Values._context.application -}}
 {{- end }}

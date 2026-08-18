@@ -1,0 +1,21 @@
+reloader:
+  ignoreConfigMaps: true
+  ignoreCronJobs: true
+  ignoreJobs: true
+  namespaceSelector: platform.scg.sh/application
+  reloadOnCreate: true
+  reloadOnDelete: true
+  reloadStrategy: annotations
+  deployment:
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi

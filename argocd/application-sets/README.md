@@ -17,6 +17,11 @@ separate values files.
 A preview lock supplies only `source` and `image`; its workload and pull request
 number come from the path.
 
+The managed generators also own the central Vault integration gate. It remains
+disabled until the activation procedure in
+[`../../working/VAULT.md`](../../working/VAULT.md) is complete. Application
+metadata does not control this gate or provide Vault paths.
+
 ## Refresh behavior
 
 GitHub push webhooks refresh the Argo CD API server and the ApplicationSet
@@ -56,7 +61,9 @@ recreation behavior before merging.
   changes.
 
 Each generated Application enables automated sync, pruning, self-healing, and
-namespace creation.
+namespace creation. Managed Applications ignore Reloader's pod-template
+annotation so a Secret-triggered rolling deployment does not conflict with Argo
+CD self-healing.
 Application namespaces receive the labels required for public Gateway routes and
 restricted pod security.
 

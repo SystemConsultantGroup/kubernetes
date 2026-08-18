@@ -10,7 +10,7 @@ Cilium patches before generating a control-plane machine configuration.
 | --- | --- |
 | `worker.yaml` | Shared worker settings, including scheduling workloads on control-plane nodes |
 | `cilium.yaml` | Shared Cilium prerequisites: no Talos CNI and no kube-proxy |
-| `<node>.yaml` | Node-specific hostname and system-disk selector |
+| `<node>.yaml` | Node-specific hostname, disk selectors, and user volumes |
 
 The node-specific files present are `scc.yaml`, `e1s.yaml`, and `e2s.yaml`.
 Every node listed in [`../state.yaml`](../state.yaml) needs a matching file;
@@ -23,6 +23,11 @@ The current state enables only `scc`.
 Verify the WWID on the target machine before installation or apply.
 Replace placeholders such as `REPLACE_WITH_E1S_SYSTEM_DISK_WWID` before enabling
 a node.
+
+The testing `scc` node also provisions a default partition-based Talos user
+volume named `data` from the selected blank disk. Talos mounts it at
+`/var/mnt/data`. The selector uses a stable WWN symlink and the volume grows to
+use the disk's available space.
 
 Do not put credentials here.
 Talos secrets remain in encrypted

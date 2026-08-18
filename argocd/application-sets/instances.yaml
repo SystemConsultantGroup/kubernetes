@@ -25,6 +25,11 @@ spec:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: applications
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/template/metadata/annotations/reloader.stakater.com~1last-reloaded-from
       sources:
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
@@ -39,6 +44,8 @@ spec:
                 application: '{{ index .path.segments 1 }}'
                 instance:
                   type: '{{ trimSuffix ".yaml" .path.filename }}'
+                secrets:
+                  enabled: false
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
           ref: values
@@ -58,6 +65,8 @@ spec:
             pod-security.kubernetes.io/enforce-version: latest
         syncOptions:
           - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - SkipDryRunOnMissingResource=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -85,6 +94,11 @@ spec:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: applications
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/template/metadata/annotations/reloader.stakater.com~1last-reloaded-from
       sources:
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
@@ -100,6 +114,8 @@ spec:
                   type: preview
                   workload: '{{ index .path.segments 4 }}'
                   pullRequest: {{ trimSuffix ".yaml" .path.filename }}
+                secrets:
+                  enabled: false
               '{{ index .path.segments 4 }}':
                 source:
                   repository: '{{ .source.repository }}'
@@ -124,3 +140,5 @@ spec:
             pod-security.kubernetes.io/enforce-version: latest
         syncOptions:
           - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - SkipDryRunOnMissingResource=true

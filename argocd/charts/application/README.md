@@ -59,7 +59,11 @@ For example, `shop` with a `web` workload creates:
 ```text
 Deployment: shop-web
 Service:    shop-web
+Secret:     shop-web-environment
 ```
+
+The Secret only exists when centrally managed Vault integration is enabled and
+the corresponding Vault path contains data.
 
 Names are truncated to Kubernetes' 63-character name limit where the chart
 controls the name.
@@ -216,6 +220,40 @@ Each item may contain:
 - `secretRef`, containing optional `name` and `optional`.
 
 The values are passed directly to the container's Kubernetes `envFrom` field.
+When managed Vault integration is enabled, its optional generated Secret source
+is rendered first and these sources follow it.
+
+## Managed Vault environment
+
+Managed Vault integration is internal platform behavior and has no workload
+field in `meta.yaml`. When centrally enabled, every rendered workload gets:
+
+- a generated ExternalSecret;
+- an optional `envFrom` reference to `<application>-<workload>-environment`;
+- a namespaced SecretStore using a generated Vault role; and
+- automatic rollout annotations for Secret changes.
+
+Stable instances extract one logical KV v2 path:
+
+```text
+applications/<application>/<instance-type>/<workload>
+```
+
+Preview instances merge testing and preview paths in order:
+
+```text
+applications/<application>/testing/<workload>
+applications/<application>/preview/<workload>
+```
+
+Vault keys become environment variable names directly. Use portable names such
+as `DATABASE_URL`. A missing Vault path leaves the Kubernetes Secret absent and
+the optional environment source contributes no variables.
+
+The integration is currently gated off by the ApplicationSets until Vault's
+storage, TLS, initialization, and scoped roles are ready. The design and
+activation procedure are in
+[`../../../working/VAULT.md`](../../../working/VAULT.md).
 
 ## `readinessProbe`
 
@@ -607,10 +645,14 @@ _context:
   application: shop
   instance:
     type: production
+  secrets:
+    enabled: false
 ```
 
 `application` must be a valid workload-style name. `instance.type` is one of
-`production`, `testing`, or `preview`.
+`production`, `testing`, or `preview`. The optional `secrets` object is supplied
+only by the platform. Enabling it also requires an HTTPS `server` URL; application
+metadata must not define either field.
 
 Preview context additionally requires:
 

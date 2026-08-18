@@ -148,6 +148,19 @@
               }
             }
           ]
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "server": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://"
+            }
+          }
         }
       }
     }

@@ -1,0 +1,57 @@
+global:
+  tlsDisable: false
+injector:
+  enabled: false
+server:
+  volumes:
+    - name: vault-server-tls
+      secret:
+        secretName: vault-server-tls
+  volumeMounts:
+    - name: vault-server-tls
+      mountPath: /vault/userconfig/vault-server-tls
+      readOnly: true
+  extraEnvironmentVars:
+    VAULT_CACERT: /vault/userconfig/vault-server-tls/ca.crt
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: local-data
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  standalone:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 1
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |-
+        ui = true
+
+        listener "tcp" {
+          tls_disable = 0
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file = "/vault/userconfig/vault-server-tls/tls.crt"
+          tls_key_file = "/vault/userconfig/vault-server-tls/tls.key"
+          tls_client_ca_file = "/vault/userconfig/vault-server-tls/ca.crt"
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+        }
+
+        service_registration "kubernetes" {}
+ui:
+  enabled: true
+csi:
+  enabled: false

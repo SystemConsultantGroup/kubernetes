@@ -8,4 +8,7 @@ resources:
   - platform/argocd/application.yaml
   - platform/cert-manager/application.yaml
   - platform/external-dns-scg.sh/application.yaml
+  - platform/external-secrets/application.yaml
   - platform/gateway/application.yaml
+  - platform/local-path-provisioner/application.yaml
+  - platform/reloader/application.yaml
