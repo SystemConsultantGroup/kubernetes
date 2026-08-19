@@ -67,20 +67,31 @@ configure_vault_oidc() {
     platform_id="$(vault write -field=id identity/group/name/github-platform \
       type=external policies=github-platform)"
 
-    vault write -field=id identity/lookup/group \
+    active_alias_group_id="$(vault write -field=id identity/lookup/group \
       alias_name=SystemConsultantGroup:active \
-      alias_mount_accessor="$oidc_accessor" >/dev/null 2>&1 ||
+      alias_mount_accessor="$oidc_accessor" 2>/dev/null || true)"
+    if [ -z "$active_alias_group_id" ]; then
       vault write identity/group-alias \
         name=SystemConsultantGroup:active \
         mount_accessor="$oidc_accessor" \
         canonical_id="$active_id" >/dev/null
-    vault write -field=id identity/lookup/group \
+    elif [ "$active_alias_group_id" != "$active_id" ]; then
+      echo "Existing GitHub active alias targets the wrong Vault group" >&2
+      exit 1
+    fi
+
+    platform_alias_group_id="$(vault write -field=id identity/lookup/group \
       alias_name=SystemConsultantGroup:platform \
-      alias_mount_accessor="$oidc_accessor" >/dev/null 2>&1 ||
+      alias_mount_accessor="$oidc_accessor" 2>/dev/null || true)"
+    if [ -z "$platform_alias_group_id" ]; then
       vault write identity/group-alias \
         name=SystemConsultantGroup:platform \
         mount_accessor="$oidc_accessor" \
         canonical_id="$platform_id" >/dev/null
+    elif [ "$platform_alias_group_id" != "$platform_id" ]; then
+      echo "Existing GitHub platform alias targets the wrong Vault group" >&2
+      exit 1
+    fi
   '
 }
 
