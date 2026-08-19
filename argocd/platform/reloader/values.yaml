@@ -1,5 +1,5 @@
 reloader:
-  ignoreConfigMaps: true
+  ignoreConfigMaps: false
   ignoreCronJobs: true
   ignoreJobs: true
   namespaceSelector: platform.scg.sh/application
