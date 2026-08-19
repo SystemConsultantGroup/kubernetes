@@ -62,10 +62,12 @@ configure_vault_oidc() {
       token_max_ttl=8h >/dev/null
 
     oidc_accessor="$(vault read -field=accessor sys/auth/oidc)"
-    active_id="$(vault write -field=id identity/group/name/github-active \
-      type=external policies=github-active)"
-    platform_id="$(vault write -field=id identity/group/name/github-platform \
-      type=external policies=github-platform)"
+    vault write identity/group/name/github-active \
+      type=external policies=github-active >/dev/null
+    vault write identity/group/name/github-platform \
+      type=external policies=github-platform >/dev/null
+    active_id="$(vault read -field=id identity/group/name/github-active)"
+    platform_id="$(vault read -field=id identity/group/name/github-platform)"
 
     active_alias_group_id="$(vault write -field=id identity/lookup/group \
       alias_name=SystemConsultantGroup:active \
