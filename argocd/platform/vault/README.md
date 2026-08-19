@@ -80,7 +80,8 @@ The `platform` team is nested under `active`, so platform operators receive both
 policies. Vault has a distinct Dex client secret in `secrets/bootstrap.yaml`;
 it does not reuse Argo CD's downstream session or client identity.
 
-After configuration, select **OIDC** in the Vault UI or use:
+The unauthenticated Vault UI presents OIDC as its default method and keeps token
+login under **Other** for break-glass access. From the CLI, use:
 
 ```bash
 export VAULT_ADDR=https://vault.platform.scg.sh

@@ -16,8 +16,9 @@ The command:
 1. immediately encrypts the one-time initialization response into
    `secrets/vault-recovery.yaml`;
 1. enables the file audit device, KV v2 at `kv`, and Kubernetes authentication;
-1. configures GitHub authentication through Argo CD Dex and maps the `active`
-   and `platform` teams to Vault policies; and
+1. configures GitHub authentication through Argo CD Dex, makes it the default
+   web UI method, and maps the `active` and `platform` teams to Vault policies;
+   and
 1. waits for `https://vault.platform.scg.sh/v1/sys/health`.
 
 If Vault is already initialized and its recovery file still contains a valid

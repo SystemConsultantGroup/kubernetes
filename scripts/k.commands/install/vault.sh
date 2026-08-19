@@ -44,6 +44,10 @@ configure_vault_oidc() {
 
     vault auth list | grep -q '^oidc/' ||
       vault auth enable -path=oidc oidc >/dev/null
+    vault auth tune \
+      -listing-visibility=unauth \
+      -description="GitHub via Argo CD Dex" \
+      oidc/ >/dev/null
 
     printf %s "$oidc_client_secret" | vault write auth/oidc/config \
       oidc_discovery_url=https://argocd.platform.scg.sh/api/dex \
