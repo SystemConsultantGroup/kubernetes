@@ -13,7 +13,7 @@ generated root [`.sops.yaml`](../.sops.yaml).
 | `bootstrap.yaml` | Encrypted Argo CD OAuth and webhook, Cloudflare, and ZeroSSL bootstrap values |
 | `talos.yaml` | Encrypted Talos cluster secrets |
 | `vault.yaml` | Encrypted Vault Transit seal token and recovery copy of the Worker key |
-| `vault-recovery.yaml` | Generated, encrypted recovery shares and initial root token for the current Vault data |
+| `vault-recovery.yaml` | Generated, encrypted recovery shares for the current Vault data; the temporary initial root token is removed after operator access is verified |
 
 Keep every file except `state.yaml` encrypted in Git. Do not hand-edit
 `.sops.yaml`; the recipient commands regenerate it.

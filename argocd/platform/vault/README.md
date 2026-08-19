@@ -87,8 +87,10 @@ export VAULT_ADDR=https://vault.platform.scg.sh
 vault login -method=oidc role=github
 ```
 
-Test a platform login before revoking the initial root token. Recovery shares
-remain the break-glass mechanism if Dex or GitHub is unavailable.
+Test a platform login before revoking the initial root token and removing it
+from `vault-recovery.yaml`. Recovery shares remain the break-glass mechanism if
+Dex or GitHub is unavailable. The current deployment's initial root token has
+been revoked and removed.
 
 ## Operations
 
