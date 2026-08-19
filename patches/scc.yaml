@@ -2,9 +2,17 @@
 machine:
   install:
     diskSelector:
-      wwid: naa.31402ec0102fbdd2
+      wwid: naa.600508b1001cc9d1ee77e9fbec5ef031
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig
 hostname: k8s.scc
 auto: off
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: data
+provisioning:
+  diskSelector:
+    match: disk.wwid == "naa.600508b1001c163bf948aff8ec7c6601"
+  grow: true
