@@ -26,6 +26,10 @@ write_policy() {
 path "kv/data/applications/$application/$instance_type/*" {
   capabilities = ["read"]
 }
+
+path "auth/token/lookup-self" {
+  capabilities = ["read"]
+}
 EOF
     ;;
   preview)
@@ -35,6 +39,10 @@ path "kv/data/applications/$application/testing/*" {
 }
 
 path "kv/data/applications/$application/preview/*" {
+  capabilities = ["read"]
+}
+
+path "auth/token/lookup-self" {
   capabilities = ["read"]
 }
 EOF

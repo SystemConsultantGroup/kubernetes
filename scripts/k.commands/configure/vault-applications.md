@@ -24,7 +24,8 @@ The command discovers directories using the managed `meta.yaml` plus
   and `platform.scg.sh/instance-type: preview`.
 
 The policies allow only the KV v2 data paths documented in
-[`../../../working/VAULT.md`](../../../working/VAULT.md). Preview policies can
+[`../../../working/VAULT.md`](../../../working/VAULT.md) plus the required
+`auth/token/lookup-self` provider validation endpoint. Preview policies can
 also read testing paths for the approved fallback. Roles bind only the
 `vault-auth` ServiceAccount, request the `vault` audience, and issue one-hour
 tokens with an eight-hour maximum TTL.

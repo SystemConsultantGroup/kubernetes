@@ -199,9 +199,7 @@ preserve_init=0
   vault secrets enable -path=kv kv-v2
   vault auth enable kubernetes
   vault write auth/kubernetes/config \
-    kubernetes_host=https://kubernetes.default.svc:443 \
-    kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
+    kubernetes_host=https://kubernetes.default.svc:443
 '
 
 root_token="$(jq -r '.root_token' "$init_file")"

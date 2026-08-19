@@ -185,9 +185,11 @@ changes. Reloader watches generated Secrets and patches the workload pod
 template, causing a Kubernetes rolling deployment.
 
 Reloader must have creation and deletion reloads enabled in addition to its
-default update handling. It uses the annotation strategy. Generated Argo CD
-Applications ignore Reloader's pod-template annotation so self-healing does not
-revert the rollout patch.
+default update handling. It uses the annotation strategy. Each generated
+workload explicitly watches its generated Secret so create and delete events
+remain observable while the Secret is absent. Generated Argo CD Applications
+ignore Reloader's pod-template annotation so self-healing does not revert the
+rollout patch.
 
 The resulting flow is:
 
@@ -239,9 +241,11 @@ The preview role needs permission to read namespace labels during Kubernetes
 authentication. A preview role can read testing paths because testing is the
 approved fallback.
 
-Scoped stores ensure that changing an ExternalSecret path cannot cross the
-Vault policy boundary. The platform still controls generated paths and does not
-expose path overrides in application metadata.
+Every workload policy also reads `auth/token/lookup-self`, which External
+Secrets Operator requires to validate its Vault token. Scoped stores ensure
+that changing an ExternalSecret path cannot cross the Vault policy boundary.
+The platform still controls generated paths and does not expose path overrides
+in application metadata.
 
 ## Vault deployment
 

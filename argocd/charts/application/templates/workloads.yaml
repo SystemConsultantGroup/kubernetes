@@ -32,6 +32,9 @@ metadata:
     platform.scg.sh/source-repository: {{ $source.repository | quote }}
     platform.scg.sh/source-revision: {{ $source.revision | quote }}
     reloader.stakater.com/auto: "true"
+    {{- if $secretsEnabled }}
+    secret.reloader.stakater.com/reload: {{ include "application.secretName" (dict "root" $ "workload" $name) | quote }}
+    {{- end }}
     {{- if hasPrefix "https://github.com/" $source.repository }}
     link.argocd.argoproj.io/source: {{ printf "%s/commit/%s" (trimSuffix ".git" $source.repository) $source.revision | quote }}
     {{- end }}
