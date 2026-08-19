@@ -13,10 +13,10 @@ storageClassName: local-data
 
 Volumes bind with `WaitForFirstConsumer`, so scheduling selects the node before
 the local path is created. The class currently permits only Kubernetes node
-`k8s` and stores data below the Talos user volume mounted at:
+`k8s` and stores data on its Talos `EPHEMERAL` volume at:
 
 ```text
-/var/mnt/data
+/var/lib/local-data
 ```
 
 Unlisted nodes have no provisioning paths. Add a node only after its own durable
@@ -26,5 +26,6 @@ The reclaim policy is `Retain`. Deleting a claim does not erase its local data o
 make its PersistentVolume automatically reusable. An operator must inspect and
 clean retained data before deleting or replacing the PersistentVolume.
 
-Local volumes are not replicated and cannot move to another node. Applications
-must provide their own replication or accept node-local availability.
+Local volumes are not replicated and cannot move to another node. They are also
+lost if the Talos `EPHEMERAL` partition is reset. Applications must provide
+their own replication or off-cluster backups and accept node-local availability.

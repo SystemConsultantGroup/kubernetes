@@ -8,12 +8,3 @@ apiVersion: v1alpha1
 kind: HostnameConfig
 hostname: k8s.scc
 auto: off
----
-apiVersion: v1alpha1
-kind: UserVolumeConfig
-name: data
-provisioning:
-  diskSelector:
-    match: "'/dev/disk/by-id/wwn-0x5002538f33c0675a' in disk.symlinks"
-  minSize: 1TB
-  grow: true

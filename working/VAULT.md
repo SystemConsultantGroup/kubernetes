@@ -2,20 +2,15 @@
 
 ## Status
 
-The design is approved and implementation is staged.
+The design is approved and Vault is active in the Argo CD root. Managed
+application secret generation remains disabled centrally until Vault has an
+initialized KV engine, Kubernetes authentication, scoped roles, and a tested
+backup path. Application metadata does not contain secret configuration.
 
-External Secrets Operator and Reloader can be installed before Vault is ready.
-Managed application secret generation remains disabled centrally until Vault has
-durable storage, TLS, an initialized KV engine, Kubernetes authentication, and
-scoped roles. Application metadata does not contain secret configuration.
-
-The `scc` node now provides the Talos user volume `data` at `/var/mnt/data`,
-backed by the partition `/dev/sdb1`. The Argo root now declares Local Path
-Provisioner and the non-default `local-data` StorageClass, restricted to that
-node and path. The live cluster receives them after this repository change is
-merged. The staged Vault Application is intentionally excluded from the Argo CD
-root until the storage layer is verified and the remaining activation
-prerequisites are ready.
+The single `scc` node provides the non-default `local-data` StorageClass at
+`/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
+and audit PVCs from this class. The storage is node-local and is lost on a Talos
+EPHEMERAL reset, so encrypted off-cluster Raft snapshots are mandatory.
 
 ## Decisions
 
@@ -208,9 +203,9 @@ expose path overrides in application metadata.
 
 ## Vault deployment
 
-The staged deployment uses the official Vault chart and integrated Raft
-storage. The testing configuration requests `local-data` and runs one Raft
-member. It must not be activated until all of the following exist:
+The deployment uses the official Vault chart and integrated Raft storage. The
+current configuration requests `local-data` and runs one Raft member. Continued
+production use requires all of the following:
 
 1. the `local-data` StorageClass is reconciled and locally verified;
 1. enough independent nodes exist before increasing the Raft replica count;

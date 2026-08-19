@@ -15,7 +15,7 @@ storageClass:
 nodePathMap:
   - node: k8s
     paths:
-      - /var/mnt/data
+      - /var/lib/local-data
   - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
     paths: []
 podSecurityContext:
