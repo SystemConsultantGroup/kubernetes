@@ -28,4 +28,7 @@ spec:
       sectionName: https
   validation:
     hostname: vault.platform.scg.sh
-    wellKnownCACertificates: System
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: vault-backend-ca

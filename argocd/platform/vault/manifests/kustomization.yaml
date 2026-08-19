@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - certificate.yaml
+  - backend-ca.yaml
   - auth-rbac.yaml
   - route.yaml

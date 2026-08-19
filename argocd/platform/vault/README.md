@@ -20,8 +20,9 @@ recovery.
 
 cert-manager issues `vault-server-tls` for `vault.platform.scg.sh`. The public
 Gateway terminates client TLS and uses `BackendTLSPolicy` to establish and
-validate a second TLS connection to `vault-active:8200` with the system CA
-bundle.
+validate a second TLS connection to `vault-active:8200`. The public ZeroSSL
+issuer chain is pinned in `vault-backend-ca`; update that bundle if cert-manager
+changes issuer chains.
 
 ## Transit seal credentials
 

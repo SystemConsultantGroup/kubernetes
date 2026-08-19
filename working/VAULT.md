@@ -2,10 +2,12 @@
 
 ## Status
 
-The design is approved and Vault is active in the Argo CD root. Managed
-application secret generation remains disabled centrally until Vault has an
-initialized KV engine, Kubernetes authentication, scoped roles, and a tested
-backup path. Application metadata does not contain secret configuration.
+The design is approved and Vault is active, initialized, and auto-unsealed.
+KV v2 is mounted at `kv`, Kubernetes authentication is configured, and file
+auditing writes to the audit PVC. Managed application secret generation remains
+disabled centrally until scoped policies and roles exist and the snapshot
+restore path is tested. Application metadata does not contain secret
+configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
