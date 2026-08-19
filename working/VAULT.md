@@ -17,8 +17,9 @@ recovery file.
 
 Managed application secret generation is enabled centrally. Scoped policies and
 Kubernetes roles exist for the `example` application, whose testing path has a
-non-sensitive verification value. Application metadata does not contain secret
-configuration.
+non-sensitive verification value. ESO synchronization and Reloader create,
+update, delete, and recreation rollouts are verified there. Application metadata
+does not contain secret configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
@@ -185,11 +186,12 @@ changes. Reloader watches generated Secrets and patches the workload pod
 template, causing a Kubernetes rolling deployment.
 
 Reloader must have creation and deletion reloads enabled in addition to its
-default update handling. It uses the annotation strategy. Each generated
-workload explicitly watches its generated Secret so create and delete events
-remain observable while the Secret is absent. Generated Argo CD Applications
-ignore Reloader's pod-template annotation so self-healing does not revert the
-rollout patch.
+default update handling. It uses the annotation strategy and must watch
+ConfigMaps as well as Secrets, because its lifecycle handlers require both
+controllers. Each generated workload explicitly watches its generated Secret so
+create and delete events remain observable while the Secret is absent. Generated
+Argo CD Applications ignore Reloader's pod-template annotation so self-healing
+does not revert the rollout patch.
 
 The resulting flow is:
 
@@ -269,8 +271,6 @@ Current limitations are:
 The base activation steps and central managed-secret gate are complete. Continue
 in this order:
 
-1. test ESO synchronization and Reloader create, update, and deletion behavior
-   with the `example` testing workload;
 1. run `k configure vault-applications` after adding or removing a managed
    application;
 1. seed or migrate application values into the generated `kv/applications/...`
