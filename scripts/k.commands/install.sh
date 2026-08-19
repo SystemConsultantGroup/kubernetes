@@ -9,3 +9,4 @@ validate_talos_inputs
 run install kubernetes
 run install cilium
 run install argocd
+run install vault

@@ -13,11 +13,10 @@ generated root [`.sops.yaml`](../.sops.yaml).
 | `bootstrap.yaml` | Encrypted Argo CD OAuth and webhook, Cloudflare, and ZeroSSL bootstrap values |
 | `talos.yaml` | Encrypted Talos cluster secrets |
 | `vault.yaml` | Encrypted Vault Transit seal token and recovery copy of the Worker key |
-| `vault-init.yaml` | Encrypted Vault recovery shares and initial root token |
-| `vault-snapshot.yaml` | Base64-encoded, SOPS-encrypted initial Raft snapshot |
+| `vault-recovery.yaml` | Generated, encrypted recovery shares and initial root token for the current Vault data |
 
-Keep `bootstrap.yaml` and `talos.yaml` encrypted in Git.
-Do not hand-edit `.sops.yaml`; the recipient commands regenerate it.
+Keep every file except `state.yaml` encrypted in Git. Do not hand-edit
+`.sops.yaml`; the recipient commands regenerate it.
 
 ## Grant access
 
@@ -52,6 +51,7 @@ Use the wrapper so `.sops.yaml` stays synchronized:
 ```bash
 k secrets edit bootstrap
 k secrets edit talos
+k secrets edit vault
 ```
 
 Before `k install` can complete, `bootstrap.yaml` must contain real values for

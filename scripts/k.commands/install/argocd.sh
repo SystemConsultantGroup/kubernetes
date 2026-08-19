@@ -1,11 +1,9 @@
 require_no_args "k install argocd" "$@"
 require_bootstrap_secrets
-require_vault_secrets
 argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_CLIENT_SECRET)"
 argocd_github_webhook_secret="$(read_bootstrap_secret ARGOCD_GITHUB_WEBHOOK_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
 zerossl_eab_hmac_key="$(read_bootstrap_secret ZEROSSL_EAB_HMAC_KEY)"
-vault_transit_seal_token="$(read_vault_secret VAULT_TRANSIT_SEAL_TOKEN)"
 
 argocd_dir="$ROOT_DIR/argocd"
 require_file "$argocd_dir/values.yaml"
@@ -45,12 +43,6 @@ printf '%s' "$zerossl_eab_hmac_key" |
   kubectl -n cert-manager create secret generic zerossl-eab \
     --from-file=hmac-key=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 unset zerossl_eab_hmac_key
-
-kubectl create namespace vault --dry-run=client -o yaml | kubectl apply -f -
-printf '%s' "$vault_transit_seal_token" |
-  kubectl -n vault create secret generic vault-transit-seal \
-    --from-file=token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
-unset vault_transit_seal_token
 
 kubectl apply -f "$argocd_dir/root-application.yaml"
 kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found

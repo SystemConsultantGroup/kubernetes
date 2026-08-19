@@ -5,14 +5,14 @@
 The design is approved and Vault is active, initialized, and auto-unsealed.
 KV v2 is mounted at `kv`, Kubernetes authentication is configured, and file
 auditing writes to the audit PVC. Managed application secret generation remains
-disabled centrally until scoped policies and roles exist and the snapshot
-restore path is tested. Application metadata does not contain secret
-configuration.
+disabled centrally until scoped policies and roles exist. Application metadata
+does not contain secret configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
 and audit PVCs from this class. The storage is node-local and is lost on a Talos
-EPHEMERAL reset, so encrypted off-cluster Raft snapshots are mandatory.
+EPHEMERAL reset. This is intentional: repository-driven resets rebuild Vault
+with empty data and replace the generated recovery material.
 
 ## Decisions
 
@@ -212,9 +212,8 @@ production use requires all of the following:
 1. the `local-data` StorageClass is reconciled and locally verified;
 1. enough independent nodes exist before increasing the Raft replica count;
 1. end-to-end TLS and CA distribution to application namespaces;
-1. an initialization and unseal procedure with recovery material held outside
-   the cluster;
-1. off-cluster Raft snapshots and a tested restore procedure;
+1. an initialization and unseal procedure that SOPS-encrypts recovery material
+   outside the cluster;
 1. Vault audit devices with durable output; and
 1. an operator workflow for KV, auth mount, policy, and role provisioning.
 
@@ -227,7 +226,8 @@ Activate the system in this order:
 
 1. provide durable storage and the Vault TLS trust chain;
 1. include the staged Vault Application in `argocd/kustomization.yaml`;
-1. initialize and unseal Vault;
+1. run `k install vault` to initialize, auto-unseal, and replace encrypted
+   recovery output;
 1. enable KV v2 at `kv` and Kubernetes auth at `kubernetes`;
 1. configure scoped policies and roles for each application;
 1. migrate and rename existing secrets into generated paths;

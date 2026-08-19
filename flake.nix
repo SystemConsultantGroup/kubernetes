@@ -62,6 +62,7 @@
               age
               bun
               cilium-cli
+              curl
               glow
               kubectl
               kubernetes-helm

@@ -15,8 +15,8 @@ Vault requests two retained `local-data` volumes:
 - 10 GiB at `/vault/data` for integrated Raft storage;
 - 10 GiB at `/vault/audit` for file audit logs.
 
-Both volumes are node-local and require off-cluster snapshots for disaster
-recovery.
+Both volumes are node-local and are intentionally outside this repository's
+reset contract. A destructive cluster reset starts Vault with empty storage.
 
 cert-manager issues `vault-server-tls` for `vault.platform.scg.sh`. The public
 Gateway terminates client TLS and uses `BackendTLSPolicy` to establish and
@@ -34,17 +34,15 @@ copies of:
 - `VAULT_TRANSIT_SEAL_KEY_V1`, the recovery copy of the Worker's `KMS_KEY_V1`
   binding.
 
-The Kubernetes token is materialized as `vault/vault-transit-seal` during Argo
-CD bootstrap. Secret values must only move through standard input:
+`k install vault` materializes the Kubernetes token as
+`vault/vault-transit-seal`. Worker recovery values must only move through
+standard input:
 
 ```bash
 sops decrypt --extract '["VAULT_TRANSIT_SEAL_KEY_V1"]' secrets/vault.yaml |
   (cd workers/kms && bun run wrangler secret put KMS_KEY_V1)
 sops decrypt --extract '["VAULT_TRANSIT_SEAL_TOKEN"]' secrets/vault.yaml |
   (cd workers/kms && bun run wrangler secret put KMS_AUTH_TOKEN)
-sops decrypt --extract '["VAULT_TRANSIT_SEAL_TOKEN"]' secrets/vault.yaml |
-  kubectl -n vault create secret generic vault-transit-seal \
-    --from-file=token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 Never replace `KMS_KEY_V1` after Vault initialization. Follow the Worker rotation
@@ -52,26 +50,22 @@ procedure and retain old versions.
 
 ## Initialization
 
-Initialize exactly once after the StatefulSet, certificate, and Worker are
-healthy. Capture the JSON response directly into a SOPS-encrypted file; never
-print recovery keys or the initial root token:
+Run the idempotent installer after Argo CD and the Worker are ready:
 
 ```bash
-umask 077
-kubectl -n vault exec vault-0 -- \
-  vault operator init -format=json -recovery-shares=5 -recovery-threshold=3 |
-  sops encrypt --filename-override secrets/vault-init.yaml \
-    --input-type json --output-type yaml /dev/stdin >secrets/vault-init.yaml
+k install vault
 ```
 
-Verify the encrypted file is decryptable before continuing. Auto-unseal recovery
-keys do not substitute for the Worker encryption key and cannot unseal Vault if
-the Worker key is lost.
+For a fresh data volume, it initializes Vault, immediately SOPS-encrypts the
+one-time response into `secrets/vault-recovery.yaml`, and configures auditing,
+KV v2, and Kubernetes authentication. Commit the changed encrypted recovery
+file after each destructive reset. On an initialized Vault it validates and
+retains the existing file.
 
-After initialization, authenticate without exposing the root token in process
-arguments and enable the audit device, KV v2, and Kubernetes authentication.
-Record any long-lived operator authentication design before revoking the initial
-root token.
+The recovery file is generated output tied to the current Raft data. Its shares
+do not substitute for the Worker key and cannot unseal Vault if that key is
+lost. Record a long-lived operator authentication design before revoking the
+initial root token.
 
 ## Operations
 
@@ -82,16 +76,7 @@ export VAULT_ADDR=https://vault.platform.scg.sh
 vault status
 ```
 
-Take regular Raft snapshots and encrypt them before moving them off the node:
-
-```bash
-vault operator raft snapshot save /secure/path/vault.snap
-```
-
-The initial post-bootstrap snapshot is stored as SOPS-encrypted base64 in
-`secrets/vault-snapshot.yaml`. Future snapshots should go to a dedicated,
-versioned off-cluster backup target rather than accumulating in Git.
-
-A snapshot is useful only together with the Worker key version that protected
-Vault at the time. Test restoration outside the live cluster before relying on
-the backup procedure.
+This repository restores infrastructure, not Vault data, and does not contain
+Raft snapshots. A destructive reset creates new Raft data and replaces
+`vault-recovery.yaml`. If data retention becomes a requirement, use a dedicated
+encrypted backup system and test restoration separately.

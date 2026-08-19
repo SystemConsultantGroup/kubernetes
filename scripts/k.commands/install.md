@@ -1,6 +1,6 @@
 # install
 
-Bootstraps the cluster in order: Kubernetes, Cilium, then Argo CD.
+Bootstraps the cluster in order: Kubernetes, Cilium, Argo CD, then Vault.
 
 ## Usage
 
@@ -22,6 +22,8 @@ Set them with `k secrets edit bootstrap` and `k secrets edit vault`.
 - `gateway-api` installs the pinned Gateway API standard CRDs.
 - `cilium` installs Gateway API support and the pinned Cilium release.
 - `argocd` installs Argo CD and bootstraps the GitOps root.
+- `vault` installs and initializes Vault, replacing its encrypted recovery
+  output after a destructive reset.
 
 ## Prerequisites
 
