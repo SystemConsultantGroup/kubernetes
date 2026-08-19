@@ -88,6 +88,10 @@ Take regular Raft snapshots and encrypt them before moving them off the node:
 vault operator raft snapshot save /secure/path/vault.snap
 ```
 
+The initial post-bootstrap snapshot is stored as SOPS-encrypted base64 in
+`secrets/vault-snapshot.yaml`. Future snapshots should go to a dedicated,
+versioned off-cluster backup target rather than accumulating in Git.
+
 A snapshot is useful only together with the Worker key version that protected
 Vault at the time. Test restoration outside the live cluster before relying on
 the backup procedure.
