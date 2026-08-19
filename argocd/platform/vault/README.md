@@ -93,6 +93,18 @@ from `vault-recovery.yaml`. Recovery shares remain the break-glass mechanism if
 Dex or GitHub is unavailable. The current deployment's initial root token has
 been revoked and removed.
 
+## Application access
+
+After adding or removing a managed application, authenticate as a platform
+operator and reconcile its scoped policies and Kubernetes-auth roles:
+
+```bash
+k configure vault-applications
+```
+
+This is a live Vault operation. Its generated paths and role boundaries are
+specified in [`../../../working/VAULT.md`](../../../working/VAULT.md).
+
 ## Operations
 
 Use the public address for operator commands:

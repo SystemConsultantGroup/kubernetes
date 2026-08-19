@@ -35,15 +35,15 @@ Preview identity comes from the preview file path.
 ### Minimal example
 
 The repository's minimal public HTTP example is
-[`hello-world/`](hello-world/).
+[`example/`](example/).
 
-`applications/hello-world/meta.yaml`:
+`applications/example/meta.yaml`:
 
 ```yaml
 fe:
   http:
     port: 8080
-    domain: hello.world.scg.sh
+    domain: example.scg.sh
 ```
 
 The production, testing, and preview lock files all use the same immutable
@@ -51,14 +51,14 @@ source and image pair in this example.
 The generated identities are:
 
 ```text
-hello-world-production
-hello-world-testing
-hello-world-preview-fe-1
+example-production
+example-testing
+example-preview-fe-1
 ```
 
-Each instance creates a Deployment and Service named `hello-world-fe`.
+Each instance creates a Deployment and Service named `example-fe`.
 The Service listens on port 80 and targets container port 8080.
-Production routing uses `hello.world.scg.sh`; testing and preview use the
+Production routing uses `example.scg.sh`; testing and preview use the
 platform-generated hostnames.
 See the chart README for the complete naming and routing rules.
 

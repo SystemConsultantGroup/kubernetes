@@ -250,10 +250,9 @@ Vault keys become environment variable names directly. Use portable names such
 as `DATABASE_URL`. A missing Vault path leaves the Kubernetes Secret absent and
 the optional environment source contributes no variables.
 
-The integration is currently gated off by the ApplicationSets until Vault's
-storage, TLS, initialization, and scoped roles are ready. The design and
-activation procedure are in
-[`../../../working/VAULT.md`](../../../working/VAULT.md).
+The ApplicationSets centrally enable this integration after Vault's storage,
+TLS, initialization, and scoped roles are ready. The design and activation
+procedure are in [`../../../working/VAULT.md`](../../../working/VAULT.md).
 
 ## `readinessProbe`
 
@@ -699,10 +698,10 @@ Production and testing contexts must not include `workload` or `pullRequest`.
 From the repository root:
 
 ```bash
-helm template hello-world-production argocd/charts/application \
-  --values applications/hello-world/meta.yaml \
-  --values applications/hello-world/instances/production.yaml \
-  --set _context.application=hello-world \
+helm template example-production argocd/charts/application \
+  --values applications/example/meta.yaml \
+  --values applications/example/instances/production.yaml \
+  --set _context.application=example \
   --set _context.instance.type=production
 ```
 

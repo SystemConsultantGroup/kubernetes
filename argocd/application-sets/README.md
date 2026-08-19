@@ -17,10 +17,10 @@ separate values files.
 A preview lock supplies only `source` and `image`; its workload and pull request
 number come from the path.
 
-The managed generators also own the central Vault integration gate. It remains
-disabled until the activation procedure in
-[`../../working/VAULT.md`](../../working/VAULT.md) is complete. Application
-metadata does not control this gate or provide Vault paths.
+The managed generators own the enabled central Vault integration gate and its
+trusted server URL. Application metadata does not control this gate or provide
+Vault paths. The activation procedure is recorded in
+[`../../working/VAULT.md`](../../working/VAULT.md).
 
 ## Refresh behavior
 

@@ -45,7 +45,8 @@ spec:
                 instance:
                   type: '{{ trimSuffix ".yaml" .path.filename }}'
                 secrets:
-                  enabled: false
+                  enabled: true
+                  server: https://vault.platform.scg.sh
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
           ref: values
@@ -115,7 +116,8 @@ spec:
                   workload: '{{ index .path.segments 4 }}'
                   pullRequest: {{ trimSuffix ".yaml" .path.filename }}
                 secrets:
-                  enabled: false
+                  enabled: true
+                  server: https://vault.platform.scg.sh
               '{{ index .path.segments 4 }}':
                 source:
                   repository: '{{ .source.repository }}'

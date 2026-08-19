@@ -15,9 +15,10 @@ values under `kv`; `SystemConsultantGroup:platform` additionally receives
 method. The initial root token has been revoked and removed from the encrypted
 recovery file.
 
-Managed application secret generation remains disabled centrally until scoped
-application policies and Kubernetes roles exist. Application metadata does not
-contain secret configuration. This application integration is the next phase.
+Managed application secret generation is enabled centrally. Scoped policies and
+Kubernetes roles exist for the `example` application, whose testing path has a
+non-sensitive verification value. Application metadata does not contain secret
+configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
@@ -158,9 +159,9 @@ Generated ExternalSecrets use:
 ```yaml
 refreshPolicy: Periodic
 refreshInterval: 15s
-deletionPolicy: Delete
 target:
   creationPolicy: Owner
+  deletionPolicy: Delete
 ```
 
 This gives the following behavior:
@@ -257,27 +258,23 @@ Current limitations are:
 
 - Raft and audit data are lost with Talos `EPHEMERAL` storage;
 - no Vault data backup is retained by design;
-- application policies and Kubernetes roles are not yet provisioned;
-- the central managed-secret gate remains disabled; and
 - Worker mTLS is optional hardening and is not enabled.
 
 ## Remaining activation sequence
 
-The base Vault activation steps are complete. Continue in this order:
+The base activation steps and central managed-secret gate are complete. Continue
+in this order:
 
-1. generate scoped policies and Kubernetes auth roles for each application;
+1. test ESO synchronization and Reloader create, update, and deletion behavior
+   with the `example` testing workload;
+1. run `k configure vault-applications` after adding or removing a managed
+   application;
 1. seed or migrate application values into the generated `kv/applications/...`
    paths without exposing them in logs or Git;
-1. render the namespaced SecretStores and ExternalSecrets while retaining the
-   central disabled gate;
-1. test ESO synchronization and Reloader create, update, and deletion behavior
-   with one non-production workload;
-1. set `_context.secrets.enabled: true` and the trusted HTTPS Vault server URL
-   in both managed ApplicationSets;
-1. verify production paths before promotion; and
+1. verify production paths before storing production values; and
 1. optionally enable Worker mTLS and rehearse recovery-share root generation.
 
-The central gate allows activation without changing any application
+The central gate activates integration without changing any application
 `meta.yaml`.
 
 ## Migration
