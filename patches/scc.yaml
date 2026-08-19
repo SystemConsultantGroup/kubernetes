@@ -1,13 +1,13 @@
 # Super Computing Center node specific patches
-machine:
-  install:
-    diskSelector:
-      wwid: naa.600508b1001cc9d1ee77e9fbec5ef031
----
 apiVersion: v1alpha1
 kind: HostnameConfig
 hostname: k8s.scc
 auto: off
+---
+machine:
+  install:
+    diskSelector:
+      wwid: naa.600508b1001cc9d1ee77e9fbec5ef031
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig
