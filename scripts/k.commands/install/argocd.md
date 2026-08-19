@@ -6,7 +6,8 @@ Installs Argo CD and bootstraps the repository's GitOps root.
 
 The command:
 
-1. creates the `argocd` namespace, OAuth secret, and GitHub webhook secret;
+1. creates the `argocd` namespace, GitHub OAuth and webhook secrets, and the
+   Vault OIDC client secret;
 1. installs or upgrades the `argocd` Helm release at `argocd.version` from
    `state.yaml`;
 1. restarts the ApplicationSet controller so webhook secret changes take effect;
@@ -31,7 +32,8 @@ k install argocd
 
 - `secrets/bootstrap.yaml` is decryptable and contains real values for
   `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `ARGOCD_GITHUB_WEBHOOK_SECRET`,
-  `CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`.
+  `CLOUDFLARE_API_TOKEN`, `VAULT_OIDC_CLIENT_SECRET`, and
+  `ZEROSSL_EAB_HMAC_KEY`.
 - Cilium is installed and the cluster is reachable.
 - [`argocd/values.yaml`](../../../argocd/values.yaml) and
   [`argocd/root-application.yaml`](../../../argocd/root-application.yaml) exist.

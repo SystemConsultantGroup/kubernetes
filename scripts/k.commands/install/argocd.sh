@@ -2,6 +2,7 @@ require_no_args "k install argocd" "$@"
 require_bootstrap_secrets
 argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_CLIENT_SECRET)"
 argocd_github_webhook_secret="$(read_bootstrap_secret ARGOCD_GITHUB_WEBHOOK_SECRET)"
+vault_oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
 zerossl_eab_hmac_key="$(read_bootstrap_secret ZEROSSL_EAB_HMAC_KEY)"
 
@@ -20,6 +21,11 @@ printf '%s' "$argocd_github_webhook_secret" |
     --from-file=webhook.github.secret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n argocd label secret argocd-github-webhook app.kubernetes.io/part-of=argocd --overwrite
 unset argocd_github_webhook_secret
+printf '%s' "$vault_oidc_client_secret" |
+  kubectl -n argocd create secret generic argocd-vault-oidc \
+    --from-file=oidc.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n argocd label secret argocd-vault-oidc app.kubernetes.io/part-of=argocd --overwrite
+unset vault_oidc_client_secret
 
 helm upgrade --install argocd \
   oci://ghcr.io/argoproj/argo-helm/argo-cd \

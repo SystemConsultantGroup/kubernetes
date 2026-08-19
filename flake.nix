@@ -54,7 +54,10 @@
       devShells = nixpkgs.lib.genAttrs systems (
         system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "vault-bin";
+          };
         in
         {
           default = pkgs.mkShell {
@@ -68,6 +71,7 @@
               kubernetes-helm
               sops
               talosctl
+              vault-bin
               yq-go
             ];
 

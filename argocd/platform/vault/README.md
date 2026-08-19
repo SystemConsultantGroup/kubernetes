@@ -64,8 +64,31 @@ retains the existing file.
 
 The recovery file is generated output tied to the current Raft data. Its shares
 do not substitute for the Worker key and cannot unseal Vault if that key is
-lost. Record a long-lived operator authentication design before revoking the
-initial root token.
+lost.
+
+## Operator authentication
+
+Vault uses Argo CD's bundled Dex as an OIDC provider. Dex delegates to the
+existing GitHub OAuth application and emits GitHub team claims. The mappings are:
+
+- `SystemConsultantGroup:active` receives `github-active`, which manages secret
+  values and versions under `kv/`;
+- `SystemConsultantGroup:platform` receives `github-platform`, which administers
+  Vault.
+
+The `platform` team is nested under `active`, so platform operators receive both
+policies. Vault has a distinct Dex client secret in `secrets/bootstrap.yaml`;
+it does not reuse Argo CD's downstream session or client identity.
+
+After configuration, select **OIDC** in the Vault UI or use:
+
+```bash
+export VAULT_ADDR=https://vault.platform.scg.sh
+vault login -method=oidc role=github
+```
+
+Test a platform login before revoking the initial root token. Recovery shares
+remain the break-glass mechanism if Dex or GitHub is unavailable.
 
 ## Operations
 

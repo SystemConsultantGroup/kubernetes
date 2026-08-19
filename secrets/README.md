@@ -56,7 +56,8 @@ k secrets edit vault
 
 Before `k install` can complete, `bootstrap.yaml` must contain real values for
 `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `ARGOCD_GITHUB_WEBHOOK_SECRET`,
-`CLOUDFLARE_API_TOKEN`, and `ZEROSSL_EAB_HMAC_KEY`. `vault.yaml` must contain
+`CLOUDFLARE_API_TOKEN`, `VAULT_OIDC_CLIENT_SECRET`, and
+`ZEROSSL_EAB_HMAC_KEY`. `vault.yaml` must contain
 `VAULT_TRANSIT_SEAL_TOKEN` and `VAULT_TRANSIT_SEAL_KEY_V1`.
 The Cloudflare token must be allowed to read the relevant zone and edit its DNS
 records.

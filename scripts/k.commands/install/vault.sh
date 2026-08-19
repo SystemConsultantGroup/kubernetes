@@ -1,6 +1,88 @@
 require_no_args "k install vault" "$@"
+require_bootstrap_secrets
 require_vault_secrets
 require_file "$ROOT_DIR/argocd/platform/vault/application.yaml"
+require_file "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
+require_file "$ROOT_DIR/argocd/platform/vault/policies/platform.hcl"
+
+configure_vault_policy() {
+  local token="$1" name="$2" policy_file="$3"
+  {
+    printf '%s\n' "$token"
+    cat "$policy_file"
+  } | kubectl -n vault exec -i vault-0 -- /bin/sh -ec '
+    IFS= read -r VAULT_TOKEN
+    export VAULT_TOKEN VAULT_SKIP_VERIFY=true
+    vault policy write "$1" - >/dev/null
+  ' vault-policy "$name"
+}
+
+vault_token_valid() {
+  local token="$1"
+  printf '%s\n' "$token" | kubectl -n vault exec -i vault-0 -- /bin/sh -ec '
+    IFS= read -r VAULT_TOKEN
+    export VAULT_TOKEN VAULT_SKIP_VERIFY=true
+    vault token lookup >/dev/null
+  ' 2>/dev/null
+}
+
+configure_vault_oidc() {
+  local token="$1" client_secret="$2"
+
+  configure_vault_policy "$token" github-active \
+    "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
+  configure_vault_policy "$token" github-platform \
+    "$ROOT_DIR/argocd/platform/vault/policies/platform.hcl"
+
+  {
+    printf '%s\n' "$token"
+    printf '%s\n' "$client_secret"
+  } | kubectl -n vault exec -i vault-0 -- /bin/sh -ec '
+    IFS= read -r VAULT_TOKEN
+    IFS= read -r oidc_client_secret
+    export VAULT_TOKEN VAULT_SKIP_VERIFY=true
+
+    vault auth list | grep -q '^oidc/' ||
+      vault auth enable -path=oidc oidc >/dev/null
+
+    printf %s "$oidc_client_secret" | vault write auth/oidc/config \
+      oidc_discovery_url=https://argocd.platform.scg.sh/api/dex \
+      oidc_client_id=vault \
+      oidc_client_secret=- \
+      default_role=github >/dev/null
+    unset oidc_client_secret
+
+    vault write auth/oidc/role/github \
+      role_type=oidc \
+      user_claim=sub \
+      groups_claim=groups \
+      oidc_scopes=openid,profile,email,groups \
+      allowed_redirect_uris=http://localhost:8250/oidc/callback,https://vault.platform.scg.sh/ui/vault/auth/oidc/oidc/callback \
+      token_ttl=1h \
+      token_max_ttl=8h >/dev/null
+
+    oidc_accessor="$(vault read -field=accessor sys/auth/oidc)"
+    active_id="$(vault write -field=id identity/group/name/github-active \
+      type=external policies=github-active)"
+    platform_id="$(vault write -field=id identity/group/name/github-platform \
+      type=external policies=github-platform)"
+
+    vault write -field=id identity/lookup/group \
+      alias_name=SystemConsultantGroup:active \
+      alias_mount_accessor="$oidc_accessor" >/dev/null 2>&1 ||
+      vault write identity/group-alias \
+        name=SystemConsultantGroup:active \
+        mount_accessor="$oidc_accessor" \
+        canonical_id="$active_id" >/dev/null
+    vault write -field=id identity/lookup/group \
+      alias_name=SystemConsultantGroup:platform \
+      alias_mount_accessor="$oidc_accessor" >/dev/null 2>&1 ||
+      vault write identity/group-alias \
+        name=SystemConsultantGroup:platform \
+        mount_accessor="$oidc_accessor" \
+        canonical_id="$platform_id" >/dev/null
+  '
+}
 
 if ! curl --fail --silent --show-error \
   https://kms.vault.platform.scg.sh/healthz >/dev/null; then
@@ -57,7 +139,17 @@ done
 if [[ $(jq -r '.initialized' "$status_file") == true ]]; then
   require_file "$VAULT_RECOVERY_FILE"
   sops decrypt "$VAULT_RECOVERY_FILE" >/dev/null
-  echo "Vault is already initialized; existing recovery material was retained"
+  root_token="$(sops decrypt --extract '["root_token"]' "$VAULT_RECOVERY_FILE" 2>/dev/null || true)"
+  if [[ -n $root_token ]] && vault_token_valid "$root_token"; then
+    oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
+    configure_vault_oidc "$root_token" "$oidc_client_secret"
+    unset oidc_client_secret
+    echo "Vault is already initialized; OIDC configuration was reconciled"
+  else
+    echo "Vault is already initialized; no valid bootstrap root token was available for reconciliation"
+  fi
+  unset root_token
+  echo "Existing recovery material was retained"
   return
 fi
 
@@ -94,6 +186,11 @@ preserve_init=0
     kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
 '
+
+root_token="$(jq -r '.root_token' "$init_file")"
+oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
+configure_vault_oidc "$root_token" "$oidc_client_secret"
+unset root_token oidc_client_secret
 
 public_ready=0
 for _ in $(seq 1 60); do

@@ -16,12 +16,15 @@ The command:
 1. immediately encrypts the one-time initialization response into
    `secrets/vault-recovery.yaml`;
 1. enables the file audit device, KV v2 at `kv`, and Kubernetes authentication;
-   and
+1. configures GitHub authentication through Argo CD Dex and maps the `active`
+   and `platform` teams to Vault policies; and
 1. waits for `https://vault.platform.scg.sh/v1/sys/health`.
 
-If Vault is already initialized, the command validates and retains the existing
-recovery file. Vault cannot return recovery shares or the initial root token a
-second time.
+If Vault is already initialized and its recovery file still contains a valid
+initial root token, the command reconciles the OIDC configuration and policies.
+After that token is revoked and removed, it validates and retains the recovery
+file without attempting privileged reconciliation. Vault cannot return recovery
+shares or the initial root token a second time.
 
 If initialization succeeds but SOPS encryption fails, the command preserves the
 plaintext response in a mode-`0600` temporary file and prints only its path.
@@ -45,6 +48,7 @@ A complete `k install` runs this command after Argo CD.
   `https://kms.vault.platform.scg.sh`.
 - `secrets/vault.yaml` is decryptable and contains the Worker key backup and
   Transit token.
+- `secrets/bootstrap.yaml` contains the Dex client secret shared with Vault.
 - The local age key can decrypt the existing recovery file and SOPS has at
   least one configured recipient for encrypting its replacement.
 - Argo CD, cert-manager, the Gateway, and `local-data` are installed.

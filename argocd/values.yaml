@@ -21,7 +21,15 @@ configs:
               - name: SystemConsultantGroup
                 teams:
                   - active
+                  - platform
             teamNameField: slug
+      staticClients:
+        - id: vault
+          name: Vault
+          redirectURIs:
+            - http://localhost:8250/oidc/callback
+            - https://vault.platform.scg.sh/ui/vault/auth/oidc/oidc/callback
+          secret: $argocd-vault-oidc:oidc.clientSecret
   secret:
     githubSecret: '$argocd-github-webhook:webhook.github.secret'
   rbac:
