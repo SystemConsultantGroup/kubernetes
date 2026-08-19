@@ -33,7 +33,7 @@ Safety is more important than performance, but the project cannot fund an ideal 
 
 The repository currently enables only SCC in `state.yaml`. E1S and E2S have node patches but are not active. The cluster permits workloads on control-plane nodes.
 
-SCC reported:
+At the initial inspection, SCC reported:
 
 - 96 CPU cores;
 - approximately 535 GiB of memory;
@@ -41,19 +41,19 @@ SCC reported:
 - no StorageClass;
 - no persistent volumes or claims.
 
-Talos saw four independent physical disks:
+Talos initially saw four independent physical disks:
 
 - two approximately 1.9 TB SSDs;
 - two approximately 480 GB SSDs.
 
-Talos was installed on one 480 GB disk, and no RAID logical volume was visible. This initially appeared to contradict the desired baseline. It was later clarified that every server has hardware RAID with hot-swap support, but SCC had not yet been configured that way.
+The SCC hardware RAID conversion and Talos reinstallation are now complete. The controller presents two logical volumes:
 
-The agreed eventual layout is:
+- a 480 GB system RAID volume containing Talos `STATE` and `EPHEMERAL`;
+- a 1.9 TB data RAID volume intended for the `data` Talos user volume and database persistent volumes.
 
-- a 500 GB RAID 1 logical volume containing Talos system partitions and `EPHEMERAL`;
-- a 2 TB RAID 1 logical volume exposed as a Talos user volume for database persistent volumes.
+The current SCC patch selects both logical volumes by their controller-provided WWIDs. The `data` user-volume configuration is present but not ready: Talos reports that the selected data volume has insufficient free space for the requested volume, and no `/var/mnt/data` mount exists. The existing `local-data` StorageClass is nevertheless deployed and has bound local claims on `/var/lib/local-data` within `EPHEMERAL`; it is not yet suitable as the database data tier.
 
-Hardware RAID is preferred to Talos software RAID because the controllers support hot-swap and because the repository currently pins Talos 1.13.7. The RAID controller may expose new WWIDs, so each node patch must be updated after its arrays are configured.
+Hardware RAID is preferred to Talos software RAID because the controllers support hot-swap and because the repository currently pins Talos 1.13.7. The RAID controller may expose new WWIDs, so each node patch must be updated after its arrays are configured. SCC has been updated; E1S and E2S still require their final controller WWIDs before activation.
 
 Controller operating requirements include:
 
@@ -68,14 +68,16 @@ The initial recommendation is node-local persistent storage rather than Longhorn
 
 PXC already maintains three database copies in the final topology. Adding replicated block storage would duplicate replication, consume more network and capacity, and introduce additional correlated failure behavior.
 
-The local-storage design should provide:
+The local-storage design must provide:
 
-- a Talos user volume on the data RAID logical volume;
-- a small local-volume provisioner;
+- a ready Talos user volume on the data RAID logical volume;
+- a small local-volume provisioner using that volume for database claims;
 - a StorageClass using `WaitForFirstConsumer`;
 - a `Retain` reclaim policy;
 - strict hostname anti-affinity for final PXC placement;
 - one PXC member per physical node.
+
+The first three items are only partially complete on SCC. `local-data` already has the required binding and reclaim behavior, but its current `/var/lib/local-data` path belongs to `EPHEMERAL`. Before a PXC claim is created, resolve the failed `data` user volume, verify that it is mounted at `/var/mnt/data`, and move the provisioner path there. Existing local claims must be preserved or deliberately migrated before changing their provisioning path.
 
 Local PV consequences are accepted:
 
@@ -86,14 +88,14 @@ Local PV consequences are accepted:
 
 The database is currently small, so a 250–500 GiB initial allocation is already generous. The full data RAID should not be allocated to one PVC.
 
-## Rehearsal before RAID conversion
+## Rehearsal after platform storage setup
 
-Because SCC contains no important workload data, the current unmirrored state is useful for disposable experimentation. The decision is to rehearse first and configure SCC hardware RAID afterward.
+SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. The local-volume provisioner is deployed, but the data RAID user volume is not ready because Talos finds insufficient free space on its selected logical volume. Resolve that condition without erasing data of uncertain value, then verify the `data` volume and its `/var/mnt/data` mount before the database rehearsal.
 
-The disposable rehearsal should:
+The rehearsal should:
 
-1. Create a temporary Talos user volume on one unused large SCC disk.
-1. Install a local-volume provisioner.
+1. Verify the ready Talos `data` user volume and configure the provisioner to use it for database claims.
+1. Preserve or deliberately migrate existing local claims before changing the provisioner path.
 1. Install the Percona PXC Operator.
 1. Deploy a single PXC member with unsafe configuration explicitly enabled.
 1. Load the experimental logical dump described below.
@@ -105,9 +107,7 @@ The disposable rehearsal should:
 1. Delete the test database and restore it only from object storage.
 1. Record timings and every manual intervention.
 
-The rehearsal environment and its local volume are disposable and must not be mistaken for production storage.
-
-After the procedure works, SCC should be wiped, configured with both hardware RAID arrays, reinstalled, and rebuilt using the rehearsed process.
+The PXC rehearsal data may be disposable, but existing SCC platform data is not. SCC should not be wiped again as part of this sequence.
 
 ## Operator choice
 
@@ -153,8 +153,8 @@ It is not currently available. A VM on SCC or E1S would not constitute an indepe
 
 The accepted transitional risk is:
 
-- run one PXC member on SCC;
-- protect it with SCC hardware RAID before production cutover;
+- run one PXC member on SCC only after its data RAID user volume is ready;
+- SCC is already protected by hardware RAID before production cutover;
 - continuously copy backups and binlogs off SCC;
 - accept that SCC loss during the short transition causes downtime and restore work rather than transparent failover;
 - join E1S and scale directly from one to three members as soon as validation and backups permit.
@@ -537,17 +537,17 @@ The two remaining storage measurements for rehearsal are:
 
 ## GitOps organization
 
-The proposed repository structure treats database infrastructure as platform infrastructure:
+The repository treats database infrastructure as platform infrastructure:
 
 ```text
-argocd/platform/local-storage/
+argocd/platform/local-path-provisioner/
 argocd/platform/percona-operator/
 argocd/platform/mysql/
 ```
 
-These should be separate Argo CD Applications:
+These are separate Argo CD Applications:
 
-1. local storage and StorageClass;
+1. local storage and StorageClass, already deployed as `local-path-provisioner`;
 1. operator and CRDs;
 1. PXC cluster, backup schedules, and policies.
 
@@ -565,7 +565,7 @@ Plaintext credentials must not be committed to application or platform manifests
 
 The migration is considered sufficiently safer than the existing system when:
 
-- SCC production storage uses hardware RAID;
+- SCC uses hardware RAID and its PXC local PVCs reside on the ready data RAID user volume rather than `EPHEMERAL`;
 - all application tables in PXC use InnoDB;
 - all writable tables have primary keys;
 - PXC strict mode remains enabled;
