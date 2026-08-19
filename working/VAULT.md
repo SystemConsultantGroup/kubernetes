@@ -2,17 +2,29 @@
 
 ## Status
 
-The design is approved and Vault is active, initialized, and auto-unsealed.
+The base platform is deployed and healthy. Vault 2.0.4 is active at
+`vault.platform.scg.sh`, initialized, and auto-unsealed through the
+Transit-compatible Worker at `kms.vault.platform.scg.sh`. Argo CD reports both
+Vault and its own application as synced and healthy.
+
 KV v2 is mounted at `kv`, Kubernetes authentication is configured, and file
-auditing writes to the audit PVC. Managed application secret generation remains
-disabled centrally until scoped policies and roles exist. Application metadata
-does not contain secret configuration.
+auditing writes to the audit PVC. GitHub operator authentication uses Argo CD
+Dex. `SystemConsultantGroup:active` receives `github-active` and can manage
+values under `kv`; `SystemConsultantGroup:platform` additionally receives
+`github-platform` with administrative access. OIDC is the default web UI login
+method. The initial root token has been revoked and removed from the encrypted
+recovery file.
+
+Managed application secret generation remains disabled centrally until scoped
+application policies and Kubernetes roles exist. Application metadata does not
+contain secret configuration. This application integration is the next phase.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
 and audit PVCs from this class. The storage is node-local and is lost on a Talos
 EPHEMERAL reset. This is intentional: repository-driven resets rebuild Vault
-with empty data and replace the generated recovery material.
+with empty data and replace `secrets/vault-recovery.yaml`. The repository does
+not retain Raft snapshots or restore Vault data.
 
 ## Decisions
 
@@ -27,6 +39,33 @@ Runtime application secrets use:
 - scoped Vault roles instead of one cluster-wide Vault identity.
 
 Custom Kustomize applications do not receive generated secret resources.
+
+## Operator access and recovery
+
+Enter the development shell and authenticate through GitHub:
+
+```bash
+nix develop
+export VAULT_ADDR=https://vault.platform.scg.sh
+vault login -method=oidc role=github
+```
+
+The `platform` team is nested under `active`, so platform members receive both
+identity policies. Operator tokens have a one-hour TTL, are renewable, and have
+an eight-hour maximum TTL. Use `vault token renew` instead of repeating the
+browser login during an active session.
+
+`secrets/vault-recovery.yaml` contains five SOPS-encrypted recovery shares with
+a threshold of three for the current Raft data. It no longer contains an initial
+root token. Recovery shares can authorize root-token generation and rekeying,
+but cannot unseal Vault if the Worker or its encryption key is unavailable.
+`secrets/vault.yaml` separately retains the Worker's seal key and Transit token.
+
+`k install vault` restores the Kubernetes seal Secret, applies Vault, initializes
+fresh storage, captures and encrypts new recovery material, and configures the
+base auth methods and operator policies. On an already initialized deployment
+without a bootstrap root token, it validates the recovery file without trying
+to reconcile privileged Vault configuration.
 
 ## Terminology
 
@@ -205,36 +244,38 @@ expose path overrides in application metadata.
 
 ## Vault deployment
 
-The deployment uses the official Vault chart and integrated Raft storage. The
-current configuration requests `local-data` and runs one Raft member. Continued
-production use requires all of the following:
+The deployment uses the official Vault chart and integrated Raft storage. It
+runs one Raft member and is intentionally not represented as highly available.
+Do not increase the replica count until independent nodes and storage exist.
 
-1. the `local-data` StorageClass is reconciled and locally verified;
-1. enough independent nodes exist before increasing the Raft replica count;
-1. end-to-end TLS and CA distribution to application namespaces;
-1. an initialization and unseal procedure that SOPS-encrypts recovery material
-   outside the cluster;
-1. Vault audit devices with durable output; and
-1. an operator workflow for KV, auth mount, policy, and role provisioning.
+TLS is active end to end: the public Gateway terminates client TLS and validates
+the TLS connection to Vault with the pinned issuer chain. Auto-unseal has been
+restart-tested. File auditing, KV v2, Kubernetes auth, GitHub OIDC, recovery
+capture, and operator access are configured and verified.
 
-Three Vault pods on one physical node are not highly available. The current
-single-node cluster must not represent such a deployment as HA.
+Current limitations are:
 
-## Activation sequence
+- Raft and audit data are lost with Talos `EPHEMERAL` storage;
+- no Vault data backup is retained by design;
+- application policies and Kubernetes roles are not yet provisioned;
+- the central managed-secret gate remains disabled; and
+- Worker mTLS is optional hardening and is not enabled.
 
-Activate the system in this order:
+## Remaining activation sequence
 
-1. provide durable storage and the Vault TLS trust chain;
-1. include the staged Vault Application in `argocd/kustomization.yaml`;
-1. run `k install vault` to initialize, auto-unseal, and replace encrypted
-   recovery output;
-1. enable KV v2 at `kv` and Kubernetes auth at `kubernetes`;
-1. configure scoped policies and roles for each application;
-1. migrate and rename existing secrets into generated paths;
-1. verify ESO synchronization and Reloader rollouts in testing;
+The base Vault activation steps are complete. Continue in this order:
+
+1. generate scoped policies and Kubernetes auth roles for each application;
+1. seed or migrate application values into the generated `kv/applications/...`
+   paths without exposing them in logs or Git;
+1. render the namespaced SecretStores and ExternalSecrets while retaining the
+   central disabled gate;
+1. test ESO synchronization and Reloader create, update, and deletion behavior
+   with one non-production workload;
 1. set `_context.secrets.enabled: true` and the trusted HTTPS Vault server URL
-   in both managed ApplicationSets; and
-1. verify production paths before promotion.
+   in both managed ApplicationSets;
+1. verify production paths before promotion; and
+1. optionally enable Worker mTLS and rehearse recovery-share root generation.
 
 The central gate allows activation without changing any application
 `meta.yaml`.
