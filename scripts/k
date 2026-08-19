@@ -13,6 +13,7 @@ RECIPIENTS_FILE="$SECRETS_DIR/state.yaml"
 SOPS_CONFIG_FILE="$ROOT_DIR/.sops.yaml"
 TALOS_SECRETS_FILE="$SECRETS_DIR/talos.yaml"
 BOOTSTRAP_SECRETS_FILE="$SECRETS_DIR/bootstrap.yaml"
+VAULT_SECRETS_FILE="$SECRETS_DIR/vault.yaml"
 export TALOSCONFIG="$ROOT_DIR/talosconfig"
 export KUBECONFIG="$ROOT_DIR/kubeconfig"
 cd "$ROOT_DIR"
@@ -242,6 +243,30 @@ require_bootstrap_secrets() {
     value="$(read_bootstrap_secret "$name")"
     [[ -n $value && $value != REPLACE_ME ]] || {
       echo "Set $name with: k secrets edit bootstrap" >&2
+      return 1
+    }
+  done
+}
+
+read_vault_secret() {
+  local name="$1"
+  case "$name" in
+  VAULT_TRANSIT_SEAL_KEY_V1 | VAULT_TRANSIT_SEAL_TOKEN) ;;
+  *)
+    echo "Unknown Vault secret: $name" >&2
+    return 2
+    ;;
+  esac
+  require_file "$VAULT_SECRETS_FILE"
+  sops decrypt --extract "[\"$name\"]" "$VAULT_SECRETS_FILE"
+}
+
+require_vault_secrets() {
+  local name value
+  for name in VAULT_TRANSIT_SEAL_KEY_V1 VAULT_TRANSIT_SEAL_TOKEN; do
+    value="$(read_vault_secret "$name")"
+    [[ -n $value && $value != REPLACE_ME ]] || {
+      echo "Set $name with: k secrets edit vault" >&2
       return 1
     }
   done

@@ -12,8 +12,9 @@ k install <command>
 Running `k install` with no subcommand performs the complete bootstrap.
 It requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
 `ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`, and
-`ZEROSSL_EAB_HMAC_KEY` in encrypted `secrets/bootstrap.yaml`.
-Set them with `k secrets edit bootstrap`.
+`ZEROSSL_EAB_HMAC_KEY` in encrypted `secrets/bootstrap.yaml`, plus the Vault
+Transit credentials in encrypted `secrets/vault.yaml`.
+Set them with `k secrets edit bootstrap` and `k secrets edit vault`.
 
 ## Subcommands
 
@@ -26,7 +27,7 @@ Set them with `k secrets edit bootstrap`.
 
 For the full bootstrap:
 
-- both encrypted files under `secrets/` are decryptable with the local age key;
+- every encrypted file under `secrets/` is decryptable with the local age key;
 - every declared node has `patches/<node>.yaml`; and
 - `patches/worker.yaml` and `patches/cilium.yaml` exist.
 

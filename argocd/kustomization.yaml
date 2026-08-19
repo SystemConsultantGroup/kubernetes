@@ -12,3 +12,4 @@ resources:
   - platform/gateway/application.yaml
   - platform/local-path-provisioner/application.yaml
   - platform/reloader/application.yaml
+  - platform/vault/application.yaml

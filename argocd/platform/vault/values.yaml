@@ -11,8 +11,10 @@ server:
     - name: vault-server-tls
       mountPath: /vault/userconfig/vault-server-tls
       readOnly: true
-  extraEnvironmentVars:
-    VAULT_CACERT: /vault/userconfig/vault-server-tls/ca.crt
+  extraSecretEnvironmentVars:
+    - envName: VAULT_TRANSIT_SEAL_TOKEN
+      secretName: vault-transit-seal
+      secretKey: token
   resources:
     requests:
       cpu: 100m
@@ -20,6 +22,10 @@ server:
     limits:
       memory: 512Mi
   dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: local-data
+  auditStorage:
     enabled: true
     size: 10Gi
     storageClass: local-data
@@ -31,6 +37,7 @@ server:
   ha:
     enabled: true
     replicas: 1
+    apiAddr: https://vault.platform.scg.sh
     raft:
       enabled: true
       setNodeId: true
@@ -43,11 +50,18 @@ server:
           cluster_address = "[::]:8201"
           tls_cert_file = "/vault/userconfig/vault-server-tls/tls.crt"
           tls_key_file = "/vault/userconfig/vault-server-tls/tls.key"
-          tls_client_ca_file = "/vault/userconfig/vault-server-tls/ca.crt"
         }
 
         storage "raft" {
           path = "/vault/data"
+        }
+
+        seal "transit" {
+          address = "https://kms.vault.platform.scg.sh"
+          token = "env://VAULT_TRANSIT_SEAL_TOKEN"
+          disable_renewal = "true"
+          mount_path = "transit"
+          key_name = "vault-root"
         }
 
         service_registration "kubernetes" {}

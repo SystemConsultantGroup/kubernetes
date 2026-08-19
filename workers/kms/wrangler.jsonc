@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vault-kms",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-19",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "kms.vault.platform.scg.sh",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "CURRENT_KEY_VERSION": "v1",
+    "REQUIRE_MTLS": "false",
+    "TRANSIT_KEY_NAME": "vault-root",
+    "TRANSIT_MOUNT_PATH": "transit"
+  },
+  "observability": {
+    "enabled": false
+  }
+}

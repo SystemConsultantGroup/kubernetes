@@ -79,3 +79,4 @@ Change Argo CD-managed resources in Git, not with direct cluster edits.
 - [`secrets/`](secrets/) contains the public recipient registry and encrypted
   cluster configuration.
 - [`state.yaml`](state.yaml) is authoritative for cluster topology and versions.
+- [`workers/`](workers/) contains Cloudflare Workers deployed outside Argo CD.

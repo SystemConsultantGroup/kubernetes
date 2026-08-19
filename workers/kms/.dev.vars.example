@@ -1,0 +1,2 @@
+KMS_AUTH_TOKEN=replace-with-a-long-random-token
+KMS_KEY_V1=replace-with-exactly-32-random-bytes-encoded-as-standard-base64

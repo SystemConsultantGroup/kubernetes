@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-server
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: vault-server-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: zerossl-cloudflare
+  dnsNames:
+    - vault.platform.scg.sh

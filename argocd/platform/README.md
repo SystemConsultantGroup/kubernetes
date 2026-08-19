@@ -16,17 +16,17 @@ AppProject.
 | [`gateway/`](gateway/) | Cilium public Gateway and `gateway-system` namespace |
 | [`local-path-provisioner/`](local-path-provisioner/) | Dynamic node-local volumes from Talos user storage |
 | [`reloader/`](reloader/) | Rolls managed workloads when referenced Secrets change |
-| [`vault/`](vault/) | Staged Vault server configuration; intentionally inactive |
+| [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
 
 Active components use automated sync, pruning, and self-healing.
 Bootstrap credentials are created by `k install argocd` from encrypted values;
 never put tokens in platform values files.
 
-The Vault Application is not included by the root until `local-data` is verified
-and Vault's TLS, initialization, recovery, and scoped authentication are ready.
-Its activation requirements and the managed secret contract are recorded in
-[`../../working/VAULT.md`](../../working/VAULT.md).
+Vault uses the non-default `local-data` class, HTTPS at
+`vault.platform.scg.sh`, and the Transit-compatible Worker at
+`kms.vault.platform.scg.sh`. Initialization, recovery, and the managed secret
+contract are recorded in [`../../working/VAULT.md`](../../working/VAULT.md).
 
 ## Public routing
 
