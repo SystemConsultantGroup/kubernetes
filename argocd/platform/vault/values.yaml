@@ -36,7 +36,7 @@ server:
     enabled: false
   ha:
     enabled: true
-    replicas: 0
+    replicas: 1
     apiAddr: https://vault.platform.scg.sh
     raft:
       enabled: true
