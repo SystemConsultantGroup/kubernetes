@@ -26,7 +26,7 @@
         {{- $external = $domain.external -}}
       {{- end -}}
       {{- $suffix := trunc 8 (sha256sum $hostname) -}}
-      {{- $resourceName := printf "%s-%s-%s" $application $owner $suffix | trunc 63 | trimSuffix "-" -}}
+      {{- $resourceName := include "application.resourceName" (dict "name" (printf "%s-%s-%s" $application $owner $suffix) "limit" 59) -}}
       {{- $listenerName := $resourceName -}}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -191,7 +191,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: ReferenceGrant
 metadata:
-  name: {{ printf "%s-%s-%v" $application $previewWorkload $context.instance.pullRequest | trunc 63 | trimSuffix "-" }}
+  name: {{ include "application.resourceName" (dict "name" (printf "%s-%s-%v" $application $previewWorkload $context.instance.pullRequest)) }}
   namespace: {{ include "application.testingNamespace" $ }}
 spec:
   from:

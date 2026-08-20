@@ -19,8 +19,8 @@ number come from the path.
 
 The managed generators own the enabled central Vault integration gate and its
 trusted server URL. Application metadata does not control this gate or provide
-Vault paths. The activation procedure is recorded in
-[`../../working/VAULT.md`](../../working/VAULT.md).
+Vault paths. The contract and activation procedure are documented in the
+[Vault component README](../platform/vault/README.md).
 
 ## Refresh behavior
 
@@ -42,7 +42,8 @@ The application name is the first component of every generated identity.
 | custom Kustomize | `<application>` | none | `<application>` |
 
 The Argo CD Application objects themselves live in the `argocd` namespace.
-Managed application resource names are documented in
+Repository checks reject identities that exceed Kubernetes name limits before
+ApplicationSet reconciliation. Managed application resource names are documented in
 [`../charts/application/README.md`](../charts/application/README.md).
 
 Renaming an Application or destination namespace changes Argo CD identity and

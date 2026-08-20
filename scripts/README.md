@@ -1,7 +1,8 @@
 # Operator commands
 
-[`k`](k) is the supported entrypoint for local cluster operations.
-Start in the repository development shell:
+[`k`](k) is the platform-engineer entrypoint for local cluster operations. It
+is not part of the application-developer workflow. Start in the repository
+development shell:
 
 ```bash
 nix develop
@@ -10,7 +11,8 @@ k --help
 
 The shell adds `scripts/` to `PATH`, provides the repository's main tooling,
 and points `TALOSCONFIG` and `KUBECONFIG` at ignored files in the repository
-root.
+root. Help and encrypted-secret management do not load cluster state, so they
+remain available while repairing `state.yaml`.
 
 ## Command groups
 
@@ -26,7 +28,9 @@ root.
 | `k forward` | Forward Argo CD to localhost |
 
 Use `k <command> --help` for prerequisites, arguments, and side effects.
-The matching documents are in [`k.commands/`](k.commands/).
+The matching documents are in [`k.commands/`](k.commands/). Internal repository
+checks live under [`checks/`](checks/) and run through `nix flake check`; they
+are not operator commands.
 
 ## Local credentials
 

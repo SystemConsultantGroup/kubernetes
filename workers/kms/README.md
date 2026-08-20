@@ -80,8 +80,9 @@ planned seal migration.
 
 Configure Cloudflare API Shield client-certificate validation for the custom
 domain and configure Vault to present that certificate. Then set
-`REQUIRE_MTLS` to `true` in `wrangler.jsonc` and redeploy. The Worker requires
-Cloudflare's `certVerified` value to be `SUCCESS` and rejects revoked
+`REQUIRE_MTLS` to exactly `true` in `wrangler.jsonc` and redeploy. Only `true`
+and `false` are accepted, so a typo makes requests fail closed. The Worker
+requires Cloudflare's `certVerified` value to be `SUCCESS` and rejects revoked
 certificates. Keep token authentication enabled as a second factor.
 
 ## Vault configuration

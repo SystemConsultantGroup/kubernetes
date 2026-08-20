@@ -15,8 +15,10 @@ Vault requests two retained `local-data` volumes:
 - 10 GiB at `/vault/data` for integrated Raft storage;
 - 10 GiB at `/vault/audit` for file audit logs.
 
-Both volumes are node-local and are intentionally outside this repository's
-reset contract. A destructive cluster reset starts Vault with empty storage.
+Both volumes are node-local. Their PersistentVolumes use `Retain`, but the
+current `/var/lib/local-data` backing path is on Talos `EPHEMERAL` storage and is
+therefore inside `k reset`'s wipe boundary. A node reset starts Vault with empty
+storage even when the Kubernetes PersistentVolumes were retained.
 
 cert-manager issues `vault-server-tls` for `vault.platform.scg.sh`. The public
 Gateway terminates client TLS and uses `BackendTLSPolicy` to establish and
@@ -50,7 +52,7 @@ procedure and retain old versions.
 
 ## Initialization
 
-Run the idempotent installer after Argo CD and the Worker are ready:
+Run the installer after Argo CD and the Worker are ready:
 
 ```bash
 k install vault
@@ -61,6 +63,12 @@ one-time response into `secrets/vault-recovery.yaml`, and configures auditing,
 KV v2, Kubernetes authentication, and shared managed-application access. Commit
 the changed encrypted recovery file after each destructive reset. On an
 initialized Vault it validates and retains the existing file.
+
+The installer reconciles privileged Vault configuration only while the recovery
+file contains a valid initial root token. After that token is revoked and
+removed, committed policy or authentication changes require a platform operator
+to authenticate and apply them as an explicit planned operation; rerunning the
+installer does not reconcile those settings.
 
 The recovery file is generated output tied to the current Raft data. Its shares
 do not substitute for the Worker key and cannot unseal Vault if that key is
@@ -102,7 +110,7 @@ ServiceAccount from any namespace and can read every three-segment path below
 
 Application onboarding does not change Vault configuration. The generated
 SecretStores and ExternalSecrets use the shared role and derived paths described
-in [`../../../working/VAULT.md`](../../../working/VAULT.md).
+in the [application chart documentation](../../charts/application/README.md).
 
 ## Operations
 

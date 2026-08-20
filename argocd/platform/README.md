@@ -19,14 +19,17 @@ AppProject.
 | [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
 
-Active components use automated sync, pruning, and self-healing.
+Active components use automated sync, pruning, and self-healing. Root sync
+waves create foundational operators and storage first, supporting controllers
+and certificates second, and externally routed services third. A wave orders
+child Application reconciliation but does not replace component health checks.
 Bootstrap credentials are created by `k install argocd` from encrypted values;
 never put tokens in platform values files.
 
 Vault uses the non-default `local-data` class, HTTPS at
 `vault.platform.scg.sh`, and the Transit-compatible Worker at
 `kms.vault.platform.scg.sh`. Initialization, recovery, and the managed secret
-contract are recorded in [`../../working/VAULT.md`](../../working/VAULT.md).
+contract are documented in the [Vault component README](vault/README.md).
 
 ## Public routing
 

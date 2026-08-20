@@ -28,25 +28,43 @@ state_value() {
   printf '%s\n' "$value"
 }
 
-CLUSTER_NAME="$(state_value '.name')"
-TALOS_SCHEMATIC="$(state_value '.talos.schematic')"
-TALOS_VERSION="$(state_value '.talos.version')"
-[[ $TALOS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-  echo "Invalid Talos version in state.yaml: $TALOS_VERSION" >&2
-  exit 1
+STATE_LOADED=0
+CLUSTER_NAME=""
+TALOS_SCHEMATIC=""
+TALOS_VERSION=""
+KUBERNETES_VERSION=""
+GATEWAY_API_VERSION=""
+CILIUM_VERSION=""
+ARGOCD_VERSION=""
+MAIN_NODE=""
+MAIN_IP=""
+CLUSTER_ENDPOINT=""
+TALOS_INSTALL_IMAGE=""
+NODES=()
+
+load_cluster_state() {
+  ((STATE_LOADED == 0)) || return 0
+  local nodes_state
+  CLUSTER_NAME="$(state_value '.name')"
+  TALOS_SCHEMATIC="$(state_value '.talos.schematic')"
+  TALOS_VERSION="$(state_value '.talos.version')"
+  [[ $TALOS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+    echo "Invalid Talos version in state.yaml: $TALOS_VERSION" >&2
+    return 1
+  }
+  TALOS_VERSION="v$TALOS_VERSION"
+  KUBERNETES_VERSION="$(state_value '.kubernetes.version')"
+  GATEWAY_API_VERSION="$(state_value '."gateway-api".version')"
+  CILIUM_VERSION="$(state_value '.cilium.version')"
+  ARGOCD_VERSION="$(state_value '.argocd.version')"
+  MAIN_NODE="$(state_value '.endpoint')"
+  MAIN_IP="$(MAIN_NODE="$MAIN_NODE" state_value '.nodes[strenv(MAIN_NODE)].address')"
+  CLUSTER_ENDPOINT="https://$MAIN_IP:6443"
+  TALOS_INSTALL_IMAGE="factory.talos.dev/installer/$TALOS_SCHEMATIC:$TALOS_VERSION"
+  nodes_state="$(state_value '.nodes | to_entries[] | "\(.key):\(.value.address)"')"
+  mapfile -t NODES <<<"$nodes_state"
+  STATE_LOADED=1
 }
-TALOS_VERSION="v$TALOS_VERSION"
-KUBERNETES_VERSION="$(state_value '.kubernetes.version')"
-GATEWAY_API_VERSION="$(state_value '."gateway-api".version')"
-CILIUM_VERSION="$(state_value '.cilium.version')"
-ARGOCD_VERSION="$(state_value '.argocd.version')"
-MAIN_NODE="$(state_value '.endpoint')"
-MAIN_IP="$(MAIN_NODE="$MAIN_NODE" state_value '.nodes[strenv(MAIN_NODE)].address')"
-CLUSTER_ENDPOINT="https://$MAIN_IP:6443"
-TALOS_INSTALL_IMAGE="factory.talos.dev/installer/$TALOS_SCHEMATIC:$TALOS_VERSION"
-NODES_STATE="$(state_value '.nodes | to_entries[] | "\(.key):\(.value.address)"')"
-mapfile -t NODES <<<"$NODES_STATE"
-unset NODES_STATE
 
 require_file() {
   if [[ ! -f $1 ]]; then
@@ -273,6 +291,11 @@ require_vault_secrets() {
   done
 }
 
+require_vault_worker() {
+  curl --fail --silent --show-error --max-time 10 \
+    https://kms.vault.platform.scg.sh/healthz >/dev/null
+}
+
 validate_talos_inputs() {
   local node node_name node_ip
   require_file "$TALOS_SECRETS_FILE"
@@ -315,15 +338,16 @@ usage_for() {
 show_doc() {
   local doc="$1"
   [[ -f $doc ]] || return 0
-  if command -v glow >/dev/null 2>&1 && [[ -t 1 ]]; then
+  if [[ ! -t 1 ]]; then
+    command cat "$doc"
+  elif command -v glow >/dev/null 2>&1; then
     glow "$doc"
   else
     md_style "$doc"
   fi
 }
 
-# Minimal ANSI markdown renderer: strips ATX heading markers (glow leaves
-# raw '#' when stdout is not a TTY) and dims code blocks.
+# Minimal ANSI markdown renderer for interactive terminals without glow.
 md_style() {
   local in_code=0 line
   while IFS= read -r line; do
@@ -396,6 +420,9 @@ run_from() (
     return
   fi
 
+  if [[ ! -d "$directory/$command" && $directory != "$COMMAND_DIR/secrets"* ]]; then
+    load_cluster_state
+  fi
   source "$script" "$@"
 )
 

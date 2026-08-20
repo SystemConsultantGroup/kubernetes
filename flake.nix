@@ -47,9 +47,47 @@
     {
       formatter = nixpkgs.lib.genAttrs systems (system: (treefmtFor system).config.build.wrapper);
 
-      checks = nixpkgs.lib.genAttrs systems (system: {
-        formatting = (treefmtFor system).config.build.check self;
-      });
+      checks = nixpkgs.lib.genAttrs systems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          formatting = (treefmtFor system).config.build.check self;
+          repository =
+            pkgs.runCommand "repository-check"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  cacert
+                  kubectl
+                  kubernetes-helm
+                  lychee
+                  shellcheck
+                  yq-go
+                ];
+              }
+              ''
+                export HOME="$TMPDIR/home"
+                export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                mkdir -p "$HOME"
+                bash ${self}/scripts/checks/repository.sh
+                touch "$out"
+              '';
+          worker-tests =
+            pkgs.runCommand "worker-tests"
+              {
+                nativeBuildInputs = [ pkgs.bun ];
+              }
+              ''
+                export HOME="$TMPDIR/home"
+                mkdir -p "$HOME"
+                cd ${self}/workers/kms
+                bun test src/index.test.ts
+                touch "$out"
+              '';
+        }
+      );
 
       devShells = nixpkgs.lib.genAttrs systems (
         system:
@@ -69,6 +107,8 @@
               glow
               kubectl
               kubernetes-helm
+              lychee
+              shellcheck
               sops
               talosctl
               vault-bin

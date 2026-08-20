@@ -35,8 +35,15 @@ function request(
   );
 }
 
-async function responseBody(response: Response): Promise<any> {
-  return response.json();
+type TransitResponse = {
+  data: {
+    ciphertext: string;
+    plaintext: string;
+  };
+};
+
+async function responseBody<Result>(response: Response): Promise<Result> {
+  return response.json() as Promise<Result>;
 }
 
 describe("Vault Transit compatibility", () => {
@@ -46,7 +53,7 @@ describe("Vault Transit compatibility", () => {
       environment(),
     );
     expect(healthy.status).toBe(200);
-    expect(await responseBody(healthy)).toEqual({ status: "ok" });
+    expect(await responseBody<{ status: string }>(healthy)).toEqual({ status: "ok" });
 
     const unhealthy = await handleRequest(
       new Request("https://kms.vault.platform.scg.sh/healthz"),
@@ -61,7 +68,9 @@ describe("Vault Transit compatibility", () => {
       environment(),
     );
     expect(response.status).toBe(403);
-    expect(await responseBody(response)).toEqual({ errors: ["permission denied"] });
+    expect(await responseBody<{ errors: string[] }>(response)).toEqual({
+      errors: ["permission denied"],
+    });
   });
 
   test("encrypts and decrypts a Transit payload", async () => {
@@ -72,7 +81,7 @@ describe("Vault Transit compatibility", () => {
     );
     expect(encryptedResponse.status).toBe(200);
 
-    const encryptedBody = await responseBody(encryptedResponse);
+    const encryptedBody = await responseBody<TransitResponse>(encryptedResponse);
     expect(encryptedBody.data.ciphertext).toMatch(
       /^vault:v1:[A-Za-z0-9_-]+$/,
     );
@@ -82,17 +91,17 @@ describe("Vault Transit compatibility", () => {
       environment(),
     );
     expect(decryptedResponse.status).toBe(200);
-    expect(await responseBody(decryptedResponse)).toEqual({
-      data: { plaintext },
-    });
+    expect(
+      await responseBody<{ data: { plaintext: string } }>(decryptedResponse),
+    ).toEqual({ data: { plaintext } });
   });
 
   test("uses a fresh AES-GCM nonce for every encryption", async () => {
     const body = { plaintext: btoa("same plaintext") };
-    const first = await responseBody(
+    const first = await responseBody<TransitResponse>(
       await handleRequest(request("encrypt", body), environment()),
     );
-    const second = await responseBody(
+    const second = await responseBody<TransitResponse>(
       await handleRequest(request("encrypt", body), environment()),
     );
     expect(first.data.ciphertext).not.toBe(second.data.ciphertext);
@@ -101,7 +110,7 @@ describe("Vault Transit compatibility", () => {
   test("retains decryption support for old key versions", async () => {
     const plaintext = btoa("wrapped with v1");
     const oldEnvironment = environment({ KMS_KEY_V2: KEY_V2 });
-    const encrypted = await responseBody(
+    const encrypted = await responseBody<TransitResponse>(
       await handleRequest(
         request("encrypt", { plaintext }),
         oldEnvironment,
@@ -117,9 +126,11 @@ describe("Vault Transit compatibility", () => {
       rotatedEnvironment,
     );
     expect(decrypted.status).toBe(200);
-    expect(await responseBody(decrypted)).toEqual({ data: { plaintext } });
+    expect(
+      await responseBody<{ data: { plaintext: string } }>(decrypted),
+    ).toEqual({ data: { plaintext } });
 
-    const newlyEncrypted = await responseBody(
+    const newlyEncrypted = await responseBody<TransitResponse>(
       await handleRequest(
         request("encrypt", { plaintext }),
         rotatedEnvironment,
@@ -129,7 +140,7 @@ describe("Vault Transit compatibility", () => {
   });
 
   test("rejects tampered ciphertext without exposing crypto details", async () => {
-    const encrypted = await responseBody(
+    const encrypted = await responseBody<TransitResponse>(
       await handleRequest(
         request("encrypt", { plaintext: btoa("secret") }),
         environment(),
@@ -148,7 +159,9 @@ describe("Vault Transit compatibility", () => {
       environment(),
     );
     expect(response.status).toBe(400);
-    expect(await responseBody(response)).toEqual({ errors: ["invalid ciphertext"] });
+    expect(await responseBody<{ errors: string[] }>(response)).toEqual({
+      errors: ["invalid ciphertext"],
+    });
   });
 
   test("supports optional Cloudflare-verified client certificates", async () => {
@@ -174,6 +187,14 @@ describe("Vault Transit compatibility", () => {
       environment({ REQUIRE_MTLS: "true" }),
     );
     expect(accepted.status).toBe(200);
+  });
+
+  test("rejects invalid mTLS configuration", async () => {
+    const response = await handleRequest(
+      request("encrypt", { plaintext: btoa("secret") }),
+      environment({ REQUIRE_MTLS: "ture" }),
+    );
+    expect(response.status).toBe(503);
   });
 
   test("does not expose APIs outside the configured Transit paths", async () => {

@@ -70,13 +70,14 @@ Change Argo CD-managed resources in Git, not with direct cluster edits.
 
 ## Repository map
 
-- [`applications/`](applications/) contains application metadata, immutable
-  instance locks, and custom Kustomizations.
+- [`applications/`](applications/) contains application metadata, digest-pinned
+  instance lock files, and custom Kustomizations.
 - [`argocd/`](argocd/) contains the GitOps root, ApplicationSets, platform
   components, projects, and the shared application chart.
 - [`patches/`](patches/) contains shared and node-specific Talos patches.
 - [`scripts/`](scripts/) provides the `k` operator command and its help.
 - [`secrets/`](secrets/) contains the public recipient registry and encrypted
   cluster configuration.
-- [`state.yaml`](state.yaml) is authoritative for cluster topology and versions.
+- [`state.yaml`](state.yaml) is authoritative for cluster topology and versions;
+  repository checks verify repeated manifest pins.
 - [`workers/`](workers/) contains Cloudflare Workers deployed outside Argo CD.

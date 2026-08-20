@@ -6,13 +6,24 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service | quote }}
 platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{- end }}
 
+{{- define "application.resourceName" -}}
+{{- $limit := .limit | default 63 | int -}}
+{{- $name := .name | trimSuffix "-" -}}
+{{- if le (len $name) $limit -}}
+{{- $name -}}
+{{- else -}}
+{{- $hash := sha256sum $name | trunc 8 -}}
+{{- $prefixLimit := sub $limit 9 | int -}}
+{{- printf "%s-%s" ($name | trunc $prefixLimit | trimSuffix "-") $hash -}}
+{{- end -}}
+{{- end }}
+
 {{- define "application.workloadName" -}}
-{{- printf "%s-%s" .root.Values._context.application .workload | trunc 63 | trimSuffix "-" -}}
+{{- include "application.resourceName" (dict "name" (printf "%s-%s" .root.Values._context.application .workload)) -}}
 {{- end }}
 
 {{- define "application.secretName" -}}
-{{- $workloadName := include "application.workloadName" . | trunc 51 | trimSuffix "-" -}}
-{{- printf "%s-environment" $workloadName -}}
+{{- include "application.resourceName" (dict "name" (printf "%s-%s-environment" .root.Values._context.application .workload)) -}}
 {{- end }}
 
 {{- define "application.testingNamespace" -}}
@@ -20,7 +31,8 @@ platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{- end }}
 
 {{- define "application.previewHostname" -}}
-{{- printf "%s-%s-%v.preview.scg.sh" .Values._context.application .Values._context.instance.workload .Values._context.instance.pullRequest -}}
+{{- $label := include "application.resourceName" (dict "name" (printf "%s-%s-%v" .Values._context.application .Values._context.instance.workload .Values._context.instance.pullRequest)) -}}
+{{- printf "%s.preview.scg.sh" $label -}}
 {{- end }}
 
 {{- define "application.testingHostname" -}}

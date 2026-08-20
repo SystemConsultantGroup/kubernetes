@@ -4,15 +4,14 @@ Applies a generated Talos machine configuration to every node in `state.yaml`.
 
 ## Behavior
 
-For each declared node, the command:
+The command first decrypts `secrets/talos.yaml`, generates every declared
+node's control-plane configuration, applies the node and shared patches, and
+validates every result in strict metal mode. It does not modify a node unless
+all configurations pass local validation.
 
-1. decrypts `secrets/talos.yaml` into a temporary file;
-1. generates a control-plane configuration from `state.yaml`;
-1. applies the node patch, shared worker patch, and shared Cilium patch; and
-1. applies the result to that node before continuing to the next one.
-
-A reachable node uses the normal Talos connection.
-An unreachable node uses `--insecure`, which supports first-boot configuration.
+A configured node uses the authenticated Talos connection. A node uses
+`--insecure` only when its unauthenticated machine-status endpoint confirms that
+it is in maintenance mode. Any other authentication failure stops the command.
 The command has no confirmation prompt or dry-run mode and always targets every
 declared node.
 

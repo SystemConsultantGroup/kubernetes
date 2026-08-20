@@ -19,8 +19,12 @@ the local path is created. The class currently permits only Kubernetes node
 /var/lib/local-data
 ```
 
-Unlisted nodes have no provisioning paths. Add a node only after its own durable
-Talos user volume exists.
+Unlisted nodes have no provisioning paths. The `data` user volume declared by
+the SCC Talos patch is not the backing store for this class and `/var/mnt/data`
+is not currently a valid provisioning path. Do not switch the path until Talos
+reports that volume ready and retained claims have an explicit migration plan.
+Add another node only after its intended storage path and durability are
+verified.
 
 The reclaim policy is `Retain`. Deleting a claim does not erase its local data or
 make its PersistentVolume automatically reusable. An operator must inspect and

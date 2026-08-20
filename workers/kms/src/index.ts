@@ -69,6 +69,17 @@ function setting(env: Env, name: string, fallback?: string): string {
   throw new HttpError(503, "KMS is not configured");
 }
 
+function booleanSetting(environment: Env, name: string, fallback: boolean): boolean {
+  const value = setting(environment, name, fallback ? "true" : "false").toLowerCase();
+  if (value === "true") {
+    return true;
+  }
+  if (value === "false") {
+    return false;
+  }
+  throw new HttpError(503, `KMS ${name} setting is invalid`);
+}
+
 function transitConfiguration(env: Env): {
   currentVersion: string;
   keyName: string;
@@ -342,7 +353,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     }
 
     if (
-      setting(env, "REQUIRE_MTLS", "false").toLowerCase() === "true" &&
+      booleanSetting(env, "REQUIRE_MTLS", false) &&
       !hasValidClientCertificate(request as RequestWithCloudflare)
     ) {
       return errorResponse(401, "client certificate required");

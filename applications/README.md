@@ -196,12 +196,21 @@ The generated Argo CD Application and namespace are named:
 ```
 
 Use `kustomization.yaml`, not `kustomize.yaml`.
-Do not add `meta.yaml` to a custom application.
+Do not add `meta.yaml` to a custom application. Resources with an explicit
+namespace may target only the application's generated namespace, and a declared
+Namespace must use the application name. Platform review of merged Git changes
+is the authorization boundary; application developers receive no cluster or
+`k` credentials.
 
 ## Validation and detailed schema
 
-The shared chart validates workload configuration with a generated strict JSON
-schema.
+Platform engineers run repository checks during review to validate the managed
+or custom layout, required production lock, workload consistency, preview
+identity, generated name limits, and local renders. Application developers do
+not need access to the platform-only `k` command.
+
+The shared chart validates effective workload configuration with a generated
+strict JSON schema.
 It accepts only the fields documented in
 [`../argocd/charts/application/README.md`](../argocd/charts/application/README.md),
 including Kubernetes-native resources, environment sources, readiness probes,

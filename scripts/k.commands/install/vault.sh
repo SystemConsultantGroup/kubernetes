@@ -1,6 +1,7 @@
 require_no_args "k install vault" "$@"
 require_bootstrap_secrets
 require_vault_secrets
+require_vault_worker
 require_file "$ROOT_DIR/argocd/platform/vault/application.yaml"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/applications.hcl"

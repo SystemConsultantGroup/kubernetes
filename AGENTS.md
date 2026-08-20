@@ -40,10 +40,18 @@ Keep changes focused, preserve unrelated work, and use the tools supplied by
 - A directory under `applications/` uses exactly one mode: managed `meta.yaml`
   plus `instances/`, or a custom `kustomization.yaml`.
   Do not mix the modes or use `kustomize.yaml` as the entrypoint.
-- Managed production and testing instance images must be digest-pinned, and
-  source revisions must be full commit identifiers.
+- Every managed production, testing, and preview image must be digest-pinned,
+  and every source revision must be a full commit identifier.
   Preview identity comes from its path under
   `instances/preview/<workload>/<pull-request>.yaml`.
+- `k` is exclusively for platform engineers. Application developers interact
+  through application files, documentation, and pull requests; do not make
+  application workflows depend on access to `k`.
+- A custom application may explicitly target only its generated application
+  namespace. Treat platform review of merged Git changes as the authorization
+  boundary because application developers have no cluster credentials.
+- Preserve existing command and application interfaces unless the user
+  explicitly requests an interface change.
 - Shell command files under `scripts/k.commands/` are sourced by `scripts/k`.
   They rely on its functions and globals and are not standalone executables.
   Preserve the directory-based command dispatch and matching help document.
@@ -106,8 +114,15 @@ nix fmt -- --ci .
 nix flake check
 ```
 
-For shell changes, also syntax-check `scripts/k` and affected `*.sh` files.
-For schema changes, run the schema generator's `--check` mode.
-For Argo CD, Kustomize, application metadata, or chart changes, render the
-affected local configuration with the tools in the Nix development shell; do not
-apply the rendered output to a cluster.
+`nix flake check` checks formatting, shell quality, repository invariants,
+representative Helm and Kustomize renders, version consistency, and Worker unit
+tests. For schema changes, also run the schema generator's `--check` mode. For
+Worker changes, also run `bun run check` and the Wrangler deployment dry-run.
+For Argo CD, Kustomize, application metadata, or chart changes, render any
+additional affected local configuration with the tools in the Nix development
+shell; do not apply the rendered output to a cluster.
+
+Generate and validate every targeted Talos machine configuration before applying
+any of them. Generated names must remain unique and fit Kubernetes and DNS
+limits. Keep durable architecture and operating procedures in the nearest
+README; working notes must not be the only source for a lasting contract.

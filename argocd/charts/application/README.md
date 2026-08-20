@@ -65,10 +65,10 @@ Secret:     shop-web-environment
 The Secret only exists when centrally managed Vault integration is enabled and
 the corresponding Vault path contains data.
 
-Names are truncated to Kubernetes' 63-character name limit where the chart
-controls the name.
-ApplicationSet names, namespaces, and generated hostnames do not currently add a
-separate `app-` prefix.
+When a chart-controlled name would exceed its Kubernetes or DNS label limit,
+the chart preserves a readable prefix and appends a stable hash of the complete
+name. ApplicationSet names and namespaces do not add a separate `app-` prefix;
+repository checks enforce their combined length before reconciliation.
 
 ## Schema rules
 
@@ -252,7 +252,7 @@ the optional environment source contributes no variables.
 
 The ApplicationSets centrally enable this integration after Vault's storage,
 TLS, initialization, and shared application role are ready. The design and
-activation procedure are in [`../../../working/VAULT.md`](../../../working/VAULT.md).
+activation procedure are in the [Vault component README](../../platform/vault/README.md).
 
 ## `readinessProbe`
 
@@ -400,8 +400,9 @@ For each workload and hostname, the chart uses the first eight characters of
 <application>-<workload>-<sha256-hostname-prefix>
 ```
 
-The result is truncated to 63 characters.
-The ListenerSet and HTTPRoute use that name.
+Long results preserve a readable prefix and append a stable hash. The base name
+is limited to 59 characters so its `-tls` derivatives also remain within the
+63-character limit. The ListenerSet and HTTPRoute use that name.
 A non-external domain also creates a Certificate and TLS Secret with `-tls`
 appended.
 

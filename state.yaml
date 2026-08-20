@@ -18,14 +18,16 @@ cilium:
   version: "1.20.0"
 argocd:
   version: "10.2.2" # chart version
+cert-manager:
+  version: "1.21.0"
+external-dns:
+  version: "1.21.1" # chart version
 external-secrets:
   version: "2.9.0"
 local-path-provisioner:
-  version: "0.0.37"
   revision: "49b2be8e26d6d34c9afaa21fa33108d2e82f8955"
+  helper: "1.37.0"
 reloader:
-  version: "1.4.21"
   chart: "2.2.16"
 vault:
-  version: "2.0.4"
   chart: "0.34.1"
