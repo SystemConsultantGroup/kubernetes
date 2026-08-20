@@ -139,10 +139,15 @@ fi
 
 git config user.name github-actions\[bot\]
 git config user.email 41898282+github-actions\[bot\]@users.noreply.github.com
-if [[ $operation == remove ]]; then
-  message="Remove $application/$workload preview $pull_request"
+if [[ $instance == preview ]]; then
+  destination="$application/$workload/preview-$pull_request"
 else
-  message="Apply $application/$workload to $instance at ${source_revision:0:12}"
+  destination="$application/$workload/$instance"
+fi
+if [[ $operation == remove ]]; then
+  message="Remove $destination"
+else
+  message="Apply ${source_revision:0:12} to $destination"
 fi
 git add -- "$lock"
 git commit -m "$message"
