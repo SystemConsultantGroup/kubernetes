@@ -30,8 +30,8 @@ offline, access-controlled backup: losing a key that protects Vault data can
 make Vault unrecoverable.
 
 Every request to a Transit endpoint must have the configured shared secret in
-`X-Vault-Token`. Optional mTLS enforcement is also available, but it requires
-Cloudflare client-certificate validation to be configured for the hostname.
+`X-Vault-Token`. mTLS is a future defense-in-depth consideration; enabling it
+requires Cloudflare client-certificate validation for the hostname.
 
 ## Local development
 
@@ -76,9 +76,10 @@ disables the public `workers.dev` and preview URLs. If the service is moved to
 do not change the Transit mount or key name on an initialized Vault without a
 planned seal migration.
 
-### Optional mTLS
+### Future consideration: mTLS
 
-Configure Cloudflare API Shield client-certificate validation for the custom
+mTLS is currently disabled. If stronger defense in depth becomes necessary,
+configure Cloudflare API Shield client-certificate validation for the custom
 domain and configure Vault to present that certificate. Then set
 `REQUIRE_MTLS` to exactly `true` in `wrangler.jsonc` and redeploy. Only `true`
 and `false` are accepted, so a typo makes requests fail closed. The Worker
