@@ -107,13 +107,12 @@ The database is currently small, so a 250–500 GiB initial allocation is alread
 
 ## Rehearsal after platform storage setup
 
-SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. Its data RAID user volume is ready at `/var/mnt/data`, and the retained Vault claims have been migrated there. The next rehearsal step begins with the operator deployment after the repository path change is reconciled.
+SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. Its data RAID user volume is ready at `/var/mnt/data`, and the retained Vault claims have been migrated there. Argo CD has reconciled that path, Percona PXC Operator 1.20.0 is healthy, and the one-member PXC 8.0.45 rehearsal is ready with one HAProxy and a retained 250 GiB claim.
 
-The rehearsal should:
+Both size-related unsafe flags are explicit. PXC strict mode is enforcing. Kubernetes reverse DNS initially made HAProxy probes take six seconds, so MySQL hostname resolution is disabled and grants must not depend on DNS hostnames. The single-member rehearsal uses `RollingUpdate` because `SmartUpdate` could not restart its only ready member while HAProxy was unready; restore `SmartUpdate` with the final three-member topology.
 
-1. Confirm that Argo CD has reconciled the `/var/mnt/data` provisioner path.
-1. Install the Percona PXC Operator.
-1. Deploy a single PXC member with unsafe configuration explicitly enabled.
+The remaining rehearsal should:
+
 1. Load the experimental logical dump described below.
 1. Convert every MyISAM table to InnoDB in the target copy.
 1. Add primary keys to every affected table.
