@@ -41,7 +41,18 @@ jobs:
       KUBERNETES_APP_PRIVATE_KEY: ${{ secrets.KUBERNETES_APP_PRIVATE_KEY }}
 ```
 
-The workflow maps `main` to production, `testing` to testing, and same-repository pull requests to previews. Pull requests build GitHub's proposed merge commit so previews exercise the code that would result from merging. Fork pull requests are rejected and `pull_request_target` is not supported.
+## Branch and instance mapping
+
+The mapping uses exact branch names. It is not based on the order of the branches in the workflow:
+
+| Application event | Instance change |
+| --- | --- |
+| Push to `main` | Update production |
+| Push to `testing` | Update testing |
+| Open or update a same-repository pull request | Create or update that pull request's preview |
+| Close a same-repository pull request | Remove that pull request's preview |
+
+A push from any branch other than `main` or `testing` is rejected. Pull requests build GitHub's proposed merge commit so previews exercise the code that would result from merging. Fork pull requests are rejected and `pull_request_target` is not supported.
 
 Application tests can run in a separate job before `build-image`. A pull-request closure must still call the reusable workflow so it can remove the preview lock.
 
