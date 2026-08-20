@@ -58,9 +58,9 @@ k install vault
 
 For a fresh data volume, it initializes Vault, immediately SOPS-encrypts the
 one-time response into `secrets/vault-recovery.yaml`, and configures auditing,
-KV v2, and Kubernetes authentication. Commit the changed encrypted recovery
-file after each destructive reset. On an initialized Vault it validates and
-retains the existing file.
+KV v2, Kubernetes authentication, and shared managed-application access. Commit
+the changed encrypted recovery file after each destructive reset. On an
+initialized Vault it validates and retains the existing file.
 
 The recovery file is generated output tied to the current Raft data. Its shares
 do not substitute for the Worker key and cannot unseal Vault if that key is
@@ -95,15 +95,14 @@ been revoked and removed.
 
 ## Application access
 
-After adding or removing a managed application, authenticate as a platform
-operator and reconcile its scoped policies and Kubernetes-auth roles:
+Vault bootstrapping creates one `applications` Kubernetes-auth role and policy
+for all managed application SecretStores. The role accepts the `vault-auth`
+ServiceAccount from any namespace and can read every three-segment path below
+`kv/data/applications/`.
 
-```bash
-k configure vault-applications
-```
-
-This is a live Vault operation. Its generated paths and role boundaries are
-specified in [`../../../working/VAULT.md`](../../../working/VAULT.md).
+Application onboarding does not change Vault configuration. The generated
+SecretStores and ExternalSecrets use the shared role and derived paths described
+in [`../../../working/VAULT.md`](../../../working/VAULT.md).
 
 ## Operations
 

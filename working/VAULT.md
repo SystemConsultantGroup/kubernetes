@@ -15,11 +15,11 @@ values under `kv`; `SystemConsultantGroup:platform` additionally receives
 method. The initial root token has been revoked and removed from the encrypted
 recovery file.
 
-Managed application secret generation is enabled centrally. Scoped policies and
-Kubernetes roles exist for the `example` application, whose testing path has a
-non-sensitive verification value. ESO synchronization and Reloader create,
-update, delete, and recreation rollouts are verified there. Application metadata
-does not contain secret configuration.
+Managed application secret generation is enabled centrally. Every managed
+SecretStore uses one shared Vault policy and Kubernetes-auth role. The `example`
+testing path has a non-sensitive verification value, and ESO synchronization and
+Reloader create, update, delete, and recreation rollouts are verified there.
+Application metadata does not contain secret configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
@@ -38,7 +38,7 @@ Runtime application secrets use:
 - generated namespaced SecretStores using Kubernetes authentication;
 - automatic environment injection for every managed workload;
 - Reloader to roll workloads after Secret creation, changes, or deletion; and
-- scoped Vault roles instead of one cluster-wide Vault identity.
+- one shared Vault role for every managed application and environment.
 
 Custom Kustomize applications do not receive generated secret resources.
 
@@ -208,46 +208,28 @@ This is operationally equivalent to a repository change triggering a new
 rollout, but it does not create a Git commit or a new Argo CD source revision.
 Vault audit logs record the source change.
 
-## Scoped authentication
+## Shared authentication
 
 Each generated namespace contains a Vault authentication ServiceAccount and a
 namespaced SecretStore. The store authenticates to Vault's Kubernetes auth mount
-with audience `vault`.
+with audience `vault` and the shared `applications` role.
 
-Expected Vault roles are:
-
-```text
-<application>-production
-<application>-testing
-<application>-preview
-```
-
-Expected policy access is:
+The role binds the `vault-auth` ServiceAccount in every namespace. Its policy
+can read every path matching:
 
 ```text
-<application>-production → kv/data/applications/<application>/production/*
-<application>-testing    → kv/data/applications/<application>/testing/*
-<application>-preview    → kv/data/applications/<application>/testing/*
-                           kv/data/applications/<application>/preview/*
+kv/data/applications/<application>/<instance-type>/<workload>
 ```
 
-Production and testing roles bind to their exact namespaces. Preview roles bind
-to preview namespaces selected by both existing namespace labels:
+The policy also reads `auth/token/lookup-self`, which External Secrets Operator
+requires to validate its Vault token. Application and environment separation is
+a generated-path convention rather than a Vault authorization boundary. A
+holder of any valid `vault-auth` token can read another application's managed
+path directly.
 
-```yaml
-platform.scg.sh/application: <application>
-platform.scg.sh/instance-type: preview
-```
-
-The preview role needs permission to read namespace labels during Kubernetes
-authentication. A preview role can read testing paths because testing is the
-approved fallback.
-
-Every workload policy also reads `auth/token/lookup-self`, which External
-Secrets Operator requires to validate its Vault token. Scoped stores ensure
-that changing an ExternalSecret path cannot cross the Vault policy boundary.
-The platform still controls generated paths and does not expose path overrides
-in application metadata.
+The chart controls generated ExternalSecret paths and does not expose path
+overrides in managed application metadata. Preview ExternalSecrets continue to
+read testing paths first and preview paths second.
 
 ## Vault deployment
 
@@ -268,11 +250,10 @@ Current limitations are:
 
 ## Remaining activation sequence
 
-The base activation steps and central managed-secret gate are complete. Continue
-in this order:
+The base activation steps, shared application role, and central managed-secret
+gate are complete. Application onboarding does not require Vault configuration.
+Continue in this order:
 
-1. run `k configure vault-applications` after adding or removing a managed
-   application;
 1. seed or migrate application values into the generated `kv/applications/...`
    paths without exposing them in logs or Git;
 1. verify production paths before storing production values; and

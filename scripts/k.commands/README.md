@@ -8,10 +8,9 @@ initialized by `k`.
 
 ## Layout
 
-- Top-level scripts implement `k apply`, `k configure`, `k install`, `k reset`,
-  and dispatch.
-- `configure/`, `forward/`, `generate/`, `install/`, `secrets/`, `upgrade/`, and `wait/`
-  contain grouped subcommands.
+- Top-level scripts implement `k apply`, `k install`, `k reset`, and dispatch.
+- `forward/`, `generate/`, `install/`, `secrets/`, `upgrade/`, and `wait/` contain
+  grouped subcommands.
 - The Markdown file beside each shell script provides its user-facing help.
 
 The dispatcher uses the first summary line of each document in command lists.

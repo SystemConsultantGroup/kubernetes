@@ -3,6 +3,7 @@ require_bootstrap_secrets
 require_vault_secrets
 require_file "$ROOT_DIR/argocd/platform/vault/application.yaml"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
+require_file "$ROOT_DIR/argocd/platform/vault/policies/applications.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/platform.hcl"
 
 configure_vault_policy() {
@@ -15,6 +16,26 @@ configure_vault_policy() {
     export VAULT_TOKEN VAULT_SKIP_VERIFY=true
     vault policy write "$1" - >/dev/null
   ' vault-policy "$name"
+}
+
+configure_vault_applications() {
+  local token="$1"
+
+  configure_vault_policy "$token" applications \
+    "$ROOT_DIR/argocd/platform/vault/policies/applications.hcl"
+
+  printf '%s\n' "$token" | kubectl -n vault exec -i vault-0 -- /bin/sh -ec '
+    IFS= read -r VAULT_TOKEN
+    export VAULT_TOKEN VAULT_SKIP_VERIFY=true
+    vault write auth/kubernetes/role/applications \
+      bound_service_account_names=vault-auth \
+      bound_service_account_namespaces="*" \
+      audience=vault \
+      token_policies=applications \
+      token_no_default_policy=true \
+      token_ttl=1h \
+      token_max_ttl=8h >/dev/null
+  '
 }
 
 vault_token_valid() {
@@ -160,8 +181,9 @@ if [[ $(jq -r '.initialized' "$status_file") == true ]]; then
   if [[ -n $root_token ]] && vault_token_valid "$root_token"; then
     oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
     configure_vault_oidc "$root_token" "$oidc_client_secret"
+    configure_vault_applications "$root_token"
     unset oidc_client_secret
-    echo "Vault is already initialized; OIDC configuration was reconciled"
+    echo "Vault is already initialized; privileged configuration was reconciled"
   else
     echo "Vault is already initialized; no valid bootstrap root token was available for reconciliation"
   fi
@@ -205,6 +227,7 @@ preserve_init=0
 root_token="$(jq -r '.root_token' "$init_file")"
 oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
 configure_vault_oidc "$root_token" "$oidc_client_secret"
+configure_vault_applications "$root_token"
 unset root_token oidc_client_secret
 
 public_ready=0

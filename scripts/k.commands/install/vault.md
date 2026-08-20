@@ -16,13 +16,14 @@ The command:
 1. immediately encrypts the one-time initialization response into
    `secrets/vault-recovery.yaml`;
 1. enables the file audit device, KV v2 at `kv`, and Kubernetes authentication;
+1. creates the shared managed-application policy and Kubernetes-auth role;
 1. configures GitHub authentication through Argo CD Dex, makes it the default
    web UI method, and maps the `active` and `platform` teams to Vault policies;
    and
 1. waits for `https://vault.platform.scg.sh/v1/sys/health`.
 
 If Vault is already initialized and its recovery file still contains a valid
-initial root token, the command reconciles the OIDC configuration and policies.
+initial root token, the command reconciles the privileged configuration.
 After that token is revoked and removed, it validates and retains the recovery
 file without attempting privileged reconciliation. Vault cannot return recovery
 shares or the initial root token a second time.

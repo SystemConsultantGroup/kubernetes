@@ -230,7 +230,7 @@ field in `meta.yaml`. When centrally enabled, every rendered workload gets:
 
 - a generated ExternalSecret;
 - an optional `envFrom` reference to `<application>-<workload>-environment`;
-- a namespaced SecretStore using a generated Vault role; and
+- a namespaced SecretStore using the shared Vault application role; and
 - automatic rollout annotations for Secret changes.
 
 Stable instances extract one logical KV v2 path:
@@ -251,8 +251,8 @@ as `DATABASE_URL`. A missing Vault path leaves the Kubernetes Secret absent and
 the optional environment source contributes no variables.
 
 The ApplicationSets centrally enable this integration after Vault's storage,
-TLS, initialization, and scoped roles are ready. The design and activation
-procedure are in [`../../../working/VAULT.md`](../../../working/VAULT.md).
+TLS, initialization, and shared application role are ready. The design and
+activation procedure are in [`../../../working/VAULT.md`](../../../working/VAULT.md).
 
 ## `readinessProbe`
 
