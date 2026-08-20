@@ -103,7 +103,7 @@ Local PV consequences are accepted:
 - permanent node replacement requires recreating that member's local PVC and rebuilding it through SST;
 - storage must retain headroom for SST, temporary files, and operational recovery.
 
-The database is currently small, so a 250–500 GiB initial allocation is already generous. The full data RAID should not be allocated to one PVC.
+The database is currently small, so a 250–500 GiB initial request is already generous. The rehearsal claim requests 250 GiB, but local hostPath provisioning does not enforce that value as a filesystem quota: the pod sees the full data filesystem. Storage monitoring and operating procedures must preserve headroom for other claims, SST, temporary files, and recovery.
 
 ## Rehearsal after platform storage setup
 
@@ -111,12 +111,10 @@ SCC now runs from hardware RAID and has active local platform claims, so it is n
 
 Both size-related unsafe flags are explicit. PXC strict mode is enforcing. Kubernetes reverse DNS initially made HAProxy probes take six seconds, so MySQL hostname resolution is disabled and grants must not depend on DNS hostnames. The single-member rehearsal uses `RollingUpdate` because `SmartUpdate` could not restart its only ready member while HAProxy was unready; restore `SmartUpdate` with the final three-member topology.
 
+The experimental dump was transformed and imported in 219 seconds. The deterministic streaming transform changed exactly 34 MyISAM definitions to InnoDB, added explicit invisible auto-increment primary keys to the 13 audited PK-less tables, and removed 551 dump-time table-lock pairs. The target contains 41 application schemas, 551 InnoDB tables, and 15,724,817 rows, occupying approximately 2.8 GiB in the PXC data directory. All tables passed `mysqlcheck`; all 551 produced non-null checksums; and the exact row counts, checksums, transformed artifact, and logs are retained only in the ignored rehearsal workspace.
+
 The remaining rehearsal should:
 
-1. Load the experimental logical dump described below.
-1. Convert every MyISAM table to InnoDB in the target copy.
-1. Add primary keys to every affected table.
-1. Run PXC strict mode.
 1. Test representative applications and Keycloak.
 1. Configure backups and PITR against onsite S3-compatible storage.
 1. Delete the test database and restore it only from object storage.

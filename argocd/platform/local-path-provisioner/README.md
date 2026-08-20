@@ -28,6 +28,11 @@ The reclaim policy is `Retain`. Deleting a claim does not erase its local data o
 make its PersistentVolume automatically reusable. An operator must inspect and
 clean retained data before deleting or replacing the PersistentVolume.
 
+The requested PVC capacity is scheduling metadata, not an enforced hostPath
+quota. A workload can consume more than its request up to the user volume's
+available capacity. Monitor filesystem use and preserve shared headroom for
+recovery, temporary data, and other retained claims.
+
 Local volumes are not replicated and cannot move to another node. Resetting
 Talos `STATE` and `EPHEMERAL` does not erase the separately declared user
 volume, but loss or erasure of its data RAID still destroys the volumes.

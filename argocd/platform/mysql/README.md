@@ -32,7 +32,9 @@ The `mysql` PerconaXtraDBCluster starts as an explicitly unsafe rehearsal with
 one PXC member and one HAProxy on SCC. It uses PXC 8.0.45, references
 `pxc-system-users`, and carries `argocd.argoproj.io/sync-options: Prune=false`.
 The database requests a retained 250 GiB `local-data` claim, 16 GiB of memory,
-and a 12 GiB InnoDB buffer pool.
+and a 12 GiB InnoDB buffer pool. Local hostPath provisioning does not enforce
+the 250 GiB request as a filesystem quota, so storage monitoring must protect
+headroom on the shared data volume.
 
 The single-member and single-proxy sizes require both `unsafeFlags.pxcSize` and
 `unsafeFlags.proxySize`. Do not treat this topology as highly available. The
