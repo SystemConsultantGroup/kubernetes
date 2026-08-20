@@ -4,15 +4,25 @@ This directory contains workloads deployed by the SCG platform.
 Application owners normally change these files and submit pull requests.
 Merging to `main` makes the declared state available to Argo CD.
 
-Each application uses exactly one layout:
+Choose one layout for the application directory:
 
-- managed: `meta.yaml` plus instance lock files under `instances/`;
-- custom: a root `kustomization.yaml` rendered directly by Argo CD.
+| Layout | Use it when | Entrypoint |
+| --- | --- | --- |
+| Managed | The shared Deployment, Service, routing, and secret conventions fit | `meta.yaml` and `instances/` |
+| Custom | The application needs Kubernetes resources the shared chart does not expose | `kustomization.yaml` |
 
-Do not mix the layouts.
-Do not put credentials in application files.
+Do not mix the layouts or put credentials in application files. Start with the
+managed layout unless it cannot express the workload; it provides stricter
+validation and consistent previews.
 
 ## Managed application
+
+The normal workflow is:
+
+1. define runtime behavior once in `meta.yaml`;
+1. add an immutable production lock for every workload;
+1. optionally add testing or pull-request preview locks; and
+1. submit the changes together so metadata and locks remain consistent.
 
 A managed application has this shape:
 
@@ -27,10 +37,16 @@ applications/example/
         123.yaml
 ```
 
-`meta.yaml` contains workload names and runtime configuration.
-Stable instance files contain the immutable source and image locks.
-Production is required; testing is optional.
-Preview identity comes from the preview file path.
+`meta.yaml` contains workload names and runtime configuration, but never
+`source` or `image`. Stable instance files contain exactly those immutable
+source and image locks. Production is required; testing is optional. Preview
+identity comes from the preview file path.
+
+Application, workload, and generated identity components use lowercase DNS-style
+names. Each complete Argo CD identity must fit 63 characters, including
+`-production`, `-testing`, or `-preview-<workload>-<pull-request>`. Internal
+workload resources can use stable hash suffixes when needed, but Application and
+namespace identities cannot.
 
 ### Minimal example
 
@@ -175,9 +191,21 @@ The generated preview identity is:
 <application>-preview-<workload>-<pull-request>
 ```
 
-Preview deployments use one replica.
-A preview renders only the selected workload; references to other local
-workloads target their testing Services.
+Preview deployments use one replica. A preview renders only the selected
+workload; references to other local workloads target their testing Services.
+
+### Managed secret values
+
+Managed workloads automatically receive environment values from the platform's
+Vault integration when a corresponding path exists. Application metadata never
+contains Vault configuration or plaintext values. Production and testing use
+their own paths; previews inherit testing values and then apply a shared preview
+override for the selected workload.
+
+Applications must validate required values at startup because a missing Vault
+path is allowed. Testing credentials must be safe for preview code. Members
+responsible for secret values should follow the
+[Vault application-value workflow](../argocd/platform/vault/README.md#managing-application-values).
 
 ## Custom Kustomize application
 
@@ -195,12 +223,14 @@ The generated Argo CD Application and namespace are named:
 <application>
 ```
 
-Use `kustomization.yaml`, not `kustomize.yaml`.
-Do not add `meta.yaml` to a custom application. Resources with an explicit
-namespace may target only the application's generated namespace, and a declared
-Namespace must use the application name. Platform review of merged Git changes
-is the authorization boundary; application developers receive no cluster or
-`k` credentials.
+Use `kustomization.yaml`, not `kustomize.yaml`. Do not add `meta.yaml` or an
+`instances/` tree. Custom applications do not receive managed testing or preview
+instances; define every desired resource in the Kustomization.
+
+Resources with an explicit namespace may target only the application's generated
+namespace, and a declared Namespace must use the application name. Platform
+review of merged Git changes is the authorization boundary; application
+developers receive no cluster or `k` credentials.
 
 ## Validation and detailed schema
 
@@ -208,6 +238,15 @@ Platform engineers run repository checks during review to validate the managed
 or custom layout, required production lock, workload consistency, preview
 identity, generated name limits, and local renders. Application developers do
 not need access to the platform-only `k` command.
+
+Before requesting review, confirm that:
+
+- the application directory uses only one layout;
+- every stable lock contains exactly the workloads in `meta.yaml`;
+- every lock uses a full commit SHA and digest-pinned image from the same build;
+- preview workload and pull-request identities match the file path;
+- domains, routes, and referenced Services are intentional; and
+- no plaintext credential or local configuration file is included.
 
 The shared chart validates effective workload configuration with a generated
 strict JSON schema.

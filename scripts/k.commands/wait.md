@@ -4,7 +4,8 @@ Waits for Talos or Kubernetes health checks to succeed.
 
 ## Subcommands
 
-- `kubernetes` waits for every pod in every namespace to become Ready.
+- `kubernetes` accepts succeeded pods and waits for every active pod in every
+  namespace to become Ready.
 - `talos` runs a Talos health check for every declared node.
 
 ## Usage

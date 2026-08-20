@@ -1,271 +1,43 @@
-# Vault application secrets
+# Vault activation follow-up
 
 ## Status
 
-The base platform is deployed and healthy. Vault 2.0.4 is active at
-`vault.platform.scg.sh`, initialized, and auto-unsealed through the
-Transit-compatible Worker at `kms.vault.platform.scg.sh`. Argo CD reports both
-Vault and its own application as synced and healthy.
-
-KV v2 is mounted at `kv`, Kubernetes authentication is configured, and file
-auditing writes to the audit PVC. GitHub operator authentication uses Argo CD
-Dex. `SystemConsultantGroup:active` receives `github-active` and can manage
-values under `kv`; `SystemConsultantGroup:platform` additionally receives
-`github-platform` with administrative access. OIDC is the default web UI login
-method. The initial root token has been revoked and removed from the encrypted
-recovery file.
-
-Managed application secret generation is enabled centrally. Every managed
-SecretStore uses one shared Vault policy and Kubernetes-auth role. The `example`
-paths contain non-sensitive values that exercise production, testing, and
-preview layering. ESO synchronization and Reloader create, update, delete, and
-recreation rollouts are verified there. Application metadata does not contain
-secret configuration.
-
-The single `scc` node provides the non-default `local-data` StorageClass at
-`/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
-and audit PVCs from this class. The storage is node-local and is lost on a Talos
-EPHEMERAL reset. This is intentional: repository-driven resets rebuild Vault
-with empty data and replace `secrets/vault-recovery.yaml`. The repository does
-not retain Raft snapshots or restore Vault data.
-
-## Decisions
-
-Runtime application secrets use:
-
-- HashiCorp Vault as the authority;
-- the Vault KV v2 secrets engine mounted at `kv`;
-- External Secrets Operator to synchronize values into Kubernetes Secrets;
-- generated namespaced SecretStores using Kubernetes authentication;
-- automatic environment injection for every managed workload;
-- Reloader to roll workloads after Secret creation, changes, or deletion; and
-- one shared Vault role for every managed application and environment.
-
-Custom Kustomize applications do not receive generated secret resources.
-
-## Operator access and recovery
-
-Enter the development shell and authenticate through GitHub:
-
-```bash
-nix develop
-export VAULT_ADDR=https://vault.platform.scg.sh
-vault login -method=oidc role=github
-```
-
-The `platform` team is nested under `active`, so platform members receive both
-identity policies. Operator tokens have a one-hour TTL, are renewable, and have
-an eight-hour maximum TTL. Use `vault token renew` instead of repeating the
-browser login during an active session.
-
-`secrets/vault-recovery.yaml` contains five SOPS-encrypted recovery shares with
-a threshold of three for the current Raft data. It no longer contains an initial
-root token. Recovery shares can authorize root-token generation and rekeying,
-but cannot unseal Vault if the Worker or its encryption key is unavailable.
-`secrets/vault.yaml` separately retains the Worker's seal key and Transit token.
-
-`k install vault` restores the Kubernetes seal Secret, applies Vault, initializes
-fresh storage, captures and encrypts new recovery material, and configures the
-base auth methods and operator policies. On an already initialized deployment
-without a bootstrap root token, it validates the recovery file without trying
-to reconcile privileged Vault configuration.
-
-## Terminology
-
-A Vault KV secret is a map stored at one logical path. Each entry is a key-value
-pair. A Kubernetes Secret is a namespaced resource whose data is also a map of
-keys to values.
-
-For example:
-
-```text
-Mount:  kv
-Path:   applications/alumni/production/be
-Key:    MINIO_ENDPOINT
-Value:  https://minio.example.org
-```
-
-The logical path shown by the Vault CLI and used by External Secrets Operator
-omits the KV v2 API segment. Vault policies and direct API requests include it:
-
-```text
-Logical path:  applications/alumni/production/be
-CLI path:      kv/applications/alumni/production/be
-Policy path:   kv/data/applications/alumni/production/be
-```
-
-Vault path components are a naming convention, not Vault projects or physical
-folders.
-
-## Paths
-
-Every managed workload derives its paths without application metadata:
-
-```text
-applications/<application>/<instance-type>/<workload>
-```
-
-Examples:
-
-```text
-applications/alumni/production/be
-applications/alumni/testing/be
-applications/alumni/preview/be
-```
-
-Production and testing use one source. Preview uses testing as its base and
-preview as an ordered override:
-
-```yaml
-dataFrom:
-  - extract:
-      key: applications/alumni/testing/be
-  - extract:
-      key: applications/alumni/preview/be
-```
-
-Later sources override keys from earlier sources. A partial preview secret
-therefore inherits unspecified testing keys. If neither path exists, no
-Kubernetes Secret exists.
-
-Preview code can read testing values under this policy. Testing credentials must
-therefore be sandboxed and safe to expose to unreviewed preview workloads.
-
-## Environment injection
-
-Vault keys use portable environment variable names:
-
-```text
-DATABASE_URL
-MINIO_ACCESS_KEY
-MINIO_ENDPOINT
-MINIO_SECRET_KEY
-```
-
-External Secrets Operator extracts the complete Vault map into a generated
-Kubernetes Secret. The application chart references that Secret with optional
-`envFrom`, so a workload starts without injected values when Vault has no data
-for it.
-
-Explicit `env` entries remain authoritative over `envFrom`. User-supplied
-`envFrom` entries are rendered after the generated source and can override a
-generated key.
-
-Applications that require a value must validate it at startup. Missing Vault
-secrets intentionally fail open at the Kubernetes integration boundary.
-
-## ExternalSecret lifecycle
-
-Generated ExternalSecrets use:
-
-```yaml
-refreshPolicy: Periodic
-refreshInterval: 15s
-target:
-  creationPolicy: Owner
-  deletionPolicy: Delete
-```
-
-This gives the following behavior:
-
-| Vault state | Kubernetes state |
-| --- | --- |
-| Path absent | Secret absent without `SecretSyncedError` |
-| Path created | Secret created within the refresh interval |
-| Values changed | Secret updated within the refresh interval |
-| Path deleted | Secret deleted within the refresh interval |
-
-External Secrets Operator is pull-based. With Vault Community Edition, a
-15-second interval is the upper synchronization delay rather than a true push
-event. Vault Enterprise event subscriptions would require Vault Secrets
-Operator and are not part of this design.
-
-## Rollouts
-
-Kubernetes does not update a running process's environment when a Secret
-changes. Reloader watches generated Secrets and patches the workload pod
-template, causing a Kubernetes rolling deployment.
-
-Reloader must have creation and deletion reloads enabled in addition to its
-default update handling. It uses the annotation strategy and must watch
-ConfigMaps as well as Secrets, because its lifecycle handlers require both
-controllers. Each generated workload explicitly watches its generated Secret so
-create and delete events remain observable while the Secret is absent. Generated
-Argo CD Applications ignore Reloader's pod-template annotation so self-healing
-does not revert the rollout patch.
-
-The resulting flow is:
-
-```text
-Vault write
-  → ESO reconciliation within 15 seconds
-  → Kubernetes Secret create, update, or delete
-  → Reloader watch event
-  → Deployment pod-template patch
-  → rolling deployment
-```
-
-This is operationally equivalent to a repository change triggering a new
-rollout, but it does not create a Git commit or a new Argo CD source revision.
-Vault audit logs record the source change.
-
-## Shared authentication
-
-Each generated namespace contains a Vault authentication ServiceAccount and a
-namespaced SecretStore. The store authenticates to Vault's Kubernetes auth mount
-with audience `vault` and the shared `applications` role.
-
-The role binds the `vault-auth` ServiceAccount in every namespace. Its policy
-can read every path matching:
-
-```text
-kv/data/applications/<application>/<instance-type>/<workload>
-```
-
-The policy also reads `auth/token/lookup-self`, which External Secrets Operator
-requires to validate its Vault token. Application and environment separation is
-a generated-path convention rather than a Vault authorization boundary. A
-holder of any valid `vault-auth` token can read another application's managed
-path directly.
-
-The chart controls generated ExternalSecret paths and does not expose path
-overrides in managed application metadata. Preview ExternalSecrets continue to
-read testing paths first and preview paths second.
-
-## Vault deployment
-
-The deployment uses the official Vault chart and integrated Raft storage. It
-runs one Raft member and is intentionally not represented as highly available.
-Do not increase the replica count until independent nodes and storage exist.
-
-TLS is active end to end: the public Gateway terminates client TLS and validates
-the TLS connection to Vault with the pinned issuer chain. Auto-unseal has been
-restart-tested. File auditing, KV v2, Kubernetes auth, GitHub OIDC, recovery
-capture, and operator access are configured and verified.
-
-Current limitations are:
-
-- Raft and audit data are lost with Talos `EPHEMERAL` storage;
-- no Vault data backup is retained by design;
-- Worker mTLS is optional hardening and is not enabled.
-
-## Remaining activation sequence
-
-The base activation steps, shared application role, and central managed-secret
-gate are complete. Application onboarding does not require Vault configuration.
-Continue in this order:
-
-1. seed or migrate application values into the generated `kv/applications/...`
-   paths without exposing them in logs or Git;
-1. verify production paths before storing production values; and
-1. optionally enable Worker mTLS and rehearse recovery-share root generation.
-
-The central gate activates integration without changing any application
-`meta.yaml`.
-
-## Migration
-
-Existing secrets such as:
+The base Vault platform is active and healthy:
+
+- Vault is initialized and auto-unseals through the external KMS Worker;
+- Raft and audit volumes use retained, node-local `local-data` claims;
+- KV v2, Kubernetes authentication, GitHub OIDC, and file auditing are enabled;
+- the initial root token is revoked and removed from the encrypted recovery file;
+- managed SecretStores and ExternalSecrets are enabled centrally; and
+- the `example` application uses non-sensitive values to verify production,
+  testing, and preview layering.
+
+External Secrets and Reloader have been verified for Secret creation, update,
+deletion, recreation, and the resulting Deployment rollouts. Application
+metadata does not contain Vault configuration.
+
+The current storage choice is intentionally rebuildable. `local-data` resides at
+`/var/lib/local-data` on Talos `EPHEMERAL`; `k reset` therefore removes Vault
+Raft and audit data. A rebuild initializes empty Vault storage and replaces
+`secrets/vault-recovery.yaml`. No Raft snapshot or restore workflow exists.
+
+## Remaining work
+
+1. Seed or migrate real application values into their generated
+   `kv/applications/...` paths without exposing plaintext in logs, shell history,
+   documentation, or Git.
+1. Verify each production path and workload identity before writing production
+   values.
+1. Decide whether to enable Worker mTLS as an additional factor.
+1. Rehearse recovery-share root generation and document the approved
+   break-glass ceremony without recording recovery material.
+
+Application onboarding does not require a Vault policy or role change. Custom
+Kustomize applications do not receive the managed secret integration.
+
+## Migration convention
+
+Legacy paths such as:
 
 ```text
 kv/data/alumni-dev-be-secret
@@ -279,10 +51,22 @@ kv/data/applications/alumni/testing/be
 kv/data/applications/alumni/production/be
 ```
 
-Legacy properties such as `minio-endpoint` should be renamed to environment
-variable keys such as `MINIO_ENDPOINT`. Production, testing, and preview maps
-should expose the same key names even when values differ.
+Legacy properties such as `minio-endpoint` become portable environment keys such
+as `MINIO_ENDPOINT`. Production, testing, and preview maps should expose the
+same key names even when values differ. Remove a legacy source only after the
+generated Kubernetes Secret and workload rollout have been verified.
 
-Migration must copy values without printing them into logs, documentation, or
-Git. Source secrets should only be removed after the generated Kubernetes
-Secret and rollout behavior have been verified.
+## Durable documentation
+
+The lasting contracts and procedures now live with their components:
+
+- [`../argocd/platform/vault/README.md`](../argocd/platform/vault/README.md)
+  covers storage, initialization, operator access, application paths, and
+  recovery boundaries.
+- [`../argocd/charts/application/README.md`](../argocd/charts/application/README.md)
+  covers generated ExternalSecrets, layering, environment precedence, and
+  rollout behavior.
+- [`../workers/kms/README.md`](../workers/kms/README.md) covers Worker security,
+  deployment, validation, and key rotation.
+- [`../argocd/platform/local-path-provisioner/README.md`](../argocd/platform/local-path-provisioner/README.md)
+  covers the current node-local storage durability boundary.

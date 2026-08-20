@@ -96,6 +96,10 @@ export VAULT_ADDR=https://vault.platform.scg.sh
 vault login -method=oidc role=github
 ```
 
+OIDC tokens have a one-hour TTL, are renewable, and have an eight-hour maximum
+TTL. Use `vault token renew` during an active operator session rather than
+repeating browser login.
+
 Test a platform login before revoking the initial root token and removing it
 from `vault-recovery.yaml`. Recovery shares remain the break-glass mechanism if
 Dex or GitHub is unavailable. The current deployment's initial root token has
@@ -111,6 +115,30 @@ ServiceAccount from any namespace and can read every three-segment path below
 Application onboarding does not change Vault configuration. The generated
 SecretStores and ExternalSecrets use the shared role and derived paths described
 in the [application chart documentation](../../charts/application/README.md).
+Application and environment separation is therefore a generated-path convention,
+not a Vault authorization boundary; platform review remains required for chart
+or authentication changes.
+
+### Managing application values
+
+Members of the GitHub `active` team can manage values through the Vault UI after
+OIDC login. Use these KV v2 paths:
+
+| Instance | Path |
+| --- | --- |
+| Production | `kv/applications/<application>/production/<workload>` |
+| Testing | `kv/applications/<application>/testing/<workload>` |
+| Preview override | `kv/applications/<application>/preview/<workload>` |
+
+A preview first reads the testing path, then overlays the shared preview path.
+The preview path is not pull-request-specific. A missing path is allowed and
+leaves the generated environment Secret absent. After a value changes, External
+Secrets refreshes the Kubernetes Secret and Reloader rolls the affected managed
+Deployment.
+
+Use portable environment-variable keys such as `DATABASE_URL`. Enter values
+through an approved secret-handling workflow; do not put plaintext values in Git,
+shell history, command output, or documentation.
 
 ## Operations
 

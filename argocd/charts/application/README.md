@@ -7,8 +7,21 @@ ApplicationSets combine three inputs:
 1. an immutable source and image lock from an instance file; and
 1. an internal `_context` describing the application and instance type.
 
-The chart is platform code.
-Changes can affect every managed application.
+The chart is platform code. Changes can affect every managed application.
+Application owners should start with the
+[application workflow](../../../applications/README.md) and use this page as the
+field and rendering reference.
+
+## Quick navigation
+
+- [Values assembly](#values-assembly)
+- [Naming model](#naming-model)
+- [Workload fields](#workload-fields)
+- [Managed Vault environment](#managed-vault-environment)
+- [HTTP services and routing](#http)
+- [Immutable locks](#immutable-locks)
+- [Instance behavior](#rendering-by-instance-type)
+- [Local rendering](#local-rendering)
 
 ## Values assembly
 
@@ -31,11 +44,10 @@ web:
 ```
 
 The metadata and instance files are merged by Helm before schema validation.
-Application owners normally keep runtime configuration in `meta.yaml` and locks
-in `instances/`.
-
-`source` and `image` are technically part of the final workload schema, but
-should not normally be placed in `meta.yaml`.
+Repository checks enforce the source-file boundary: runtime configuration
+belongs in `meta.yaml`, while each instance lock contains exactly `source` and
+`image`. Application owners must not place locks in metadata or runtime fields
+in instance files.
 
 ## Naming model
 
@@ -248,7 +260,19 @@ applications/<application>/preview/<workload>
 
 Vault keys become environment variable names directly. Use portable names such
 as `DATABASE_URL`. A missing Vault path leaves the Kubernetes Secret absent and
-the optional environment source contributes no variables.
+the optional environment source contributes no variables. Applications that
+require a value must validate it during startup.
+
+External Secrets polls every 15 seconds and owns the generated Kubernetes
+Secret. Creating, changing, or deleting the Vault path creates, updates, or
+deletes that Secret; Reloader then rolls the Deployment. Explicit `env` values
+win over all `envFrom` sources. Application-provided `envFrom` entries follow
+the generated Vault source and can override keys from it.
+
+Preview workloads can read their testing path before the shared preview
+override. Testing credentials must therefore be sandboxed and safe for
+unreviewed preview code. Preview values are shared by workload, not isolated by
+pull-request number.
 
 The ApplicationSets centrally enable this integration after Vault's storage,
 TLS, initialization, and shared application role are ready. The design and
@@ -614,7 +638,8 @@ source:
   revision: 0123456789abcdef0123456789abcdef01234567
 ```
 
-`source` requires exactly `repository` and `revision`.
+`source` requires exactly `repository` and `revision`. It belongs in an
+instance lock, not `meta.yaml`.
 
 The repository must be an HTTPS URL ending in `.git`, without credentials, query
 parameters, or fragments.
@@ -626,7 +651,8 @@ The revision must be a full lowercase 40-character hexadecimal Git SHA.
 image: registry.example.org/example/shop@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
 
-The image must be a fully qualified lowercase OCI reference with:
+The image belongs in the same instance lock as `source` and must be a fully
+qualified lowercase OCI reference with:
 
 - a `localhost` or DNS registry host;
 - an optional numeric registry port;
@@ -651,8 +677,8 @@ _context:
 
 `application` must be a valid workload-style name. `instance.type` is one of
 `production`, `testing`, or `preview`. The optional `secrets` object is supplied
-only by the platform. Enabling it also requires an HTTPS `server` URL; application
-metadata must not define either field.
+only by the platform. Enabling it also requires an HTTPS `server` URL;
+application metadata must not define either field.
 
 Preview context additionally requires:
 

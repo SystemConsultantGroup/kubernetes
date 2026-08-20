@@ -19,12 +19,28 @@ AppProject.
 | [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
 
-Active components use automated sync, pruning, and self-healing. Root sync
-waves create foundational operators and storage first, supporting controllers
-and certificates second, and externally routed services third. A wave orders
-child Application reconciliation but does not replace component health checks.
-Bootstrap credentials are created by `k install argocd` from encrypted values;
-never put tokens in platform values files.
+For common investigations, follow the complete controller chain:
+
+| Symptom or task | Start here | Then check |
+| --- | --- | --- |
+| Public route | Gateway and HTTPRoute conditions | cert-manager, then ExternalDNS |
+| Managed secret | Vault path and policy | External Secrets, then Reloader |
+| Stateful local volume | StorageClass and PersistentVolume | local path provisioner, node path, and Talos volume |
+| GitOps reconciliation | Generated or platform Application | AppProject permissions and root sync wave |
+
+Active components use automated sync, pruning, and self-healing. The root uses
+this reconciliation order:
+
+| Wave | Components | Dependency intent |
+| --- | --- | --- |
+| 1 | External Secrets, Gateway, local path provisioner | APIs, ingress, and storage foundations |
+| 2 | cert-manager, Reloader | certificates and application support controllers |
+| 3 | Argo CD routes, ExternalDNS, Vault | externally routed and stateful services |
+
+A wave starts child Application reconciliation in order; it does not wait for
+one component's complete health before starting the next wave. Bootstrap
+credentials are created by `k install argocd` from encrypted values. Never put
+tokens in platform values files.
 
 Vault uses the non-default `local-data` class, HTTPS at
 `vault.platform.scg.sh`, and the Transit-compatible Worker at

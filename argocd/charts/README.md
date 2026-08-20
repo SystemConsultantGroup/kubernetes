@@ -5,9 +5,10 @@ The current chart, [`application/`](application/), renders managed application
 instances from metadata, immutable locks, and an internal instance context.
 
 The application chart owns the managed application schema, resource naming,
-workload rendering, and Gateway routing behavior.
-Read its [`README.md`](application/README.md) before changing application
-metadata or chart templates.
+workload rendering, and Gateway routing behavior. Application owners should
+start with the [`applications/` workflow](../../applications/); the
+[chart README](application/README.md) is the exhaustive field and rendering
+reference for advanced configuration and platform changes.
 
 The chart is platform code rather than a general-purpose application chart.
 A change can affect every managed application.

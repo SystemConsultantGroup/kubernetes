@@ -11,7 +11,7 @@ k install <command>
 
 Running `k install` with no subcommand performs the complete bootstrap.
 It requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
-`ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`, and
+`ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`,
 `VAULT_OIDC_CLIENT_SECRET`, and `ZEROSSL_EAB_HMAC_KEY` in encrypted
 `secrets/bootstrap.yaml`, plus the Vault Transit credentials in encrypted
 `secrets/vault.yaml`.

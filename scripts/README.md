@@ -20,17 +20,27 @@ remain available while repairing `state.yaml`.
 | --- | --- |
 | `k secrets` | Validate and edit encrypted values and manage age recipients |
 | `k generate` | Generate Talos, Kubernetes, and application schema artifacts |
-| `k install` | Bootstrap Kubernetes, Cilium, and Argo CD |
+| `k install` | Bootstrap Kubernetes, Cilium, Argo CD, and Vault |
 | `k apply` | Apply Talos patches to every declared node |
 | `k upgrade` | Upgrade a component to the version in `state.yaml` |
 | `k reset` | Wipe and reboot a Talos node |
 | `k wait` | Wait for Talos or Kubernetes health |
 | `k forward` | Forward Argo CD to localhost |
 
-Use `k <command> --help` for prerequisites, arguments, and side effects.
-The matching documents are in [`k.commands/`](k.commands/). Internal repository
-checks live under [`checks/`](checks/) and run through `nix flake check`; they
-are not operator commands.
+Use `k <command> --help` immediately before an operation; each page describes
+its prerequisites, arguments, side effects, and confirmation behavior. The
+matching documents are in [`k.commands/`](k.commands/).
+
+Common safe starting points are:
+
+```bash
+k secrets check
+k generate application-schemas --check
+nix flake check
+```
+
+The repository checks live under [`checks/`](checks/). They do not access the
+cluster and are not operator commands.
 
 ## Local credentials
 

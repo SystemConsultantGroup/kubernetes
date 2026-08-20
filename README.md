@@ -14,8 +14,10 @@ Use exactly one layout per application:
 - A managed application has `meta.yaml` and immutable files under `instances/`.
 - A custom application has a root `kustomization.yaml`.
 
-Do not mix the layouts or commit credentials.
-The applications documentation covers the file formats and deployment behavior.
+Do not mix the layouts or commit credentials. Start with the
+[`applications/` guide](applications/) for the file formats, examples, preview
+behavior, and review checklist. Application developers do not need cluster
+credentials or access to the platform-only `k` command.
 
 ## Platform operators
 
@@ -29,12 +31,21 @@ curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 
 If Nix is already installed, enable flakes before entering the development
 shell.
-Then inspect the command help:
+Then enter the supported environment and inspect the task-specific help before
+running an operation:
 
 ```bash
 nix develop
 k --help
 k <command> --help
+```
+
+For an ordinary repository change, run the local checks rather than using the
+live cluster as validation:
+
+```bash
+nix fmt -- --ci .
+nix flake check
 ```
 
 The shell provides the supported tooling and points `TALOSCONFIG` and
@@ -51,6 +62,10 @@ secrets:
 ```bash
 k secrets check
 ```
+
+For routine desired-state work, edit the repository, run local checks, and open
+a pull request. Do not run an install or apply command merely because a manifest
+changed; Argo CD reconciles merged desired state automatically.
 
 The following commands can change the cluster:
 
@@ -81,3 +96,5 @@ Change Argo CD-managed resources in Git, not with direct cluster edits.
 - [`state.yaml`](state.yaml) is authoritative for cluster topology and versions;
   repository checks verify repeated manifest pins.
 - [`workers/`](workers/) contains Cloudflare Workers deployed outside Argo CD.
+- [`working/`](working/) contains temporary investigations, not durable
+  component contracts.

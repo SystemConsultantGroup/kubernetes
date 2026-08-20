@@ -5,6 +5,17 @@ cluster.
 SOPS uses the public age recipient map in [`state.yaml`](state.yaml) and the
 generated root [`.sops.yaml`](../.sops.yaml).
 
+| Task | Command |
+| --- | --- |
+| Create or identify your local recipient | `k secrets recipients me` |
+| Verify access and encryption | `k secrets check` |
+| Edit an encrypted value | `k secrets edit <name>` |
+| Grant access | `k secrets recipients add <name> <age1...>` |
+| Revoke access | `k secrets recipients remove <name>` |
+
+Granting or revoking access rekeys every encrypted secret and requires explicit
+approval. The detailed command help is available through `k <command> --help`.
+
 ## Files
 
 | File | Contents |

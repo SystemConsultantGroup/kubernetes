@@ -12,10 +12,25 @@ automatically.
 Keep changes focused, preserve unrelated work, and use the tools supplied by
 `nix develop` rather than adding ad hoc dependencies.
 
+When improving this repository, prioritize outcomes in this order:
+
+1. ease of use and readability for application developers and platform
+   engineers;
+1. correctness;
+1. concision and organization;
+1. clarity; and
+1. other concerns.
+
+Evaluate both audiences explicitly. Do not improve one workflow by making the
+other need platform-only access or unnecessary implementation knowledge.
+
 ## Documentation
 
 - Keep the root `README.md` a short landing page for application owners and
   platform operators.
+- Write for the person completing a task: put the common workflow, choice, or
+  safety boundary before implementation detail, and make prerequisites and next
+  steps easy to scan.
 - Put human-facing directory concepts, workflows, and invariants in the nearest
   directory-level `README.md`.
 - Do not duplicate exhaustive file descriptions or command references across

@@ -13,7 +13,10 @@ platform Applications.
 | `platform` | This repository and the cert-manager and ExternalDNS Helm repositories | Any namespace and cluster-scoped kinds required by platform services |
 
 See [`applications.yaml`](applications.yaml) and [`platform.yaml`](platform.yaml)
-for the exact allowlists.
+for the exact allowlists. The `applications` destination must be broad enough
+for generated namespaces, so repository layout checks and platform review also
+enforce that each custom application targets only its own namespace. The
+AppProject is not a substitute for reviewing merged desired state.
 
 ## Editing guidance
 

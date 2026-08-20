@@ -25,9 +25,9 @@ keys. This is useful as an independently hosted auto-unseal service, but it is
 not equivalent to an HSM or a KMS with non-exportable keys.
 
 Protect Cloudflare deployment credentials separately from Kubernetes and Vault
-credentials. Do not enable request-body logging. Keep an offline, access-
-controlled backup of every key version: losing a key that protects Vault data
-can make Vault unrecoverable.
+credentials. Do not enable request-body logging. Keep every key version in an
+offline, access-controlled backup: losing a key that protects Vault data can
+make Vault unrecoverable.
 
 Every request to a Transit endpoint must have the configured shared secret in
 `X-Vault-Token`. Optional mTLS enforcement is also available, but it requires

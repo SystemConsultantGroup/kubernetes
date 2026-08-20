@@ -4,6 +4,24 @@ This is a condensed transcript of the database-platform discussion. It rephrases
 
 Sensitive endpoints, access instructions, physical-location details, schema names, table names, and local artifact paths are kept in the intentionally untracked [sensitive appendix](ignored/DATABASE.md). The appendix is ignored by Git through `working/ignored/`.
 
+## Current plan at a glance
+
+- Use Percona Operator for MySQL with PXC 8.0, starting with one explicitly
+  unsafe rehearsal member and scaling directly to three members.
+- Do not place database claims on the current `/var/lib/local-data` Talos
+  `EPHEMERAL` path. First make the `data` user volume at `/var/mnt/data` ready
+  and migrate any retained platform claims deliberately.
+- Transform MyISAM tables and missing primary keys in the target copy, then test
+  applications before cutover.
+- Require tested onsite restoration, an independent offsite copy, and verified
+  source checksums before erasing E1S.
+- Keep database credentials in Vault or another approved secret workflow, never
+  in manifests or migration notes.
+
+The detailed transcript below records why these decisions were reached and what
+still needs measurement. The acceptance criteria near the end are the practical
+checkpoint for the migration.
+
 ## Starting situation
 
 The Talos cluster initially had one active node, SCC, and no application data that needed preservation. E2S can be added relatively soon. E1S currently runs the standalone MySQL server that must be migrated before E1S can be wiped and joined to Kubernetes.
@@ -553,13 +571,15 @@ These are separate Argo CD Applications:
 
 They need explicit synchronization order. The PXC custom resource should be protected from routine automated pruning, and local PV retention must be independent of the CR lifecycle. Accidental Git deletion must not cascade into database-volume deletion.
 
-The repository does not currently provide Argo CD with a general mechanism for decrypting SOPS application secrets. Before production, choose one of:
+The repository now provides Vault and External Secrets Operator for managed
+application workloads, but custom database platform resources do not receive
+that integration automatically. Before production, define reviewed namespaced
+SecretStore and ExternalSecret resources for the operator, database, and backup
+credentials, or use another explicitly approved bootstrap workflow.
 
-- an External Secrets backend;
-- an Argo CD SOPS integration;
-- a deliberately managed bootstrap command that decrypts and applies database and backup secrets.
-
-Plaintext credentials must not be committed to application or platform manifests.
+Plaintext credentials must not be committed to application or platform
+manifests. Do not add a broad Argo CD SOPS decryption path merely to avoid
+modeling the required secret resources.
 
 ## Current acceptance criteria
 

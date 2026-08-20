@@ -21,7 +21,8 @@ The legacy singular spelling `k secrets recipient` remains an alias for
 ## Prerequisites
 
 Run inside `nix develop`, which supplies `yq`, `sops`, `age`, and `age-keygen`.
-The dispatcher also requires the cluster values in `state.yaml`.
+Secret commands intentionally do not load cluster `state.yaml`, so operators can
+repair encrypted access while cluster state is invalid or incomplete.
 
 ## Behavior
 
