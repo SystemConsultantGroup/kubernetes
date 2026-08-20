@@ -17,9 +17,10 @@ recovery file.
 
 Managed application secret generation is enabled centrally. Every managed
 SecretStore uses one shared Vault policy and Kubernetes-auth role. The `example`
-testing path has a non-sensitive verification value, and ESO synchronization and
-Reloader create, update, delete, and recreation rollouts are verified there.
-Application metadata does not contain secret configuration.
+paths contain non-sensitive values that exercise production, testing, and
+preview layering. ESO synchronization and Reloader create, update, delete, and
+recreation rollouts are verified there. Application metadata does not contain
+secret configuration.
 
 The single `scc` node provides the non-default `local-data` StorageClass at
 `/var/lib/local-data` on Talos `EPHEMERAL` storage. Vault requests retained Raft
