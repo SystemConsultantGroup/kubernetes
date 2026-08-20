@@ -37,7 +37,7 @@ assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.source
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/gateway argocd/platform/vault/manifests argocd/platform/cert-manager/manifests; do
+for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done

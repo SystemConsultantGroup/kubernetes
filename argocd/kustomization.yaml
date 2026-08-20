@@ -14,5 +14,6 @@ resources:
   - platform/gateway/application.yaml
   - platform/local-path-provisioner/application.yaml
   - platform/percona-operator/application.yaml
+  - platform/mysql/application.yaml
   - platform/reloader/application.yaml
   - platform/vault/application.yaml

@@ -17,6 +17,7 @@ AppProject.
 | [`external-secrets/`](external-secrets/) | Synchronizes external values into namespaced Kubernetes Secrets |
 | [`gateway/`](gateway/) | Cilium public Gateway and `gateway-system` namespace |
 | [`local-path-provisioner/`](local-path-provisioner/) | Dynamic node-local volumes from Talos user storage |
+| [`mysql/`](mysql/) | PXC cluster resources and namespaced Vault integration |
 | [`percona-operator/`](percona-operator/) | Reconciles Percona XtraDB Cluster resources in `mysql` |
 | [`reloader/`](reloader/) | Rolls managed workloads when referenced Secrets change |
 | [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
@@ -38,7 +39,7 @@ this reconciliation order:
 | --- | --- | --- |
 | 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | APIs, networking, ingress, and storage foundations |
 | 2 | cert-manager, Percona PXC Operator, Reloader | certificates and application support controllers |
-| 3 | Argo CD, ExternalDNS, Vault | externally routed and stateful services |
+| 3 | Argo CD, ExternalDNS, MySQL resources, Vault | externally routed and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for
 one component's complete health before starting the next wave. Bootstrap

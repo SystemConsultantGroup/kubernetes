@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: Prune=false
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+    targetRevision: main
+    path: argocd/platform/mysql/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mysql
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
