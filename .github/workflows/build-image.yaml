@@ -128,11 +128,14 @@ jobs:
       - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         id: build
         with:
+          cache-from: type=gha,scope=${{ inputs.application }}-${{ inputs.workload }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.application }}-${{ inputs.workload }}
           context: .
           labels: |
             org.opencontainers.image.revision=${{ needs.resolve.outputs.source_revision }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ needs.resolve.outputs.source_repository }}
           platforms: linux/amd64
+          provenance: false
           push: true
           tags: ${{ needs.resolve.outputs.image }}:sha-${{ needs.resolve.outputs.source_revision }}
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
