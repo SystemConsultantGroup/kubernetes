@@ -137,7 +137,7 @@ Reasons include:
 - the Percona Server Operator's asynchronous mode is less mature;
 - the final three-node topology naturally maps one PXC member to each machine.
 
-The proposed initial versions are:
+The initial versions are:
 
 - Percona PXC Operator 1.20.0;
 - PXC 8.0.45 rather than an immediate move to 8.4.

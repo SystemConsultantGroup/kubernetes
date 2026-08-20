@@ -29,6 +29,8 @@ local-path-provisioner:
   helper: "1.37.0"
 percona-operator:
   version: "1.20.0"
+pxc:
+  version: "8.0.45"
 reloader:
   chart: "2.2.16"
 vault:
