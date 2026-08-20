@@ -34,6 +34,7 @@ spec:
       lower_case_table_names=0
       max_connections=500
       pxc_strict_mode=ENFORCING
+      skip_name_resolve=ON
       sync_binlog=1
     resources:
       requests:

@@ -42,6 +42,8 @@ three, and verify strict hostname anti-affinity before removing either unsafe
 flag.
 
 PXC strict mode, durable transaction-log settings, source character settings,
-and the source timezone are explicit in the custom MySQL configuration. Upgrade
+and the source timezone are explicit in the custom MySQL configuration. DNS
+hostname resolution is disabled to avoid Kubernetes reverse-lookup delays, so
+user grants must use `%` or address patterns instead of DNS hostnames. Upgrade
 checks are disabled so database version changes remain separate reviewed GitOps
 operations.
