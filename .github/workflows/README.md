@@ -1,6 +1,6 @@
 # Application delivery workflows
 
-Application repositories use the reusable [`build-image.yaml`](workflows/build-image.yaml) workflow. It builds the root `Dockerfile` with the repository root as its context, publishes an immutable image, records build provenance, and dispatches [`apply.yaml`](workflows/apply.yaml) in this repository.
+Application repositories use the reusable [`build-image.yaml`](build-image.yaml) workflow. It builds the root `Dockerfile` with the repository root as its context, publishes an immutable image, records build provenance, and dispatches [`apply.yaml`](apply.yaml) in this repository.
 
 `apply.yaml` serializes instance changes through the `instance-updates` queue. It sets production or testing workload locks, creates and updates preview locks, and removes preview locks when pull requests close. It never accesses the cluster; Argo CD observes the resulting commit to `main`.
 
