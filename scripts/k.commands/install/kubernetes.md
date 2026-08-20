@@ -12,8 +12,9 @@ The command runs these steps in order:
 1. waits for Talos and Kubernetes health on every node; and
 1. ensures the repository-root `kubeconfig` can reach the API.
 
-Etcd bootstrap retries every 10 seconds for up to 10 minutes. On first boot,
-`k apply` uses `--insecure` only when the node's unauthenticated machine-status
+Etcd bootstrap retries every 10 seconds for up to 10 minutes. Connection errors
+printed during those retries are labeled as expected while Talos starts. On
+first boot, `k apply` uses `--insecure` only when the node's unauthenticated machine-status
 endpoint confirms Talos maintenance mode. An unreachable node or any other
 authentication failure stops installation.
 

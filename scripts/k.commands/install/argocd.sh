@@ -32,8 +32,10 @@ argocd_manifest="$ROOT_DIR/.rendered/bootstrap/argocd.yaml"
 kubectl apply --server-side --field-manager=argocd-controller -f "$argocd_manifest"
 while IFS= read -r job; do
   kubectl -n argocd wait --for=condition=complete "job/$job" --timeout 10m
-done < <(yq eval-all -r 'select(.kind == "Job") | .metadata.name' "$argocd_manifest")
-kubectl -n argocd rollout status deployment --all --timeout 10m
+done < <(yq eval-all -rN 'select(.kind == "Job") | .metadata.name' "$argocd_manifest")
+while IFS= read -r deployment; do
+  kubectl -n argocd rollout status "deployment/$deployment" --timeout 10m
+done < <(yq eval-all -rN 'select(.kind == "Deployment") | .metadata.name' "$argocd_manifest")
 
 kubectl -n argocd rollout restart deployment/argocd-applicationset-controller
 kubectl -n argocd rollout status deployment/argocd-applicationset-controller --timeout 10m

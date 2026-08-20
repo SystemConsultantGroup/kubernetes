@@ -204,7 +204,7 @@ sops encrypt \
   --output-type yaml \
   "$init_file" >"$encrypted_file"
 sops decrypt --input-type yaml --output-type json "$encrypted_file" |
-  jq -e '.root_token | length > 0 and (.recovery_keys_b64 | length == 5)' >/dev/null
+  jq -e '(.root_token | length > 0) and (.recovery_keys_b64 | length == 5)' >/dev/null
 mv "$encrypted_file" "$VAULT_RECOVERY_FILE"
 chmod 644 "$VAULT_RECOVERY_FILE"
 preserve_init=0

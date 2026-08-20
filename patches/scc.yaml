@@ -15,4 +15,5 @@ name: data
 provisioning:
   diskSelector:
     match: disk.wwid == "naa.600508b1001c163bf948aff8ec7c6601"
+  minSize: 1TB
   grow: true
