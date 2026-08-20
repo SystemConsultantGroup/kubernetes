@@ -9,7 +9,9 @@ AppProject.
 
 | Directory | Purpose |
 | --- | --- |
-| [`argocd/`](argocd/) | Argo CD namespace resources and its public route |
+| [`argocd/`](argocd/) | Argo CD chart, namespace resources, and public route |
+| [`gateway-api/`](gateway-api/) | Upstream standard Gateway API definitions |
+| [`cilium/`](cilium/) | CNI, kube-proxy replacement, and Gateway controller |
 | [`cert-manager/`](cert-manager/) | ZeroSSL Cloudflare issuer and platform certificates |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
 | [`external-secrets/`](external-secrets/) | Synchronizes external values into namespaced Kubernetes Secrets |
@@ -33,9 +35,9 @@ this reconciliation order:
 
 | Wave | Components | Dependency intent |
 | --- | --- | --- |
-| 1 | External Secrets, Gateway, local path provisioner | APIs, ingress, and storage foundations |
+| 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | APIs, networking, ingress, and storage foundations |
 | 2 | cert-manager, Reloader | certificates and application support controllers |
-| 3 | Argo CD routes, ExternalDNS, Vault | externally routed and stateful services |
+| 3 | Argo CD, ExternalDNS, Vault | externally routed and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for
 one component's complete health before starting the next wave. Bootstrap

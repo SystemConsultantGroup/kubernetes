@@ -743,8 +743,8 @@ Edit [`values.schema.source.json`](values.schema.source.json), then regenerate
 and check the output:
 
 ```bash
-k generate application-schemas
-k generate application-schemas --check
+k render application-schemas
+k render application-schemas --check
 ```
 
 The generated schema incorporates the Kubernetes and Gateway API definitions

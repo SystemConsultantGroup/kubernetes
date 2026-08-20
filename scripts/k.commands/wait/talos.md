@@ -16,8 +16,8 @@ k wait talos
 
 ## Prerequisites
 
-- `talosconfig` exists at the repository root; create it with
-  `k generate talosconfig`.
+- `talosconfig` exists at the repository root; ensure it with
+  `k ensure talosconfig`.
 - Every node in `state.yaml` is reachable.
 
 The command accepts no arguments and returns a non-zero status when a health

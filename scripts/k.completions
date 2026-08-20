@@ -47,7 +47,7 @@ _k_complete() {
   "reset --yes") choices="$(_k_node_names)" ;;
   reset\ *) choices="--yes" ;;
   "secrets recipient remove" | "secrets recipients remove") choices="$(_k_recipient_names)" ;;
-  "upgrade argocd" | "upgrade cilium" | "upgrade kubernetes" | "upgrade talos") choices="--yes" ;;
+  "upgrade kubernetes" | "upgrade talos") choices="--yes" ;;
   esac
 
   mapfile -t COMPREPLY < <(compgen -W "$choices" -- "$current")

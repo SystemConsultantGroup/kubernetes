@@ -10,7 +10,7 @@ platform Applications.
 | Project | Sources | Resource scope |
 | --- | --- | --- |
 | `applications` | This repository | Any namespace, `Namespace` plus all namespaced kinds |
-| `platform` | This repository and the cert-manager and ExternalDNS Helm repositories | Any namespace and cluster-scoped kinds required by platform services |
+| `platform` | This repository and approved upstream platform chart and manifest repositories | Any namespace and cluster-scoped kinds required by platform services |
 
 See [`applications.yaml`](applications.yaml) and [`platform.yaml`](platform.yaml)
 for the exact allowlists. The `applications` destination must be broad enough

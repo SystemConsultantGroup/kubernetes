@@ -6,6 +6,8 @@ resources:
   - application-sets/instances.yaml
   - application-sets/kustomize.yaml
   - platform/argocd/application.yaml
+  - platform/gateway-api/application.yaml
+  - platform/cilium/application.yaml
   - platform/cert-manager/application.yaml
   - platform/external-dns-scg.sh/application.yaml
   - platform/external-secrets/application.yaml

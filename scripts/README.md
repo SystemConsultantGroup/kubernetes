@@ -19,10 +19,12 @@ remain available while repairing `state.yaml`.
 | Command | Purpose |
 | --- | --- |
 | `k secrets` | Validate and edit encrypted values and manage age recipients |
-| `k generate` | Generate Talos, Kubernetes, and application schema artifacts |
-| `k install` | Bootstrap Kubernetes, Cilium, Argo CD, and Vault |
+| `k ensure` | Validate and repair local Talos and Kubernetes credentials |
+| `k render` | Render state-derived schemas and Kubernetes manifests |
+| `k install` | Bootstrap Kubernetes, Cilium, and the Argo CD GitOps root |
+| `k initialize` | Initialize stateful services that require privileged API calls |
 | `k apply` | Apply Talos patches to every declared node |
-| `k upgrade` | Upgrade a component to the version in `state.yaml` |
+| `k upgrade` | Upgrade Talos or Kubernetes to the version in `state.yaml` |
 | `k reset` | Wipe and reboot a Talos node |
 | `k wait` | Wait for Talos or Kubernetes health |
 | `k forward` | Forward Argo CD to localhost |
@@ -35,22 +37,23 @@ Common safe starting points are:
 
 ```bash
 k secrets check
-k generate application-schemas --check
+k render application-schemas --check
+k render manifests
 nix flake check
 ```
 
 The repository checks live under [`checks/`](checks/). They do not access the
 cluster and are not operator commands.
 
-## Local credentials
+## Local artifacts
 
-`k generate talosconfig` and `k generate kubeconfig` write client configuration
-files at the repository root.
-They use mode `600` and are ignored by Git.
-Do not commit, copy, or paste them into issues or pull requests.
+`k ensure talosconfig` and `k ensure kubeconfig` write local credentials at the
+repository root. `k render manifests` writes inspectable, non-secret output to
+`.rendered/`. These paths use local state, are ignored by Git, and must not be
+copied into issues or pull requests when they contain environment details.
 
 ## Safety
 
-`k install`, `k apply`, `k upgrade`, and `k reset` can change a live cluster.
-Review [`../state.yaml`](../state.yaml), node patches, and the relevant command
-help first. `k reset` wipes Talos `STATE` and `EPHEMERAL` data.
+`k install`, `k initialize`, `k apply`, `k upgrade`, and `k reset` can change a
+live cluster. Review [`../state.yaml`](../state.yaml), node patches, and the
+relevant command help first. `k reset` wipes Talos `STATE` and `EPHEMERAL` data.

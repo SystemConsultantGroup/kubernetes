@@ -31,7 +31,7 @@ if ((!force)); then
   fi
 fi
 
-[[ -f $TALOSCONFIG ]] || run generate talosconfig
+run ensure talosconfig
 
 talosctl -n "$node" reset \
   --graceful=false \

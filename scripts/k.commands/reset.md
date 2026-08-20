@@ -18,8 +18,8 @@ targeted by this command, but workloads using `/var/lib/local-data` are on
 `EPHEMERAL` and lose their data.
 
 The command prompts for confirmation unless `--yes` is supplied.
-If `talosconfig` is missing, it generates one with `k generate talosconfig`
-before resetting the node.
+It runs `k ensure talosconfig` before resetting so local credentials match the
+declared cluster.
 
 ## Usage
 
@@ -30,8 +30,7 @@ k reset [--yes] [node]
 ## Prerequisites
 
 - The target node is declared in `state.yaml`.
-- `talosconfig` exists or `secrets/talos.yaml` is decryptable so it can be
-  generated.
+- `secrets/talos.yaml` is decryptable so `talosconfig` can be ensured.
 - The target is reachable with the Talos client configuration.
 
 `--yes` is intended for an explicitly reviewed, automated operation; it only

@@ -27,13 +27,13 @@ printf '%s' "$vault_oidc_client_secret" |
 kubectl -n argocd label secret argocd-vault-oidc app.kubernetes.io/part-of=argocd --overwrite
 unset vault_oidc_client_secret
 
-helm upgrade --install argocd \
-  oci://ghcr.io/argoproj/argo-helm/argo-cd \
-  --version "$ARGOCD_VERSION" \
-  --namespace argocd \
-  --values "$argocd_dir/values.yaml" \
-  --wait \
-  --timeout 10m
+[[ ${RENDERED_MANIFESTS_CURRENT:-0} == 1 ]] || run render manifests
+argocd_manifest="$ROOT_DIR/.rendered/bootstrap/argocd.yaml"
+kubectl apply --server-side --field-manager=argocd-controller -f "$argocd_manifest"
+while IFS= read -r job; do
+  kubectl -n argocd wait --for=condition=complete "job/$job" --timeout 10m
+done < <(yq eval-all -r 'select(.kind == "Job") | .metadata.name' "$argocd_manifest")
+kubectl -n argocd rollout status deployment --all --timeout 10m
 
 kubectl -n argocd rollout restart deployment/argocd-applicationset-controller
 kubectl -n argocd rollout status deployment/argocd-applicationset-controller --timeout 10m

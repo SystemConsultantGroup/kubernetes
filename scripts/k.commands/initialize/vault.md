@@ -1,6 +1,6 @@
 # vault
 
-Installs and, when necessary, initializes Vault.
+Initializes and configures the Vault deployment reconciled by Argo CD.
 
 ## Behavior
 
@@ -9,8 +9,7 @@ The command:
 1. verifies that the external KMS Worker is healthy;
 1. decrypts the Transit token from `secrets/vault.yaml` and materializes the
    `vault/vault-transit-seal` Kubernetes Secret;
-1. applies the Vault Argo CD Application;
-1. waits for the Vault pod and API;
+1. waits for the Argo CD-managed Vault pod and API;
 1. if Vault is uninitialized, initializes it with five recovery shares and a
    threshold of three;
 1. immediately encrypts the one-time initialization response into
@@ -39,10 +38,8 @@ cannot initialize a new Vault and becomes obsolete when the Raft data is lost.
 ## Usage
 
 ```bash
-k install vault
+k initialize vault
 ```
-
-A complete `k install` runs this command after Argo CD.
 
 ## Prerequisites
 
@@ -53,7 +50,7 @@ A complete `k install` runs this command after Argo CD.
 - `secrets/bootstrap.yaml` contains the Dex client secret shared with Vault.
 - The local age key can decrypt the existing recovery file and SOPS has at
   least one configured recipient for encrypting its replacement.
-- Argo CD, cert-manager, the Gateway, and `local-data` are installed.
+- Argo CD has reconciled Vault, cert-manager, the Gateway, and `local-data`.
 - The committed Vault Application and values are present on the repository's
   `main` branch because the Argo CD Application reads from `main`.
 

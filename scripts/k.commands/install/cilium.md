@@ -1,15 +1,18 @@
 # cilium
 
-Installs the pinned Cilium release with kube-proxy replacement and Gateway API
-support.
+Bootstraps the pinned Gateway API definitions and Cilium before Argo CD can run.
 
 ## Behavior
 
-The command first runs `k install gateway-api`, then invokes the Cilium CLI with
-`cilium.version` from `state.yaml`.
-It enables Kubernetes IPAM, kube-proxy replacement, Gateway API, host-networked
-Envoy, and the repository's required Cilium security and cgroup settings.
-It waits until all pods report Ready with `k wait kubernetes Cilium`.
+The command runs `k render manifests`, then applies the rendered Gateway API and
+Cilium bootstrap manifests with server-side apply. Both use the
+`argocd-controller` field manager so the root Applications can assume ongoing
+ownership without a competing imperative manager. It waits until all Cilium
+pods report Ready.
+
+The shared values enable Kubernetes IPAM, kube-proxy replacement, Gateway API,
+host-networked Envoy, and the repository's required Talos security and cgroup
+settings.
 
 ## Usage
 
@@ -20,8 +23,9 @@ k install cilium
 ## Prerequisites
 
 - Kubernetes is installed and reachable through the repository kubeconfig.
-- `state.yaml` contains `cilium.version` and `gateway-api.version`.
-- The Cilium CLI is available; `nix develop` supplies it.
+- `state.yaml` contains the Gateway API and Cilium versions.
+- Network access to the pinned release and chart is available.
 
-The command accepts no arguments and changes cluster resources.
-It uses the Cilium CLI rather than a direct Helm command.
+The command accepts no arguments and changes cluster-scoped resources. After
+Argo CD bootstrap, update Cilium and Gateway API through Git desired state rather
+than rerunning this command for upgrades.

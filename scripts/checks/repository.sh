@@ -25,6 +25,9 @@ assert_value() {
   }
 }
 
+assert_value '.argocd.version' argocd/platform/argocd/application.yaml '.spec.sources[0].targetRevision'
+assert_value '.cilium.version' argocd/platform/cilium/application.yaml '.spec.sources[0].targetRevision'
+assert_value '."gateway-api".version' argocd/platform/gateway-api/application.yaml '.spec.source.targetRevision | sub("^v"; "")'
 assert_value '.external-secrets.version' argocd/platform/external-secrets/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.revision' argocd/platform/local-path-provisioner/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.helper' argocd/platform/local-path-provisioner/values.yaml '.helperImage.tag'

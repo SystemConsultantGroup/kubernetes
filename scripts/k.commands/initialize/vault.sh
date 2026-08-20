@@ -1,8 +1,7 @@
-require_no_args "k install vault" "$@"
+require_no_args "k initialize vault" "$@"
 require_bootstrap_secrets
 require_vault_secrets
 require_vault_worker
-require_file "$ROOT_DIR/argocd/platform/vault/application.yaml"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/applications.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/platform.hcl"
@@ -135,8 +134,6 @@ printf '%s' "$vault_transit_seal_token" |
   kubectl -n vault create secret generic vault-transit-seal \
     --from-file=token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 unset vault_transit_seal_token
-
-kubectl apply -f "$ROOT_DIR/argocd/platform/vault/application.yaml"
 
 work_dir="$(mktemp -d)"
 status_file="$work_dir/status.json"

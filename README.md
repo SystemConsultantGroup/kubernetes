@@ -71,8 +71,9 @@ The following commands can change the cluster:
 
 ```text
 k install
+k initialize vault
 k apply
-k upgrade <talos|kubernetes|cilium|argocd>
+k upgrade <talos|kubernetes>
 k reset [--yes] [node]
 ```
 

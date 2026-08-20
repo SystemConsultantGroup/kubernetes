@@ -36,7 +36,7 @@ copies of:
 - `VAULT_TRANSIT_SEAL_KEY_V1`, the recovery copy of the Worker's `KMS_KEY_V1`
   binding.
 
-`k install vault` materializes the Kubernetes token as
+`k initialize vault` materializes the Kubernetes token as
 `vault/vault-transit-seal`. Worker recovery values must only move through
 standard input:
 
@@ -55,7 +55,7 @@ procedure and retain old versions.
 Run the installer after Argo CD and the Worker are ready:
 
 ```bash
-k install vault
+k initialize vault
 ```
 
 For a fresh data volume, it initializes Vault, immediately SOPS-encrypts the

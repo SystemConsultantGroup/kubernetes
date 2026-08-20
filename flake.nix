@@ -102,7 +102,6 @@
             packages = with pkgs; [
               age
               bun
-              cilium-cli
               curl
               glow
               kubectl

@@ -1,26 +1,27 @@
 # argocd
 
-Installs Argo CD and bootstraps the repository's GitOps root.
+Bootstraps Argo CD and creates the repository's GitOps root.
 
 ## Behavior
 
 The command:
 
-1. creates the `argocd` namespace, GitHub OAuth and webhook secrets, and the
-   Vault OIDC client secret;
-1. installs or upgrades the `argocd` Helm release at `argocd.version` from
-   `state.yaml`;
-1. restarts the ApplicationSet controller so webhook secret changes take effect;
-1. creates `cert-manager` and `external-dns` namespaces and their Cloudflare
-   secrets, plus the ZeroSSL EAB secret;
-1. applies [`argocd/root-application.yaml`](../../../argocd/root-application.yaml); and
+1. creates the `argocd` namespace, GitHub OAuth and webhook Secrets, and the
+   Vault OIDC client Secret;
+1. renders the pinned Argo CD chart and applies it with the same server-side
+   field manager used by Argo CD;
+1. waits for every rendered chart Job and Argo CD deployment, then refreshes
+   the ApplicationSet controller;
+1. creates the cert-manager and ExternalDNS namespaces and their Cloudflare
+   Secrets, plus the ZeroSSL EAB Secret;
+1. applies [`argocd/root-application.yaml`](../../../argocd/root-application.yaml);
+   and
 1. removes `argocd-initial-admin-secret`.
 
 Secrets come from encrypted `secrets/bootstrap.yaml` and are passed through
-standard input rather than committed to values files.
-The command waits up to 10 minutes for the Argo CD Helm release and has no
-confirmation prompt.
-The GitHub webhook secret is also used by the ApplicationSet webhook.
+standard input rather than committed to values files. The root Application then
+reconciles the Argo CD chart, Cilium, Gateway API, and the remaining desired
+state from Git.
 
 ## Usage
 
@@ -35,9 +36,9 @@ k install argocd
   `CLOUDFLARE_API_TOKEN`, `VAULT_OIDC_CLIENT_SECRET`, and
   `ZEROSSL_EAB_HMAC_KEY`.
 - Cilium is installed and the cluster is reachable.
+- The pinned Argo CD Helm repository is reachable.
 - [`argocd/values.yaml`](../../../argocd/values.yaml) and
   [`argocd/root-application.yaml`](../../../argocd/root-application.yaml) exist.
 
-This is a live operation.
-After bootstrap, change desired state in Git rather than editing Argo CD
-resources directly in the cluster.
+This is a live operation with no confirmation prompt. After bootstrap, change
+desired state in Git instead of rerunning this command for ordinary upgrades.

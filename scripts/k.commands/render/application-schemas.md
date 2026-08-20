@@ -1,7 +1,6 @@
 # application-schemas
 
-Generates or checks the managed application chart schema from the API versions
-pinned in `state.yaml`.
+Renders or checks the managed application chart schema.
 
 ## Behavior
 
@@ -22,8 +21,8 @@ It does not modify files.
 ## Usage
 
 ```bash
-k generate application-schemas
-k generate application-schemas --check
+k render application-schemas
+k render application-schemas --check
 ```
 
 ## Prerequisites

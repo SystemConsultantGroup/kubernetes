@@ -1,16 +1,16 @@
 # kubernetes
 
-Installs Kubernetes on the Talos nodes and writes a kubeconfig.
+Installs Kubernetes on Talos and ensures local credentials.
 
 ## Behavior
 
 The command runs these steps in order:
 
-1. generates `talosconfig` from `state.yaml` and encrypted Talos secrets;
+1. ensures `talosconfig` matches `state.yaml` and encrypted Talos secrets;
 1. runs `k apply` for every declared node;
 1. bootstraps etcd on the main node when it is not already a member;
 1. waits for Talos and Kubernetes health on every node; and
-1. generates the repository-root `kubeconfig`.
+1. ensures the repository-root `kubeconfig` can reach the API.
 
 Etcd bootstrap retries every 10 seconds for up to 10 minutes. On first boot,
 `k apply` uses `--insecure` only when the node's unauthenticated machine-status

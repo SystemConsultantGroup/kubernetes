@@ -1,6 +1,6 @@
 require_no_args "k install kubernetes" "$@"
 
-run generate talosconfig
+run ensure talosconfig
 run apply
 
 if talosctl -n "$MAIN_IP" etcd members >/dev/null 2>&1; then
@@ -17,4 +17,4 @@ else
 fi
 
 run wait talos
-run generate kubeconfig
+run ensure kubeconfig

@@ -12,14 +12,16 @@ After Kubernetes and Cilium are available, an operator runs:
 k install argocd
 ```
 
-The command installs the pinned Argo CD chart, creates bootstrap secrets from
-encrypted values, and applies [`root-application.yaml`](root-application.yaml).
-The root Application then reconciles this directory.
-The initial admin secret is removed; access uses the GitHub OAuth configuration
-in [`values.yaml`](values.yaml).
+The command renders and applies the pinned Argo CD chart, creates bootstrap
+Secrets from encrypted values, and applies
+[`root-application.yaml`](root-application.yaml). The root Application then
+reconciles this directory and assumes ongoing ownership of Argo CD itself,
+Cilium, Gateway API, and the remaining platform desired state. The initial admin
+Secret is removed; access uses the GitHub OAuth configuration in
+[`values.yaml`](values.yaml).
 
-`values.yaml` is used by the explicit Helm installation.
-Its OAuth client secret is read from encrypted bootstrap data and must not be
+`values.yaml` is shared by bootstrap rendering and the Argo CD Application. Its
+OAuth client secret is read from encrypted bootstrap data and must not be
 committed here.
 
 ## Access and refresh
@@ -59,5 +61,6 @@ cluster-scoped resources before merging.
 
 Change desired state in Git rather than editing Argo CD-managed resources in the
 cluster.
-Re-run `k install argocd` only when explicitly changing the installed Argo CD
-configuration or recovering its bootstrap state.
+Use Git for ordinary Argo CD configuration and chart upgrades. Re-run
+`k install argocd` only when recovering bootstrap state before GitOps is
+available.

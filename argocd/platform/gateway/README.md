@@ -2,8 +2,8 @@
 
 This directory defines the Cilium-backed `gateway-system/public` Gateway used by
 platform services and managed applications. Cilium and the pinned Gateway API
-CRDs are installed by `k install cilium` before Argo CD reconciles this
-Application.
+CRDs are bootstrapped by `k install cilium`, then reconciled by their own Argo
+CD Applications.
 
 ## Listeners
 

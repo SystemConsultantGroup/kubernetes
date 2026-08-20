@@ -81,10 +81,10 @@ Edit `argocd/charts/application/values.schema.source.json` or the pinned version
 as appropriate, then run:
 
 ```bash
-k generate application-schemas
+k render application-schemas
 ```
 
-Use `k generate application-schemas --check` to detect stale generated output.
+Use `k render application-schemas --check` to detect stale generated output.
 The command downloads version-pinned upstream definitions and therefore needs
 network access.
 
@@ -110,7 +110,7 @@ Do not run cluster-mutating operations unless the user explicitly asks for the
 specific operation and target.
 This includes:
 
-- `k install`, `k apply`, `k upgrade`, and `k reset`;
+- `k install`, `k initialize`, `k apply`, `k upgrade`, and `k reset`;
 - mutating `kubectl`, `helm`, `talosctl`, or `cilium` commands;
 - commands using `--yes` or otherwise bypassing confirmation.
 

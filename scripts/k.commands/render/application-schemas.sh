@@ -1,5 +1,5 @@
 if (($# > 1)) || (($# == 1)) && [[ $1 != --check ]]; then
-  echo "Usage: k generate application-schemas [--check]" >&2
+  echo "Usage: k render application-schemas [--check]" >&2
   return 2
 fi
 

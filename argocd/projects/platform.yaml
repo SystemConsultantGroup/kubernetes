@@ -9,7 +9,10 @@ spec:
   description: SCG platform
   sourceRepos:
     - https://github.com/SystemConsultantGroup/kubernetes.git
+    - https://github.com/kubernetes-sigs/gateway-api.git
     - https://github.com/rancher/local-path-provisioner.git
+    - https://argoproj.github.io/argo-helm
+    - https://helm.cilium.io/
     - quay.io/jetstack/charts
     - https://charts.external-secrets.io
     - https://helm.releases.hashicorp.com

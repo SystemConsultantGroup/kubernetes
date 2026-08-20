@@ -1,6 +1,6 @@
 # install
 
-Bootstraps the cluster in order: Kubernetes, Cilium, Argo CD, then Vault.
+Bootstraps the cluster through creation of the Argo CD GitOps root.
 
 ## Usage
 
@@ -9,40 +9,37 @@ k install
 k install <command>
 ```
 
-Running `k install` with no subcommand performs the complete bootstrap.
-It requires real values for `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`,
-`ARGOCD_GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`,
-`VAULT_OIDC_CLIENT_SECRET`, and `ZEROSSL_EAB_HMAC_KEY` in encrypted
-`secrets/bootstrap.yaml`, plus the Vault Transit credentials in encrypted
-`secrets/vault.yaml`.
-Set them with `k secrets edit bootstrap` and `k secrets edit vault`.
+Running `k install` with no subcommand performs the complete bootstrap in this
+order:
+
+1. installs Talos configuration, Kubernetes, and etcd;
+1. renders and applies Gateway API and Cilium bootstrap manifests;
+1. waits for cluster networking; and
+1. renders and applies Argo CD, bootstrap credentials, and the root Application.
+
+The command stops at the GitOps boundary. The root Application reconciles
+Cilium, Gateway API, Argo CD, other platform components, and application
+workloads thereafter. Initialize fresh Vault storage separately with
+`k initialize vault` after its platform Application is available.
 
 ## Subcommands
 
-- `kubernetes` installs Talos configuration, Kubernetes, etcd, and kubeconfig.
-- `gateway-api` installs the pinned Gateway API standard CRDs.
-- `cilium` installs Gateway API support and the pinned Cilium release.
-- `argocd` installs Argo CD and bootstraps the GitOps root.
-- `vault` installs and initializes Vault, replacing its encrypted recovery
-  output after a destructive reset.
+- `kubernetes` installs Talos configuration, Kubernetes, etcd, and local
+  credentials.
+- `cilium` bootstraps the CNI and Gateway API definitions before Argo CD can run.
+- `argocd` bootstraps Argo CD, required Secrets, and the GitOps root.
 
 ## Prerequisites
 
 For the full bootstrap:
 
-- every encrypted file under `secrets/` is decryptable with the local age key;
+- every encrypted Talos and bootstrap secret is decryptable and contains real
+  values;
 - every declared node has `patches/<node>.yaml`;
 - `patches/worker.yaml` and `patches/cilium.yaml` exist; and
-- the configured Transit-compatible Worker responds successfully at
-  `https://kms.vault.platform.scg.sh/healthz`.
+- the pinned Gateway API, Cilium, and Argo CD artifacts are reachable.
 
-Individual subcommands document additional requirements. `state.yaml` is the
-source of truth for all component versions.
-
-## Behavior
-
-Before changing the cluster, the full command validates all bootstrap and Vault
-secret values, Talos inputs, and Worker health. It then runs the subcommands in
-the order above and stops at the first failure.
-Individual steps can be rerun after a partial failure.
-These are live cluster-changing operations and have no confirmation prompt.
+Before changing the cluster, the full command validates bootstrap values and all
+Talos inputs. It stops at the first failure; individual steps can be rerun after
+a partial failure. These are live cluster-changing operations and have no
+confirmation prompt.
