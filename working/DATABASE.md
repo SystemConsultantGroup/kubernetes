@@ -113,10 +113,12 @@ Both size-related unsafe flags are explicit. PXC strict mode is enforcing. Kuber
 
 The experimental dump was transformed and imported in 219 seconds. The deterministic streaming transform changed exactly 34 MyISAM definitions to InnoDB, added explicit invisible auto-increment primary keys to the 13 audited PK-less tables, and removed 551 dump-time table-lock pairs. The target contains 41 application schemas, 551 InnoDB tables, and 15,724,817 rows, occupying approximately 2.8 GiB in the PXC data directory. All tables passed `mysqlcheck`; all 551 produced non-null checksums; and the exact row counts, checksums, transformed artifact, and logs are retained only in the ignored rehearsal workspace.
 
+Application and Keycloak testing is deferred until real workloads are onboarded. Backup and PITR configuration is deferred until an independent onsite S3-compatible target is ready. Do not delete the rehearsal database for a restore test before that target and its scoped credentials are approved.
+
 The remaining rehearsal should:
 
-1. Test representative applications and Keycloak.
-1. Configure backups and PITR against onsite S3-compatible storage.
+1. Test representative applications and Keycloak after onboarding.
+1. Configure backups and PITR against independent onsite S3-compatible storage.
 1. Delete the test database and restore it only from object storage.
 1. Record timings and every manual intervention.
 
