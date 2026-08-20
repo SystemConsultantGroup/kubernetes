@@ -15,7 +15,7 @@ spec:
   unsafeFlags:
     pxcSize: true
     proxySize: true
-  updateStrategy: SmartUpdate
+  updateStrategy: RollingUpdate
   upgradeOptions:
     versionServiceEndpoint: https://check.percona.com
     apply: disabled

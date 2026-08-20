@@ -35,11 +35,12 @@ The database requests a retained 250 GiB `local-data` claim, 16 GiB of memory,
 and a 12 GiB InnoDB buffer pool.
 
 The single-member and single-proxy sizes require both `unsafeFlags.pxcSize` and
-`unsafeFlags.proxySize`. Do not treat this topology as highly available. Before
-production cutover, prove backup restoration and offsite replication. After all
-three physical nodes are ready, remove the SCC-only selectors, set both sizes to
-three, and verify strict hostname anti-affinity before removing either unsafe
-flag.
+`unsafeFlags.proxySize`. Do not treat this topology as highly available. The
+rehearsal uses `RollingUpdate` because `SmartUpdate` cannot safely progress a
+restart without another ready member. Before production cutover, prove backup
+restoration and offsite replication. After all three physical nodes are ready,
+remove the SCC-only selectors, set both sizes to three, restore `SmartUpdate`,
+and verify strict hostname anti-affinity before removing either unsafe flag.
 
 PXC strict mode, durable transaction-log settings, source character settings,
 and the source timezone are explicit in the custom MySQL configuration. DNS
