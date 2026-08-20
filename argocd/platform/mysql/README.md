@@ -1,32 +1,24 @@
 # MySQL platform
 
 This Argo CD Application owns the PXC cluster's namespaced resources separately
-from the Percona operator. It starts with the Vault integration required to
-materialize PXC system-user credentials without storing values in Git.
+from the Percona operator. The Percona operator is authoritative for PXC
+system-user credentials; Vault and External Secrets are not database bootstrap
+dependencies.
 
-The `mysql` Vault role is bound only to the `vault-auth` ServiceAccount in this
-namespace and can read only `kv/data/platform/mysql/*`. The namespaced
-SecretStore extracts `platform/mysql/pxc-system-users` into the
-`pxc-system-users` Kubernetes Secret.
+The cluster fixes `spec.secretsName` as `pxc-system-users`. When that Secret is
+absent, the operator creates it with generated credentials and manages the PXC
+system users. Do not declaratively create the same Secret or introduce another
+controller that competes for its ownership.
 
-The system-user value must contain these keys:
+Treat `pxc-system-users` as sensitive database state. Never commit or print its
+values. Preserve it through an approved encrypted backup workflow before moving
+or restoring existing database data, and use Percona's supported password
+rotation procedure rather than replacing the complete Secret.
 
-- `root`;
-- `xtrabackup`;
-- `monitor`;
-- `proxyadmin`;
-- `operator`; and
-- `replication`.
-
-The generated Secret is orphaned and retained deliberately. Removing or
-temporarily failing the ExternalSecret must not delete credentials used by a
-running database. Rotate values through Vault and verify that the operator has
-propagated them before removing an old recovery copy.
-
-Backup and PITR credentials require a separate Vault value and ExternalSecret.
-Do not add them until the onsite S3 endpoint, bucket, and credential scope are
-approved. Application database users also require separate least-privilege
-Secrets; applications must not use PXC system accounts.
+Backup and PITR credentials require a separate Secret. Do not add them until the
+onsite S3 endpoint, bucket, and credential scope are approved. Application
+database users also require separate least-privilege Secrets; applications must
+not use PXC system accounts.
 
 The `mysql` PerconaXtraDBCluster starts as an explicitly unsafe rehearsal with
 one PXC member and one HAProxy on SCC. It uses PXC 8.0.45, references

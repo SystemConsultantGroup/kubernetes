@@ -119,30 +119,6 @@ Application and environment separation is therefore a generated-path convention,
 not a Vault authorization boundary; platform review remains required for chart
 or authentication changes.
 
-### MySQL platform access
-
-The MySQL platform uses a separate `mysql` policy and Kubernetes-auth role. It
-binds only the `vault-auth` ServiceAccount in the `mysql` namespace and can read
-only `kv/data/platform/mysql/*`. Apply the committed policy and role while
-logged in with the `github-platform` identity policy:
-
-```bash
-export VAULT_ADDR=https://vault.platform.scg.sh
-vault policy write mysql argocd/platform/vault/policies/mysql.hcl
-vault write auth/kubernetes/role/mysql \
-  bound_service_account_names=vault-auth \
-  bound_service_account_namespaces=mysql \
-  audience=vault \
-  token_policies=mysql \
-  token_no_default_policy=true \
-  token_ttl=1h \
-  token_max_ttl=8h
-```
-
-The system-user credentials live at
-`kv/platform/mysql/pxc-system-users`. Store values through an approved
-secret-handling workflow and never place them in Git or command output.
-
 ### Managing application values
 
 Members of the GitHub `active` team can manage values through the Vault UI after

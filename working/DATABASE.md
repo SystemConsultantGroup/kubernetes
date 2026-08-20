@@ -598,16 +598,15 @@ These are separate Argo CD Applications:
 
 They need explicit synchronization order. The PXC custom resource should be protected from routine automated pruning, and local PV retention must be independent of the CR lifecycle. Accidental Git deletion must not cascade into database-volume deletion.
 
-The repository provides Vault and External Secrets Operator for managed
-application workloads. The custom MySQL platform now has a dedicated namespaced
-SecretStore and ExternalSecret for PXC system-user credentials, backed by a
-Vault policy restricted to `kv/data/platform/mysql/*`. Backup credentials still
-require a separate value and ExternalSecret after the onsite S3 scope is
-approved.
+The Percona operator is authoritative for PXC system-user credentials and
+creates the configured `pxc-system-users` Secret when it is absent. Vault and
+External Secrets remain available to managed application workloads but are not
+database bootstrap dependencies. Backup credentials require a separate Secret
+after the onsite S3 scope is approved.
 
 Plaintext credentials must not be committed to application or platform
-manifests. Do not add a broad Argo CD SOPS decryption path merely to avoid
-modeling the required secret resources.
+manifests. Preserve generated database credentials through an approved encrypted
+backup workflow before moving or restoring existing data.
 
 ## Current acceptance criteria
 
