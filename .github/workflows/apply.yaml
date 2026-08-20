@@ -1,0 +1,38 @@
+name: Apply
+on:
+  workflow_dispatch:
+    inputs:
+      request:
+        description: Versioned JSON request produced by the build-image workflow
+        required: true
+        type: string
+concurrency:
+  group: instance-updates
+  queue: max
+permissions:
+  attestations: read
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: main
+      - env:
+          YQ_CHECKSUM: f67d8a6a2dc2308c961f83d5ba8707fd4c7c44ad77902fef87eb3a4646cdfa2a
+          YQ_VERSION: v4.53.4
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/yq"
+          mkdir -p "$directory"
+          curl --fail --location --silent --show-error \
+            "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64" \
+            --output "$directory/yq"
+          echo "$YQ_CHECKSUM  $directory/yq" | sha256sum --check
+          chmod +x "$directory/yq"
+          echo "$directory" >>"$GITHUB_PATH"
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST: ${{ inputs.request }}
+        run: .github/scripts/apply.sh

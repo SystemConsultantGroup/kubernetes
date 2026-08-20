@@ -1,0 +1,213 @@
+name: Build image
+on:
+  workflow_call:
+    inputs:
+      application:
+        description: Managed application name in the Kubernetes repository
+        required: true
+        type: string
+      workload:
+        description: Workload name in the managed application
+        required: true
+        type: string
+      image:
+        description: Fully qualified GHCR or Docker Hub image repository
+        required: true
+        type: string
+    secrets:
+      KUBERNETES_APP_ID:
+        description: ID of the GitHub App that can dispatch the Kubernetes apply workflow
+        required: true
+      KUBERNETES_APP_PRIVATE_KEY:
+        description: Private key of the GitHub App that can dispatch the Kubernetes apply workflow
+        required: true
+      DOCKERHUB_USERNAME:
+        description: Docker Hub username when the image uses docker.io
+        required: false
+      DOCKERHUB_TOKEN:
+        description: Docker Hub token when the image uses docker.io
+        required: false
+permissions:
+  attestations: write
+  contents: read
+  id-token: write
+  packages: write
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.resolve.outputs.image }}
+      instance: ${{ steps.resolve.outputs.instance }}
+      operation: ${{ steps.resolve.outputs.operation }}
+      pull_request: ${{ steps.resolve.outputs.pull_request }}
+      registry: ${{ steps.resolve.outputs.registry }}
+      source_branch: ${{ steps.resolve.outputs.source_branch }}
+      source_repository: ${{ steps.resolve.outputs.source_repository }}
+      source_revision: ${{ steps.resolve.outputs.source_revision }}
+      workflow_revision: ${{ steps.resolve.outputs.workflow_revision }}
+    steps:
+      - id: resolve
+        env:
+          APPLICATION: ${{ inputs.application }}
+          EVENT_ACTION: ${{ github.event.action }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REVISION: ${{ github.event.pull_request.head.sha }}
+          IMAGE: ${{ inputs.image }}
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+          WORKFLOW_REVISION: ${{ job.workflow_sha }}
+          WORKLOAD: ${{ inputs.workload }}
+        run: |
+          set -euo pipefail
+          [[ $APPLICATION =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]
+          [[ $WORKLOAD =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]
+          [[ $IMAGE =~ ^(ghcr\.io|docker\.io)/[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)+$ ]]
+          operation="set"
+          pull_request=
+          if [[ $GITHUB_EVENT_NAME == push ]]; then
+            source_branch="$GITHUB_REF_NAME"
+            source_revision="$GITHUB_SHA"
+            case "$source_branch" in
+              main) instance=production ;;
+              testing) instance=testing ;;
+              *) echo "Unsupported delivery branch: $source_branch" >&2; exit 1 ;;
+            esac
+          elif [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+            [[ $HEAD_REPOSITORY == "$GITHUB_REPOSITORY" ]] || {
+              echo "Preview delivery supports only same-repository pull requests" >&2
+              exit 1
+            }
+            instance=preview
+            pull_request="$PULL_REQUEST"
+            source_branch="$HEAD_BRANCH"
+            if [[ $EVENT_ACTION == closed ]]; then
+              operation=remove
+              source_revision="$HEAD_REVISION"
+            else
+              source_revision="$GITHUB_SHA"
+            fi
+          else
+            echo "Unsupported delivery event: $GITHUB_EVENT_NAME" >&2
+            exit 1
+          fi
+          [[ $source_revision =~ ^[0-9a-f]{40}$ ]]
+          {
+            echo "image=$IMAGE"
+            echo "instance=$instance"
+            echo "operation=$operation"
+            echo "pull_request=$pull_request"
+            echo "registry=${IMAGE%%/*}"
+            echo "source_branch=$source_branch"
+            echo "source_repository=$GITHUB_REPOSITORY"
+            echo "source_revision=$source_revision"
+            echo "workflow_revision=$WORKFLOW_REVISION"
+          } >>"$GITHUB_OUTPUT"
+  publish:
+    needs: resolve
+    if: needs.resolve.outputs.operation == 'set'
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.image.outputs.reference }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.resolve.outputs.source_revision }}
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        if: needs.resolve.outputs.registry == 'ghcr.io'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        if: needs.resolve.outputs.registry == 'docker.io'
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        id: build
+        with:
+          context: .
+          labels: |
+            org.opencontainers.image.revision=${{ needs.resolve.outputs.source_revision }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ needs.resolve.outputs.source_repository }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ needs.resolve.outputs.image }}:sha-${{ needs.resolve.outputs.source_revision }}
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.resolve.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+      - id: image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE: ${{ needs.resolve.outputs.image }}
+        run: echo "reference=$IMAGE@$DIGEST" >>"$GITHUB_OUTPUT"
+  apply:
+    needs:
+      - resolve
+      - publish
+    if: always() && needs.resolve.result == 'success' && (needs.resolve.outputs.operation == 'remove' || needs.publish.result == 'success')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        id: token
+        with:
+          app-id: ${{ secrets.KUBERNETES_APP_ID }}
+          private-key: ${{ secrets.KUBERNETES_APP_PRIVATE_KEY }}
+          owner: SystemConsultantGroup
+          repositories: kubernetes
+      - env:
+          APPLICATION: ${{ inputs.application }}
+          APPLY_TOKEN: ${{ steps.token.outputs.token }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+          INSTANCE: ${{ needs.resolve.outputs.instance }}
+          OPERATION: ${{ needs.resolve.outputs.operation }}
+          PULL_REQUEST: ${{ needs.resolve.outputs.pull_request }}
+          SOURCE_BRANCH: ${{ needs.resolve.outputs.source_branch }}
+          SOURCE_REPOSITORY: ${{ needs.resolve.outputs.source_repository }}
+          SOURCE_REVISION: ${{ needs.resolve.outputs.source_revision }}
+          WORKFLOW_REVISION: ${{ needs.resolve.outputs.workflow_revision }}
+          WORKLOAD: ${{ inputs.workload }}
+        run: |
+          set -euo pipefail
+          request=$(jq -cn \
+            --arg application "$APPLICATION" \
+            --arg image "$IMAGE" \
+            --arg instance "$INSTANCE" \
+            --arg operation "$OPERATION" \
+            --arg pull_request "$PULL_REQUEST" \
+            --arg source_branch "$SOURCE_BRANCH" \
+            --arg source_repository "$SOURCE_REPOSITORY" \
+            --arg source_revision "$SOURCE_REVISION" \
+            --arg workflow_revision "$WORKFLOW_REVISION" \
+            --arg workload "$WORKLOAD" \
+            '{version: 1, operation: $operation, application: $application, workload: $workload, instance: $instance, pullRequest: (if $pull_request == "" then null else ($pull_request | tonumber) end), sourceRepository: $source_repository, sourceBranch: $source_branch, sourceRevision: $source_revision, workflowRevision: $workflow_revision, image: (if $operation == "remove" then null else $image end)}')
+          response=$(GH_TOKEN="$APPLY_TOKEN" gh api \
+            --method POST \
+            --header 'X-GitHub-Api-Version: 2026-03-10' \
+            repos/SystemConsultantGroup/kubernetes/actions/workflows/apply.yaml/dispatches \
+            --field ref=main \
+            --field "inputs[request]=$request")
+          run_identifier=$(jq -er '.workflow_run_id' <<<"$response")
+          run_url=$(jq -er '.html_url' <<<"$response")
+          echo "Apply run: $run_url" >>"$GITHUB_STEP_SUMMARY"
+          for attempt in $(seq 1 360); do
+            run=$(GH_TOKEN="$APPLY_TOKEN" gh api \
+              --header 'X-GitHub-Api-Version: 2026-03-10' \
+              "repos/SystemConsultantGroup/kubernetes/actions/runs/$run_identifier")
+            status=$(jq -r '.status' <<<"$run")
+            if [[ $status == completed ]]; then
+              conclusion=$(jq -r '.conclusion' <<<"$run")
+              [[ $conclusion == success ]] || {
+                echo "Apply run concluded with $conclusion" >&2
+                exit 1
+              }
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for $run_url after $attempt attempts" >&2
+          exit 1

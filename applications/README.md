@@ -48,6 +48,12 @@ names. Each complete Argo CD identity must fit 63 characters, including
 workload resources can use stable hash suffixes when needed, but Application and
 namespace identities cannot.
 
+After bootstrap, application repositories can maintain these locks through the
+shared [application delivery workflows](../.github/). The workflow publishes an
+immutable image for `main`, `testing`, or a same-repository pull request and then
+applies the corresponding production, testing, or preview lock here. Closing a
+pull request removes its preview lock.
+
 ### Minimal example
 
 The repository's minimal public HTTP example is
