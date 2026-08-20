@@ -17,6 +17,7 @@ AppProject.
 | [`external-secrets/`](external-secrets/) | Synchronizes external values into namespaced Kubernetes Secrets |
 | [`gateway/`](gateway/) | Cilium public Gateway and `gateway-system` namespace |
 | [`local-path-provisioner/`](local-path-provisioner/) | Dynamic node-local volumes from Talos user storage |
+| [`percona-operator/`](percona-operator/) | Reconciles Percona XtraDB Cluster resources in `mysql` |
 | [`reloader/`](reloader/) | Rolls managed workloads when referenced Secrets change |
 | [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
@@ -36,7 +37,7 @@ this reconciliation order:
 | Wave | Components | Dependency intent |
 | --- | --- | --- |
 | 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | APIs, networking, ingress, and storage foundations |
-| 2 | cert-manager, Reloader | certificates and application support controllers |
+| 2 | cert-manager, Percona PXC Operator, Reloader | certificates and application support controllers |
 | 3 | Argo CD, ExternalDNS, Vault | externally routed and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for

@@ -31,6 +31,7 @@ assert_value '."gateway-api".version' argocd/platform/gateway-api/application.ya
 assert_value '.external-secrets.version' argocd/platform/external-secrets/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.revision' argocd/platform/local-path-provisioner/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.helper' argocd/platform/local-path-provisioner/values.yaml '.helperImage.tag'
+assert_value '.percona-operator.version' argocd/platform/percona-operator/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.reloader.chart' argocd/platform/reloader/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'

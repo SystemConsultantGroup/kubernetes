@@ -27,6 +27,8 @@ external-secrets:
 local-path-provisioner:
   revision: "49b2be8e26d6d34c9afaa21fa33108d2e82f8955"
   helper: "1.37.0"
+percona-operator:
+  version: "1.20.0"
 reloader:
   chart: "2.2.16"
 vault:

@@ -16,6 +16,7 @@ spec:
     - quay.io/jetstack/charts
     - https://charts.external-secrets.io
     - https://helm.releases.hashicorp.com
+    - https://percona.github.io/percona-helm-charts/
     - https://kubernetes-sigs.github.io/external-dns/
     - https://stakater.github.io/stakater-charts
   destinations:
