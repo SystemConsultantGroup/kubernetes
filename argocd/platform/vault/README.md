@@ -15,10 +15,10 @@ Vault requests two retained `local-data` volumes:
 - 10 GiB at `/vault/data` for integrated Raft storage;
 - 10 GiB at `/vault/audit` for file audit logs.
 
-Both volumes are node-local. Their PersistentVolumes use `Retain`, but the
-current `/var/lib/local-data` backing path is on Talos `EPHEMERAL` storage and is
-therefore inside `k reset`'s wipe boundary. A node reset starts Vault with empty
-storage even when the Kubernetes PersistentVolumes were retained.
+Both volumes are node-local. Their PersistentVolumes use `Retain` and reside on
+the separately declared Talos `data` user volume at `/var/mnt/data`. The
+repository's `k reset` command wipes only `STATE` and `EPHEMERAL`, not this user
+volume. Loss or erasure of the SCC data RAID still destroys both volumes.
 
 cert-manager issues `vault-server-tls` for `vault.platform.scg.sh`. The public
 Gateway terminates client TLS and uses `BackendTLSPolicy` to establish and
@@ -61,8 +61,8 @@ k initialize vault
 For a fresh data volume, it initializes Vault, immediately SOPS-encrypts the
 one-time response into `secrets/vault-recovery.yaml`, and configures auditing,
 KV v2, Kubernetes authentication, and shared managed-application access. Commit
-the changed encrypted recovery file after each destructive reset. On an
-initialized Vault it validates and retains the existing file.
+the changed encrypted recovery file after intentionally replacing Vault's data
+volume. On an initialized Vault it validates and retains the existing file.
 
 The installer reconciles privileged Vault configuration only while the recovery
 file contains a valid initial root token. After that token is revoked and
@@ -150,6 +150,7 @@ vault status
 ```
 
 This repository restores infrastructure, not Vault data, and does not contain
-Raft snapshots. A destructive reset creates new Raft data and replaces
-`vault-recovery.yaml`. If data retention becomes a requirement, use a dedicated
-encrypted backup system and test restoration separately.
+Raft snapshots. The separate data user volume survives `k reset`, but erasing or
+losing that volume requires new Raft data and a replacement
+`vault-recovery.yaml`. Add a dedicated encrypted backup system and tested restore
+procedure before relying on the node-local volume as the only recovery copy.

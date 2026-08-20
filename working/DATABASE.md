@@ -8,9 +8,8 @@ Sensitive endpoints, access instructions, physical-location details, schema name
 
 - Use Percona Operator for MySQL with PXC 8.0, starting with one explicitly
   unsafe rehearsal member and scaling directly to three members.
-- Do not place database claims on the current `/var/lib/local-data` Talos
-  `EPHEMERAL` path. First make the `data` user volume at `/var/mnt/data` ready
-  and migrate any retained platform claims deliberately.
+- Place new database claims on SCC's ready Talos `data` user volume at
+  `/var/mnt/data`; the retained Vault claims have already been migrated there.
 - Transform MyISAM tables and missing primary keys in the target copy, then test
   applications before cutover.
 - Require tested onsite restoration, an independent offsite copy, and verified
@@ -69,7 +68,7 @@ The SCC hardware RAID conversion and Talos reinstallation are now complete. The 
 - a 480 GB system RAID volume containing Talos `STATE` and `EPHEMERAL`;
 - a 1.9 TB data RAID volume intended for the `data` Talos user volume and database persistent volumes.
 
-The current SCC patch selects both logical volumes by their controller-provided WWIDs. The `data` user-volume configuration is present but not ready: Talos reports that the selected data volume has insufficient free space for the requested volume, and no `/var/mnt/data` mount exists. The existing `local-data` StorageClass is nevertheless deployed and has bound local claims on `/var/lib/local-data` within `EPHEMERAL`; it is not yet suitable as the database data tier.
+The current SCC patch selects both logical volumes by their controller-provided WWIDs. The data RAID initially retained a previous Rocky Linux GPT and LVM layout, so Talos reported insufficient free space. That obsolete layout was wiped after its disposition was confirmed. Talos now reports the 1.9 TB `data` user volume ready and mounted at `/var/mnt/data`. The two retained Vault claims were copied offline, verified, and rebound to that volume. The repository's `local-data` path now targets `/var/mnt/data` for future claims.
 
 Hardware RAID is preferred to Talos software RAID because the controllers support hot-swap and because the repository currently pins Talos 1.13.7. The RAID controller may expose new WWIDs, so each node patch must be updated after its arrays are configured. SCC has been updated; E1S and E2S still require their final controller WWIDs before activation.
 
@@ -95,7 +94,7 @@ The local-storage design must provide:
 - strict hostname anti-affinity for final PXC placement;
 - one PXC member per physical node.
 
-The first three items are only partially complete on SCC. `local-data` already has the required binding and reclaim behavior, but its current `/var/lib/local-data` path belongs to `EPHEMERAL`. Before a PXC claim is created, resolve the failed `data` user volume, verify that it is mounted at `/var/mnt/data`, and move the provisioner path there. Existing local claims must be preserved or deliberately migrated before changing their provisioning path.
+The first three items are complete on SCC. Talos reports the `data` user volume ready at `/var/mnt/data`; `local-data` has the required binding and reclaim behavior; and the retained Vault claims now use that volume. The repository path change must be reconciled before creating a PXC claim.
 
 Local PV consequences are accepted:
 
@@ -108,12 +107,11 @@ The database is currently small, so a 250–500 GiB initial allocation is alread
 
 ## Rehearsal after platform storage setup
 
-SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. The local-volume provisioner is deployed, but the data RAID user volume is not ready because Talos finds insufficient free space on its selected logical volume. Resolve that condition without erasing data of uncertain value, then verify the `data` volume and its `/var/mnt/data` mount before the database rehearsal.
+SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. Its data RAID user volume is ready at `/var/mnt/data`, and the retained Vault claims have been migrated there. The next rehearsal step begins with the operator deployment after the repository path change is reconciled.
 
 The rehearsal should:
 
-1. Verify the ready Talos `data` user volume and configure the provisioner to use it for database claims.
-1. Preserve or deliberately migrate existing local claims before changing the provisioner path.
+1. Confirm that Argo CD has reconciled the `/var/mnt/data` provisioner path.
 1. Install the Percona PXC Operator.
 1. Deploy a single PXC member with unsafe configuration explicitly enabled.
 1. Load the experimental logical dump described below.

@@ -24,11 +24,10 @@ Verify the WWID on the target machine before installation or apply.
 Replace placeholders such as `REPLACE_WITH_E1S_SYSTEM_DISK_WWID` before enabling
 a node.
 
-The testing `scc` patch also declares a default partition-based Talos user
-volume named `data` from the selected disk, with an intended mount at
-`/var/mnt/data`. The selector uses a stable WWN symlink and requests growth into
-the disk's available space. The declaration does not prove that the live volume
-is ready; verify Talos volume status before assigning workloads to that path.
+The `scc` patch also declares a default partition-based Talos user volume named
+`data` from the selected disk, mounted at `/var/mnt/data`. The selector uses a
+stable WWN symlink and requests growth into the disk's available space. Verify
+live Talos volume and mount status before assigning workloads to that path.
 
 Do not put credentials here.
 Talos secrets remain in encrypted

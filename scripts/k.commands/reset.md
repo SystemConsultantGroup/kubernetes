@@ -14,8 +14,8 @@ Without a node argument, the command targets the main node selected by
 With a node argument, it requires that node name to be declared in `state.yaml`.
 It runs `talosctl reset` with a non-graceful reset and wipes only the `STATE`
 and `EPHEMERAL` system labels. Separately declared Talos user volumes are not
-targeted by this command, but workloads using `/var/lib/local-data` are on
-`EPHEMERAL` and lose their data.
+targeted by this command. SCC's `local-data` path is on its separate `data` user
+volume, but always verify each target node's live storage before reset.
 
 The command prompts for confirmation unless `--yes` is supplied.
 It runs `k ensure talosconfig` before resetting so local credentials match the

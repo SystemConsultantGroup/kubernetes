@@ -16,10 +16,11 @@ External Secrets and Reloader have been verified for Secret creation, update,
 deletion, recreation, and the resulting Deployment rollouts. Application
 metadata does not contain Vault configuration.
 
-The current storage choice is intentionally rebuildable. `local-data` resides at
-`/var/lib/local-data` on Talos `EPHEMERAL`; `k reset` therefore removes Vault
-Raft and audit data. A rebuild initializes empty Vault storage and replaces
-`secrets/vault-recovery.yaml`. No Raft snapshot or restore workflow exists.
+The retained Vault claims reside on SCC's separate Talos `data` user volume at
+`/var/mnt/data`. They survive the repository's `k reset` command because it
+wipes only Talos `STATE` and `EPHEMERAL`, but they remain node-local and are lost
+if the data RAID is erased or fails. A one-time ignored Raft snapshot protected
+the storage migration; no recurring Raft snapshot or restore workflow exists.
 
 ## Remaining work
 
