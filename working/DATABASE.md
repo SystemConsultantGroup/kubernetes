@@ -4,18 +4,22 @@ This is a condensed transcript of the database-platform discussion. It rephrases
 
 Sensitive endpoints, access instructions, physical-location details, schema names, table names, and local artifact paths are kept in the intentionally untracked [sensitive appendix](ignored/DATABASE.md). The appendix is ignored by Git through `working/ignored/`.
 
+For the task-focused migration sequence distilled from this transcript, use the
+[database migration guide](DATABASE_MIGRATION_GUIDE.md).
+
 ## Current plan at a glance
 
-- Use Percona Operator for MySQL with PXC 8.0, starting with one explicitly
-  unsafe rehearsal member and scaling directly to three members.
-- Place new database claims on SCC's ready Talos `data` user volume at
-  `/var/mnt/data`; the retained Vault claims have already been migrated there.
-- Transform MyISAM tables and missing primary keys in the target copy, then test
-  applications before cutover.
+- Percona PXC Operator 1.20.0 and a one-member PXC 8.0.45 rehearsal are running
+  on SCC; the transformed experimental dump has been imported successfully.
+- SCC database and Vault claims use the ready Talos `data` user volume at
+  `/var/mnt/data`.
+- Repeat the import with an authoritative write-frozen source dump, then test
+  applications and Keycloak before cutover.
 - Require tested onsite restoration, an independent offsite copy, and verified
   source checksums before erasing E1S.
 - Keep database credentials in Vault or another approved secret workflow, never
   in manifests or migration notes.
+- Keep the later PXC 8.4 upgrade separate from this migration.
 
 The detailed transcript below records why these decisions were reached and what
 still needs measurement. The acceptance criteria near the end are the practical
@@ -94,7 +98,7 @@ The local-storage design must provide:
 - strict hostname anti-affinity for final PXC placement;
 - one PXC member per physical node.
 
-The first three items are complete on SCC. Talos reports the `data` user volume ready at `/var/mnt/data`; `local-data` has the required binding and reclaim behavior; and the retained Vault claims now use that volume. The repository path change must be reconciled before creating a PXC claim.
+The first three items are complete on SCC. Talos reports the `data` user volume ready at `/var/mnt/data`; `local-data` has the required binding and reclaim behavior; and the retained Vault and PXC claims use that volume.
 
 Local PV consequences are accepted:
 
@@ -105,13 +109,39 @@ Local PV consequences are accepted:
 
 The database is currently small, so a 250–500 GiB initial request is already generous. The rehearsal claim requests 250 GiB, but local hostPath provisioning does not enforce that value as a filesystem quota: the pod sees the full data filesystem. Storage monitoring and operating procedures must preserve headroom for other claims, SST, temporary files, and recovery.
 
-## Rehearsal after platform storage setup
+## Rehearsal findings and remaining gates
 
 SCC now runs from hardware RAID and has active local platform claims, so it is no longer a disposable node. Its data RAID user volume is ready at `/var/mnt/data`, and the retained Vault claims have been migrated there. Argo CD has reconciled that path, Percona PXC Operator 1.20.0 is healthy, and the one-member PXC 8.0.45 rehearsal is ready with one HAProxy and a retained 250 GiB claim.
 
 Both size-related unsafe flags are explicit. PXC strict mode is enforcing. Kubernetes reverse DNS initially made HAProxy probes take six seconds, so MySQL hostname resolution is disabled and grants must not depend on DNS hostnames. The single-member rehearsal uses `RollingUpdate` because `SmartUpdate` could not restart its only ready member while HAProxy was unready; restore `SmartUpdate` with the final three-member topology.
 
 The experimental dump was transformed and imported in 219 seconds. The deterministic streaming transform changed exactly 34 MyISAM definitions to InnoDB, added explicit invisible auto-increment primary keys to the 13 audited PK-less tables, and removed 551 dump-time table-lock pairs. The target contains 41 application schemas, 551 InnoDB tables, and 15,724,817 rows, occupying approximately 2.8 GiB in the PXC data directory. All tables passed `mysqlcheck`; all 551 produced non-null checksums; and the exact row counts, checksums, transformed artifact, and logs are retained only in the ignored rehearsal workspace.
+
+The rehearsal established these operational findings:
+
+- creating the hardware RAID logical volume did not erase old GPT, LVM, and
+  filesystem signatures; they had to be identified and explicitly wiped before
+  Talos could provision the user volume;
+- the local-path PVC's 250 GiB request is not an enforced hostPath quota;
+- `mysqldump` emitted one `LOCK TABLES` and `UNLOCK TABLES` pair per table even
+  though it did not lock source tables while reading, so the PXC transform must
+  remove those statements;
+- explicit invisible primary-key columns accepted implicit dump inserts while
+  remaining absent from ordinary `SELECT *` results;
+- Kubernetes reverse-DNS misses delayed HAProxy health queries by six seconds;
+  `skip_name_resolve=ON` removed the delay, so grants must not use DNS hostnames;
+- `SmartUpdate` could not restart the only PXC member while HAProxy was unready;
+  the one-member rehearsal requires `RollingUpdate`, with `SmartUpdate` restored
+  for the final three-member topology;
+- the operator produced valid TLS certificates and internal-only ClusterIP
+  services without public MySQL exposure; and
+- one-off import tooling must include both Zstandard and `kubectl` and must use
+  the repository kubeconfig explicitly; failed preflight invocations sent no SQL.
+
+The rehearsal does not prove source consistency, application compatibility,
+backup recovery, PITR, or multi-member behavior. The experimental source account
+could not lock MyISAM tables, the dump excluded users and grants, and only one
+full transformed import has been completed.
 
 Application and Keycloak testing is deferred until real workloads are onboarded. Backup and PITR configuration is deferred until an independent onsite S3-compatible target is ready. Do not delete the rehearsal database for a restore test before that target and its scoped credentials are approved.
 
@@ -564,7 +594,7 @@ These are separate Argo CD Applications:
 
 1. local storage and StorageClass, already deployed as `local-path-provisioner`;
 1. operator and CRDs;
-1. PXC cluster, backup schedules, and policies.
+1. PXC cluster and the future backup schedules and policies.
 
 They need explicit synchronization order. The PXC custom resource should be protected from routine automated pruning, and local PV retention must be independent of the CR lifecycle. Accidental Git deletion must not cascade into database-volume deletion.
 
