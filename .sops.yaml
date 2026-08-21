@@ -3,3 +3,4 @@ creation_rules:
   - path_regex: ^secrets/(bootstrap|talos|vault-recovery|vault)\.yaml$
     age:
       - age122cs9lkwpzx6ccpw73gjudy0t5ln6ueqcl9tckj4y2yrxvqv6u3qph6ap3
+      - age1w42r9368es5juyy38lmj8ht3zktndyyzj8r9g87e3ucyqp5jypwsau5yql
