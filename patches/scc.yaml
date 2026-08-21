@@ -5,6 +5,8 @@ hostname: k8s.scc
 auto: off
 ---
 machine:
+  nodeLabels:
+    gateway.scg.sh/listener: "true"
   install:
     diskSelector:
       wwid: naa.600508b1001cc9d1ee77e9fbec5ef031
