@@ -1,10 +1,19 @@
 # Engineering 2 Server node specific patches
 apiVersion: v1alpha1
 kind: HostnameConfig
-hostname: k8s.e2s
+hostname: e2s.k8s
 auto: off
 ---
 machine:
   install:
     diskSelector:
-      wwid: REPLACE_WITH_E2S_SYSTEM_DISK_WWID
+      wwid: naa.61418770621bbc00321ac43f2b9a04af
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: data
+provisioning:
+  diskSelector:
+    match: disk.wwid == "naa.61418770621bbc00321acff30706c889"
+  minSize: 1TB
+  grow: true

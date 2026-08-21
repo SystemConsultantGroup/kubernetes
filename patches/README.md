@@ -15,7 +15,7 @@ Cilium patches before generating a control-plane machine configuration.
 The node-specific files present are `scc.yaml`, `e1s.yaml`, and `e2s.yaml`.
 Every node listed in [`../state.yaml`](../state.yaml) needs a matching file;
 commented-out nodes are ignored until enabled.
-The current state enables only `scc`.
+The current state enables `scc` and `e2s`.
 
 ## Disk selectors
 
@@ -24,10 +24,10 @@ Verify the WWID on the target machine before installation or apply.
 Replace placeholders such as `REPLACE_WITH_E1S_SYSTEM_DISK_WWID` before enabling
 a node.
 
-The `scc` patch also declares a default partition-based Talos user volume named
-`data` from the selected disk, mounted at `/var/mnt/data`. The selector uses a
-stable WWN symlink and requests growth into the disk's available space. Verify
-live Talos volume and mount status before assigning workloads to that path.
+The `scc` and `e2s` patches also declare partition-based Talos user volumes
+named `data` from their selected disks, mounted at `/var/mnt/data`. The selectors
+use stable WWIDs and request growth into each disk's available space. Verify live
+Talos volume and mount status before assigning workloads to either path.
 
 Do not put credentials here.
 Talos secrets remain in encrypted
