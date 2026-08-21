@@ -21,3 +21,17 @@ The values preserve the Talos requirements established by
 kube-proxy replacement, host cgroups, KubePrism on `localhost:7445`, explicit
 capabilities, host-networked Gateway Envoy, ALPN, and appProtocol support.
 Review the Talos patch and these values together when changing networking.
+
+## Public listener placement
+
+Host-networked Gateway listeners run only on nodes labeled:
+
+```text
+gateway.scg.sh/listener=true
+```
+
+Cilium publishes selected node addresses in Gateway status, and ExternalDNS can
+publish those addresses for public routes. Add this label to a node only after
+its external reachability, Cilium health, and Gateway traffic have been tested.
+The Cilium agent and Envoy DaemonSet still run on every eligible Kubernetes node
+regardless of this listener selector.

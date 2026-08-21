@@ -33,6 +33,9 @@ gatewayAPI:
   enableAppProtocol: true
   hostNetwork:
     enabled: true
+    nodes:
+      matchLabels:
+        gateway.scg.sh/listener: "true"
 envoy:
   enabled: true
   securityContext:
