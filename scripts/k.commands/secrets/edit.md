@@ -1,30 +1,31 @@
+한국어 | [English](edit.en.md)
+
 # edit
 
-Opens a named encrypted secret with SOPS.
+이름으로 지정한 암호화된 시크릿을 SOPS로 엽니다.
 
-## Behavior
+## 동작
 
-The argument selects `secrets/<secret>.yaml`.
-Names may contain lowercase letters, digits, `.`, `_`, and `-`; they cannot
-start with `.` or be `state`.
-Before SOPS opens the file, the command regenerates `.sops.yaml` from
-`secrets/state.yaml`.
+인자는 `secrets/<secret>.yaml`을 선택합니다.
+이름에는 소문자, 숫자, `.`, `_`, `-`를 사용할 수 있습니다. `.`으로 시작하거나
+`state`일 수는 없습니다.
+SOPS로 파일을 열기 전에 `secrets/state.yaml`에서 `.sops.yaml`을 다시 생성합니다.
 
-With no argument or the wrong number of arguments, it lists available secret
-names and exits with a usage error.
-It does not accept flags or extra arguments.
+인자가 없거나 인자 수가 잘못되면 사용할 수 있는 시크릿 이름을 나열하고 사용법 오류로
+종료합니다.
+플래그나 추가 인자는 받지 않습니다.
 
-## Usage
+## 사용법
 
 ```bash
 k secrets edit <secret>
 ```
 
-## Prerequisites
+## 전제 조건
 
-- Run inside `nix develop`.
-- The selected secret and `secrets/state.yaml` exist.
-- The local age key can decrypt the selected file.
+- `nix develop` 안에서 실행합니다.
+- 선택한 시크릿과 `secrets/state.yaml`이 있습니다.
+- 로컬 age 키로 선택한 파일을 복호화할 수 있습니다.
 
-SOPS controls the editor and writes the file back encrypted.
-Never copy plaintext out of the editor or commit a decrypted file.
+SOPS가 편집기를 제어하고 파일을 다시 암호화하여 기록합니다.
+편집기 밖으로 평문을 복사하거나 복호화된 파일을 커밋하지 마세요.

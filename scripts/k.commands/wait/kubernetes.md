@@ -1,26 +1,28 @@
+한국어 | [English](kubernetes.en.md)
+
 # kubernetes
 
-Waits up to 10 minutes for every active pod in every namespace to become Ready.
+모든 네임스페이스의 활성 pod가 Ready가 될 때까지 최대 10분간 기다립니다.
 
-## Behavior
+## 동작
 
-The command polls all pods. Succeeded pods are complete and do not need a Ready
-condition. A failed pod stops the command immediately; every other pod must
-report Ready before the deadline.
+이 명령은 모든 pod를 polling합니다. Succeeded 상태인 pod는 완료되었으므로 Ready
+조건이 필요하지 않습니다. 실패한 pod가 있으면 즉시 중단하고, 그 밖의 모든 pod는
+기한 전에 Ready를 보고해야 합니다.
 
-An optional component name changes only the progress messages; it does not
-limit the check to that component.
+선택적인 구성 요소 이름은 진행 메시지만 변경하며 검사를 해당 구성 요소로 제한하지
+않습니다.
 
-## Usage
+## 사용법
 
 ```bash
 k wait kubernetes [component]
 ```
 
-## Prerequisites
+## 전제 조건
 
-- `kubeconfig` exists and the cluster is reachable.
+- `kubeconfig`가 있고 클러스터에 연결할 수 있습니다.
 
-The default component label is `Kubernetes`.
-The command fails when a pod fails or an active pod has not reached Ready before
-the timeout.
+기본 구성 요소 label은 `Kubernetes`입니다.
+pod가 실패하거나 활성 pod가 timeout 전에 Ready에 도달하지 못하면 명령이
+실패합니다.

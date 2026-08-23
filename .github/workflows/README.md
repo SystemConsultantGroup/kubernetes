@@ -1,12 +1,21 @@
-# Application delivery workflows
+한국어 | [English](README.en.md)
 
-Application repositories use the reusable [`build-image.yaml`](build-image.yaml) workflow. It builds the root `Dockerfile` with the repository root as its context, publishes an immutable image, records build provenance, and dispatches [`apply.yaml`](apply.yaml) in this repository.
+# 애플리케이션 배포 워크플로
 
-`apply.yaml` serializes instance changes through the `instance-updates` queue. It sets production or testing workload locks, creates and updates preview locks, and removes preview locks when pull requests close. It never accesses the cluster; Argo CD observes the resulting commit to `main`.
+애플리케이션 저장소는 재사용 가능한 [`build-image.yaml`](build-image.yaml)
+워크플로를 사용합니다. 이 워크플로는 저장소 루트를 컨텍스트로 사용하여 루트
+`Dockerfile`을 빌드하고, 변경 불가능한 이미지를 게시하고, 빌드 출처를 기록한 뒤
+이 저장소의 [`apply.yaml`](apply.yaml)을 디스패치합니다.
 
-## Application workflow
+`apply.yaml`은 `instance-updates` 큐를 통해 인스턴스 변경을 직렬화합니다.
+프로덕션 또는 테스팅 워크로드 잠금을 설정하고, 프리뷰 잠금을 생성 및 갱신하며,
+풀 리퀘스트가 닫히면 프리뷰 잠금을 제거합니다. 클러스터에는 절대 접근하지 않습니다.
+Argo CD가 결과로 생성된 `main` 커밋을 감지합니다.
 
-Add a small workflow to the application repository and pin the reusable workflow to a full Kubernetes commit:
+## 애플리케이션 워크플로
+
+애플리케이션 저장소에 작은 워크플로를 추가하고 재사용 워크플로를 Kubernetes의 전체
+커밋으로 고정하세요.
 
 ```yaml
 name: Container
@@ -41,32 +50,43 @@ jobs:
       KUBERNETES_APP_PRIVATE_KEY: ${{ secrets.KUBERNETES_APP_PRIVATE_KEY }}
 ```
 
-## Branch and instance mapping
+## 브랜치와 인스턴스 대응
 
-The mapping uses exact branch names. It is not based on the order of the branches in the workflow:
+정확한 브랜치 이름에 따라 다음과 같이 대응됩니다. 워크플로에 나열된 브랜치 순서는
+관계없습니다.
 
-| Application event | Instance change |
+| 애플리케이션 이벤트 | 인스턴스 변경 |
 | --- | --- |
-| Push to `main` | Update production |
-| Push to `testing` | Update testing |
-| Open or update a same-repository pull request | Create or update that pull request's preview |
-| Close a same-repository pull request | Remove that pull request's preview |
+| `main`에 푸시 | 프로덕션 갱신 |
+| `testing`에 푸시 | 테스팅 갱신 |
+| 같은 저장소의 풀 리퀘스트를 열거나 갱신 | 해당 풀 리퀘스트의 프리뷰 생성 또는 갱신 |
+| 같은 저장소의 풀 리퀘스트를 닫음 | 해당 풀 리퀘스트의 프리뷰 제거 |
 
-A push from any branch other than `main` or `testing` is rejected. Pull requests build GitHub's proposed merge commit so previews exercise the code that would result from merging. Fork pull requests are rejected and `pull_request_target` is not supported.
+`main`이나 `testing`이 아닌 브랜치에서 푸시하면 거부됩니다. 풀 리퀘스트는 GitHub가
+제안한 병합 커밋을 빌드하므로 프리뷰에서 병합 결과 코드를 실행합니다. 포크 풀
+리퀘스트는 거부되며 `pull_request_target`은 지원하지 않습니다.
 
-Application tests can run in a separate job before `build-image`. A pull-request closure must still call the reusable workflow so it can remove the preview lock.
+애플리케이션 테스트는 `build-image` 전에 별도 작업으로 실행할 수 있습니다. 풀
+리퀘스트를 닫을 때도 프리뷰 잠금을 제거할 수 있도록 재사용 워크플로를 호출해야 합니다.
 
-## Registry configuration
+## 레지스트리 구성
 
-The `image` input selects authentication from its fully qualified repository:
+`image` 입력의 정규화된 전체 저장소에 따라 인증 방식이 선택됩니다.
 
-- `ghcr.io` uses the caller's `GITHUB_TOKEN` and needs `packages: write`;
-- `docker.io` needs explicitly forwarded `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
+- `ghcr.io`는 호출자의 `GITHUB_TOKEN`을 사용하며 `packages: write`가 필요합니다.
+- `docker.io`에는 명시적으로 전달한 `DOCKERHUB_USERNAME` 및 `DOCKERHUB_TOKEN`
+  시크릿이 필요합니다.
 
-Images are deployed only by digest. Human-readable commit tags are published for inspection but are never written to instance locks.
+이미지는 다이제스트로만 배포됩니다. 사람이 읽을 수 있는 커밋 태그는 검사를 위해
+게시하지만 인스턴스 잠금 파일에는 절대 기록하지 않습니다.
 
-## Dispatch authorization
+## 디스패치 권한 부여
 
-Application repositories need `KUBERNETES_APP_ID` and `KUBERNETES_APP_PRIVATE_KEY`. The corresponding GitHub App must be installed only on this repository and needs `Actions: write`. Its token can dispatch `apply.yaml` but cannot modify repository contents.
+애플리케이션 저장소에는 `KUBERNETES_APP_ID`와 `KUBERNETES_APP_PRIVATE_KEY`가
+필요합니다. 해당 GitHub App은 이 저장소에만 설치해야 하며 `Actions: write` 권한이
+필요합니다. 이 토큰은 `apply.yaml`을 디스패치할 수 있지만 저장소 내용은 변경할 수
+없습니다.
 
-The apply workflow treats every dispatch as untrusted. It limits changes to the application and workload already associated with the source and image repositories in the production lock. Its own `GITHUB_TOKEN` performs the resulting commit.
+apply 워크플로는 모든 디스패치를 신뢰하지 않는 입력으로 취급합니다. 프로덕션 잠금
+파일에서 소스 및 이미지 저장소와 이미 연결된 애플리케이션과 워크로드만 변경할 수
+있도록 제한합니다. 결과 커밋은 자체 `GITHUB_TOKEN`으로 생성합니다.

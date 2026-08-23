@@ -1,28 +1,30 @@
+한국어 | [English](talos.en.md)
+
 # talos
 
-Upgrades Talos on every declared node to `talos.version` in `state.yaml`.
+선언된 모든 노드의 Talos를 `state.yaml`의 `talos.version`으로 업그레이드합니다.
 
-## Behavior
+## 동작
 
-The command checks each node and skips nodes already at the target.
-If any node needs an upgrade, it prompts once, unless `--yes` is supplied, then
-upgrades the remaining nodes one at a time in `state.yaml` order with the pinned
-installer image and `--wait`.
-It finishes with `k wait talos`.
+이 명령은 각 노드를 검사하고 이미 대상 버전인 노드는 건너뜁니다.
+업그레이드가 필요한 노드가 하나라도 있으면 `--yes`가 없는 경우 한 번 확인을 요청한
+뒤, 고정된 installer 이미지와 `--wait`를 사용하여 `state.yaml` 순서대로 남은
+노드를 한 번에 하나씩 업그레이드합니다.
+마지막에 `k wait talos`를 실행합니다.
 
-## Usage
+## 사용법
 
 ```bash
 k upgrade talos [--yes]
 ```
 
-## Prerequisites
+## 전제 조건
 
-- Every node in `state.yaml` is reachable through the repository talosconfig.
-- `state.yaml` contains the target Talos version and schematic.
-- The target installer image is available.
+- 저장소 talosconfig를 통해 `state.yaml`의 모든 노드에 연결할 수 있습니다.
+- `state.yaml`에 대상 Talos 버전과 schematic이 있습니다.
+- 대상 installer 이미지를 사용할 수 있습니다.
 
-The installer image has the form
-`factory.talos.dev/installer/<schematic>:<version>`.
-Nodes may reboot during the upgrade; do not interrupt the one-at-a-time
-sequence.
+installer 이미지 형식은
+`factory.talos.dev/installer/<schematic>:<version>`입니다.
+업그레이드 중 노드가 재부팅될 수 있습니다. 한 번에 하나씩 진행되는 순서를 중단하지
+마세요.

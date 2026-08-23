@@ -1,24 +1,26 @@
+한국어 | [English](ensure.en.md)
+
 # ensure
 
-Ensures that local Talos and Kubernetes credentials are current and usable.
+로컬 Talos 및 Kubernetes 자격 증명이 최신이며 사용할 수 있는지 확인합니다.
 
-## Usage
+## 사용법
 
 ```bash
 k ensure
 k ensure <command>
 ```
 
-Running `k ensure` with no subcommand ensures `talosconfig` first and then
-`kubeconfig`. The kubeconfig step requires an available Kubernetes cluster, so
-use the individual commands at the appropriate points during initial bootstrap.
+하위 명령 없이 `k ensure`를 실행하면 먼저 `talosconfig`를 확인하고 그다음
+`kubeconfig`를 확인합니다. kubeconfig 단계에는 사용 가능한 Kubernetes 클러스터가
+필요하므로 초기 부트스트랩 중에는 적절한 시점에 개별 명령을 사용하세요.
 
-## Subcommands
+## 하위 명령
 
-- `talosconfig` compares the local configuration with `state.yaml` and encrypted
-  Talos secrets, replacing it only when missing or stale.
-- `kubeconfig` retains a kubeconfig that can reach the Kubernetes API and
-  retrieves a replacement through Talos otherwise.
+- `talosconfig`는 로컬 구성을 `state.yaml` 및 암호화된 Talos 시크릿과 비교하고,
+  없거나 오래된 경우에만 교체합니다.
+- `kubeconfig`는 Kubernetes API에 연결할 수 있는 kubeconfig를 유지하며, 그렇지
+  않으면 Talos를 통해 대체 파일을 가져옵니다.
 
-Both files are written at the repository root with mode `600` and ignored by
-Git. These commands do not change cluster resources.
+두 파일 모두 저장소 루트에 mode `600`으로 기록되며 Git에서 무시됩니다.
+이 명령들은 클러스터 리소스를 변경하지 않습니다.

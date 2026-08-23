@@ -1,25 +1,27 @@
+한국어 | [English](wait.en.md)
+
 # wait
 
-Waits for Talos or Kubernetes health checks to succeed.
+Talos 또는 Kubernetes 상태 검사가 성공할 때까지 기다립니다.
 
-## Subcommands
+## 하위 명령
 
-- `kubernetes` accepts succeeded pods and waits for every active pod in every
-  namespace to become Ready.
-- `talos` runs a Talos health check for every declared node.
+- `kubernetes`는 성공한 pod를 허용하고 모든 네임스페이스의 활성 pod가 Ready가 될
+  때까지 기다립니다.
+- `talos`는 선언된 모든 노드에 대해 Talos 상태 검사를 실행합니다.
 
-## Usage
+## 사용법
 
 ```text
 k wait <command> [args...]
 ```
 
-Running `k wait` lists subcommands.
-Use `k wait --help` for this page.
+`k wait`를 실행하면 하위 명령을 나열합니다.
+이 페이지는 `k wait --help`로 확인하세요.
 
-## Prerequisites
+## 전제 조건
 
-- `kubernetes` needs a reachable repository kubeconfig.
-- `talos` needs a repository talosconfig and reachable declared nodes.
+- `kubernetes`에는 연결 가능한 저장소 kubeconfig가 필요합니다.
+- `talos`에는 저장소 talosconfig와 연결 가능한 선언된 노드가 필요합니다.
 
-Both commands return a non-zero status if their checks fail or time out.
+검사가 실패하거나 timeout이 발생하면 두 명령 모두 0이 아닌 상태를 반환합니다.

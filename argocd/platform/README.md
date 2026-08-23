@@ -1,76 +1,76 @@
-# Platform components
+한국어 | [English](README.en.md)
 
-This directory defines the cluster services that support applications.
-Each active component is an Argo CD `Application` assembled by
-[`../kustomization.yaml`](../kustomization.yaml) and assigned to the `platform`
-AppProject.
+# 플랫폼 구성 요소
 
-## Components
+이 디렉터리는 애플리케이션을 지원하는 클러스터 서비스를 정의합니다.
+활성 구성 요소는 각각 [`../kustomization.yaml`](../kustomization.yaml)로 조합되고
+`platform` AppProject에 배정되는 Argo CD `Application`입니다.
 
-| Directory | Purpose |
+## 구성 요소
+
+| 디렉터리 | 용도 |
 | --- | --- |
-| [`argocd/`](argocd/) | Argo CD chart, namespace resources, and public route |
-| [`gateway-api/`](gateway-api/) | Upstream standard Gateway API definitions |
-| [`cilium/`](cilium/) | CNI, kube-proxy replacement, and Gateway controller |
-| [`cert-manager/`](cert-manager/) | ZeroSSL Cloudflare issuer and platform certificates |
-| [`external-dns-scg.sh/`](external-dns-scg.sh/) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
-| [`external-secrets/`](external-secrets/) | Synchronizes external values into namespaced Kubernetes Secrets |
-| [`gateway/`](gateway/) | Cilium public Gateway and `gateway-system` namespace |
-| [`local-path-provisioner/`](local-path-provisioner/) | Dynamic node-local volumes from Talos user storage |
-| [`mysql/`](mysql/) | PXC cluster resources and namespaced Vault integration |
-| [`percona-operator/`](percona-operator/) | Reconciles Percona XtraDB Cluster resources in `mysql` |
-| [`reloader/`](reloader/) | Rolls managed workloads when referenced Secrets change |
-| [`vault/`](vault/) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
-| [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | Inactive RFC2136 reference configuration |
+| [`argocd/`](argocd/) | Argo CD 차트, 네임스페이스 리소스, 공개 라우트 |
+| [`gateway-api/`](gateway-api/) | upstream 표준 Gateway API 정의 |
+| [`cilium/`](cilium/) | CNI, kube-proxy replacement, Gateway controller |
+| [`cert-manager/`](cert-manager/) | ZeroSSL Cloudflare issuer 및 플랫폼 인증서 |
+| [`external-dns-scg.sh/`](external-dns-scg.sh/) | `scg.sh` Gateway HTTPRoute용 Cloudflare 레코드 |
+| [`external-secrets/`](external-secrets/) | 외부 값을 네임스페이스 범위 Kubernetes Secret으로 동기화 |
+| [`gateway/`](gateway/) | Cilium 공개 Gateway 및 `gateway-system` 네임스페이스 |
+| [`local-path-provisioner/`](local-path-provisioner/) | Talos 사용자 저장소의 동적 노드 로컬 볼륨 |
+| [`mysql/`](mysql/) | PXC 클러스터 리소스 및 네임스페이스 범위 Vault 연동 |
+| [`percona-operator/`](percona-operator/) | `mysql`의 Percona XtraDB Cluster 리소스 조정 |
+| [`reloader/`](reloader/) | 참조된 Secret이 변경될 때 관리형 워크로드 rolling restart |
+| [`vault/`](vault/) | Raft 저장소와 Cloudflare Worker 자동 봉인 해제를 사용하는 Vault server |
+| [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/) | 비활성 RFC2136 참조 구성 |
 
-For common investigations, follow the complete controller chain:
+일반적인 조사에서는 전체 controller 연결을 따라가세요.
 
-| Symptom or task | Start here | Then check |
+| 증상 또는 작업 | 시작 위치 | 다음 확인 위치 |
 | --- | --- | --- |
-| Public route | Gateway and HTTPRoute conditions | cert-manager, then ExternalDNS |
-| Managed secret | Vault path and policy | External Secrets, then Reloader |
-| Stateful local volume | StorageClass and PersistentVolume | local path provisioner, node path, and Talos volume |
-| GitOps reconciliation | Generated or platform Application | AppProject permissions and root sync wave |
+| 공개 라우트 | Gateway 및 HTTPRoute condition | cert-manager, 그다음 ExternalDNS |
+| 관리형 시크릿 | Vault 경로 및 policy | External Secrets, 그다음 Reloader |
+| 상태 저장 로컬 볼륨 | StorageClass 및 PersistentVolume | local path provisioner, 노드 경로, Talos 볼륨 |
+| GitOps 조정 | 생성된 Application 또는 플랫폼 Application | AppProject 권한 및 루트 sync wave |
 
-Active components use automated sync, pruning, and self-healing. The root uses
-this reconciliation order:
+활성 구성 요소는 자동 sync, 정리, 자동 복구를 사용합니다. 루트는 다음 조정 순서를
+사용합니다.
 
-| Wave | Components | Dependency intent |
+| Wave | 구성 요소 | 의존성 의도 |
 | --- | --- | --- |
-| 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | APIs, networking, ingress, and storage foundations |
-| 2 | cert-manager, Percona PXC Operator, Reloader | certificates and application support controllers |
-| 3 | Argo CD, ExternalDNS, MySQL resources, Vault | externally routed and stateful services |
+| 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | API, 네트워크, ingress, 저장소 기반 |
+| 2 | cert-manager, Percona PXC Operator, Reloader | 인증서 및 애플리케이션 지원 controller |
+| 3 | Argo CD, ExternalDNS, MySQL 리소스, Vault | 외부 라우팅 및 상태 저장 서비스 |
 
-A wave starts child Application reconciliation in order; it does not wait for
-one component's complete health before starting the next wave. Bootstrap
-credentials are created by `k install argocd` from encrypted values. Never put
-tokens in platform values files.
+wave는 child Application 조정을 순서대로 시작하며 다음 wave를 시작하기 전에 한 구성
+요소가 완전히 정상화될 때까지 기다리지는 않습니다. 부트스트랩 자격 증명은 암호화된
+값을 사용하여 `k install argocd`가 생성합니다. 플랫폼 values 파일에 토큰을 절대
+넣지 마세요.
 
-Vault uses the non-default `local-data` class, HTTPS at
-`vault.platform.scg.sh`, and the Transit-compatible Worker at
-`kms.vault.platform.scg.sh`. Initialization, recovery, and the managed secret
-contract are documented in the [Vault component README](vault/README.md).
+Vault는 기본값이 아닌 `local-data` class, `vault.platform.scg.sh`의 HTTPS,
+`kms.vault.platform.scg.sh`의 Transit 호환 Worker를 사용합니다. 초기화, 복구,
+관리형 시크릿 계약은 [Vault 구성 요소 README](vault/README.md)에 문서화되어 있습니다.
 
-## Public routing
+## 공개 라우팅
 
-The public Gateway accepts routes from namespaces labeled:
+공개 Gateway는 다음 label이 지정된 네임스페이스의 라우트를 허용합니다.
 
 ```yaml
 gateway.scg.sh/public: "true"
 ```
 
-The active ExternalDNS instance observes Gateway HTTPRoutes and manages `scg.sh`
-records through Cloudflare.
-Testing and preview listeners use wildcard DNS records and certificates from
-ExternalDNS and cert-manager. Production domains marked external are excluded
-from this DNS and certificate flow.
+활성 ExternalDNS 인스턴스는 Gateway HTTPRoute를 감시하고 Cloudflare를 통해
+`scg.sh` 레코드를 관리합니다.
+테스팅과 프리뷰 listener는 ExternalDNS와 cert-manager가 제공하는 wildcard DNS
+레코드와 인증서를 사용합니다. external로 표시된 프로덕션 도메인은 이 DNS 및 인증서
+흐름에서 제외됩니다.
 
-## Changes
+## 변경
 
-Keep each component's Application here and include it in
-[`../kustomization.yaml`](../kustomization.yaml).
-Select the narrowest suitable AppProject permissions and review sync waves,
-namespaces, credentials, and cluster-scoped resources before merging.
+각 구성 요소의 Application을 이곳에 유지하고
+[`../kustomization.yaml`](../kustomization.yaml)에 포함하세요.
+적합한 가장 좁은 AppProject 권한을 선택하고 병합 전에 sync wave, 네임스페이스,
+자격 증명, 클러스터 범위 리소스를 검토하세요.
 
-Files under `external-dns-scg.skku.ac.kr/` end in `.example` and are inactive
-reference configuration until a complete DNS and secret setup is approved.
+`external-dns-scg.skku.ac.kr/` 아래 파일은 `.example`로 끝나며 완전한 DNS 및 시크릿
+구성이 승인될 때까지 비활성 참조 구성입니다.

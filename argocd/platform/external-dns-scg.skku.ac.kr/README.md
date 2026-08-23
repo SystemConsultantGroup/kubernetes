@@ -1,13 +1,15 @@
-# Inactive RFC2136 DNS example
+한국어 | [English](README.en.md)
 
-This directory is reference material for a possible ExternalDNS instance for
-`scg.skku.ac.kr`. Files end in `.example`, are not included by the Argo CD root,
-and do not affect the cluster.
+# 비활성 RFC2136 DNS 예시
 
-Do not activate the example by renaming files alone. A rollout requires an
-approved RFC2136 endpoint and TSIG secret, a unique TXT owner ID, narrow domain
-filters, an Argo CD Application included in the root Kustomization, and a review
-of record ownership alongside the active Cloudflare instance.
+이 디렉터리는 `scg.skku.ac.kr`용 ExternalDNS 인스턴스 후보를 위한 참조 자료입니다.
+파일은 `.example`로 끝나고 Argo CD 루트에 포함되지 않으며 클러스터에 영향을 주지
+않습니다.
 
-Keep credentials out of this directory. If the design is approved, document its
-record ownership and operating procedure here before enabling reconciliation.
+파일 이름만 바꾸어 예시를 활성화하지 마세요. rollout에는 승인된 RFC2136 endpoint와
+TSIG secret, 고유 TXT owner ID, 좁은 domain filter, 루트 Kustomization에 포함된
+Argo CD Application, 활성 Cloudflare 인스턴스와 함께 수행하는 레코드 소유권 검토가
+필요합니다.
+
+이 디렉터리에 자격 증명을 넣지 마세요. 설계가 승인되면 조정을 활성화하기 전에
+레코드 소유권과 운영 절차를 이곳에 문서화하세요.

@@ -1,21 +1,23 @@
-# Repository checks
+한국어 | [English](README.en.md)
 
-These checks validate repository contracts without accessing a live cluster.
-Run the complete pinned suite from the repository root:
+# 저장소 검사
+
+이 검사는 실제 클러스터에 접근하지 않고 저장소 계약을 검증합니다.
+저장소 루트에서 고정된 전체 검사 모음을 실행하세요.
 
 ```bash
 nix flake check
 ```
 
-| Area | What is checked |
+| 영역 | 검사 항목 |
 | --- | --- |
-| Shell | Bash syntax and ShellCheck for the dispatcher and command sources |
-| Documentation | Local Markdown links, excluding intentionally untracked sensitive appendices |
-| State | Repeated platform pins match `state.yaml` |
-| Applications | One layout, exact lock fields, workload consistency, preview paths, identity limits, and namespace boundaries |
-| Rendering | Root and platform Kustomizations, every managed instance, and synthetic long-name collision cases |
-| Worker | Vault KMS compatibility tests |
+| Shell | 디스패처 및 명령 소스의 Bash 구문과 ShellCheck |
+| 문서 | 의도적으로 추적하지 않는 민감한 부록을 제외한 로컬 Markdown 링크 |
+| 상태 | 반복된 플랫폼 버전 고정과 `state.yaml`의 일치 여부 |
+| 애플리케이션 | 단일 레이아웃, 정확한 잠금 필드, 워크로드 일관성, 프리뷰 경로, 식별자 제한, 네임스페이스 경계 |
+| 렌더링 | 루트 및 플랫폼 Kustomization, 모든 관리형 인스턴스, 합성된 긴 이름 충돌 사례 |
+| Worker | Vault KMS 호환성 테스트 |
 
-Keep checks deterministic, credential-free, and safe without kubeconfig or
-talosconfig. Network-dependent schema generation and Wrangler checks remain
-explicit validation steps documented in [`../../AGENTS.md`](../../AGENTS.md).
+검사는 결정적이고 자격 증명이 필요 없으며 kubeconfig 또는 talosconfig 없이 안전해야
+합니다. 네트워크가 필요한 스키마 생성과 Wrangler 검사는
+[`../../AGENTS.md`](../../AGENTS.md)에 문서화된 명시적 검증 단계로 유지합니다.

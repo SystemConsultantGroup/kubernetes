@@ -1,34 +1,37 @@
+한국어 | [English](add.en.md)
+
 # add
 
-Adds a named age recipient and rekeys every encrypted repository secret.
+이름이 지정된 age 수신자를 추가하고 저장소의 암호화된 모든 시크릿의 키를 다시
+설정합니다.
 
 > [!CAUTION]
-> This command changes who can decrypt all repository secrets.
-> It is non-interactive and does not ask for confirmation.
+> 이 명령은 저장소의 모든 시크릿을 복호화할 수 있는 사용자를 변경합니다.
+> 대화형 입력 없이 실행되며 확인을 요청하지 않습니다.
 
-## Behavior
+## 동작
 
-The command validates the alias and `age1...` recipient, rejects duplicate
-aliases or recipients, updates `secrets/state.yaml`, regenerates `.sops.yaml`,
-and runs `sops updatekeys --yes` for every encrypted top-level YAML file.
-An existing alias with the same recipient is reported as already configured.
+이 명령은 별칭과 `age1...` 수신자를 검증하고, 중복 별칭 또는 수신자를 거부하고,
+`secrets/state.yaml`을 갱신하고, `.sops.yaml`을 다시 생성한 뒤 암호화된 모든
+최상위 YAML 파일에 `sops updatekeys --yes`를 실행합니다.
+같은 수신자를 사용하는 기존 별칭은 이미 구성된 것으로 보고합니다.
 
-If any rekey step fails, the recipient map, `.sops.yaml`, and secret files are
-restored from backups.
+rekey 단계가 하나라도 실패하면 수신자 맵, `.sops.yaml`, 시크릿 파일을 백업에서
+복원합니다.
 
-## Usage
+## 사용법
 
 ```bash
 k secrets recipients add <name> <age1...>
 ```
 
-`<name>` starts with a lowercase letter or digit and may contain lowercase
-letters, digits, `.`, `_`, and `-`.
-The command accepts exactly two arguments.
+`<name>`은 소문자 또는 숫자로 시작하고 소문자, 숫자, `.`, `_`, `-`를 포함할 수
+있습니다.
+이 명령은 정확히 두 개의 인자를 받습니다.
 
-## Prerequisites
+## 전제 조건
 
-- Run inside `nix develop`.
-- `secrets/state.yaml` and `.sops.yaml` exist.
-- At least one encrypted secret exists, and SOPS can decrypt and rekey it with
-  the local age key.
+- `nix develop` 안에서 실행합니다.
+- `secrets/state.yaml`과 `.sops.yaml`이 있습니다.
+- 암호화된 시크릿이 하나 이상 있고 로컬 age 키로 SOPS가 이를 복호화하고 rekey할
+  수 있습니다.

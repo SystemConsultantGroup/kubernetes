@@ -1,72 +1,73 @@
-# ApplicationSets
+한국어 | [English](README.en.md)
 
-These ApplicationSets turn paths in `main` into Argo CD Applications.
-They are included by [`../kustomization.yaml`](../kustomization.yaml) and
-generate Applications in the `applications` AppProject.
+# ApplicationSet
 
-## Generators
+이 ApplicationSet은 `main`의 경로를 Argo CD Application으로 변환합니다.
+[`../kustomization.yaml`](../kustomization.yaml)에 포함되며 `applications`
+AppProject에 Application을 생성합니다.
 
-| Resource | Files discovered | Result |
+## Generator
+
+| 리소스 | 검색하는 파일 | 결과 |
 | --- | --- | --- |
-| `application-instances-static` | `applications/*/instances/production.yaml` and `testing.yaml` | Shared application chart |
-| `application-instances-dynamic` | `applications/*/instances/preview/*/*.yaml` | Shared chart with one preview workload |
-| `application-kustomize` | `applications/*/kustomization.yaml` | Application directory rendered directly |
+| `application-instances-static` | `applications/*/instances/production.yaml` 및 `testing.yaml` | 공유 애플리케이션 차트 |
+| `application-instances-dynamic` | `applications/*/instances/preview/*/*.yaml` | 프리뷰 워크로드 하나를 사용하는 공유 차트 |
+| `application-kustomize` | `applications/*/kustomization.yaml` | 애플리케이션 디렉터리를 직접 렌더링 |
 
-Managed metadata and stable instance locks are passed to the shared chart as
-separate values files.
-A preview lock supplies only `source` and `image`; its workload and pull request
-number come from the path.
+관리형 메타데이터와 안정 인스턴스 잠금 파일은 별도 values 파일로 공유 차트에
+전달됩니다.
+프리뷰 잠금 파일은 `source`와 `image`만 제공하며 워크로드와 풀 리퀘스트 번호는
+경로에서 가져옵니다.
 
-The managed generators own the enabled central Vault integration gate and its
-trusted server URL. Application metadata does not control this gate or provide
-Vault paths. The contract and activation procedure are documented in the
-[Vault component README](../platform/vault/README.md).
+관리형 generator는 활성화된 중앙 Vault 연동 gate와 신뢰하는 서버 URL을
+소유합니다. 애플리케이션 메타데이터는 이 gate를 제어하거나 Vault 경로를 제공하지
+않습니다. 계약과 활성화 절차는
+[Vault 구성 요소 README](../platform/vault/README.md)에 문서화되어 있습니다.
 
-## Refresh behavior
+## 새로 고침 동작
 
-GitHub push webhooks refresh the Argo CD API server and the ApplicationSet
-controller immediately.
-The two controllers use separate webhook paths.
-Git polling remains enabled at 180 seconds as a fallback when a webhook is
-delayed or unavailable.
+GitHub push webhook은 Argo CD API server와 ApplicationSet controller를 즉시 새로
+고칩니다.
+두 controller는 서로 다른 webhook 경로를 사용합니다.
+Webhook이 지연되거나 사용할 수 없을 때를 대비해 Git polling은 180초 간격으로 계속
+활성화합니다.
 
-## Generated identities
+## 생성되는 식별자
 
-The application name is the first component of every generated identity.
+애플리케이션 이름은 생성되는 모든 식별자의 첫 번째 구성 요소입니다.
 
-| Application type | Argo CD Application | Helm release | Destination namespace |
+| 애플리케이션 유형 | Argo CD Application | Helm release | 대상 네임스페이스 |
 | --- | --- | --- | --- |
-| production | `<application>-production` | `<application>-production` | `<application>-production` |
-| testing | `<application>-testing` | `<application>-testing` | `<application>-testing` |
-| preview | `<application>-preview-<workload>-<pull-request>` | same | same |
-| custom Kustomize | `<application>` | none | `<application>` |
+| 프로덕션 | `<application>-production` | `<application>-production` | `<application>-production` |
+| 테스팅 | `<application>-testing` | `<application>-testing` | `<application>-testing` |
+| 프리뷰 | `<application>-preview-<workload>-<pull-request>` | 동일 | 동일 |
+| 사용자 정의 Kustomize | `<application>` | 없음 | `<application>` |
 
-The Argo CD Application objects themselves live in the `argocd` namespace.
-Repository checks reject identities that exceed Kubernetes name limits before
-ApplicationSet reconciliation. Managed application resource names are documented in
-[`../charts/application/README.md`](../charts/application/README.md).
+Argo CD Application 객체 자체는 `argocd` 네임스페이스에 있습니다.
+저장소 검사는 ApplicationSet 조정 전에 Kubernetes 이름 제한을 초과하는 식별자를
+거부합니다. 관리형 애플리케이션 리소스 이름은
+[`../charts/application/README.md`](../charts/application/README.md)에 문서화되어
+있습니다.
 
-Renaming an Application or destination namespace changes Argo CD identity and
-can cause the old Application and namespace to be pruned before the new ones are
-reconciled.
-Treat naming changes as live migration work and review the expected deletion and
-recreation behavior before merging.
+Application 또는 대상 네임스페이스 이름을 바꾸면 Argo CD 식별자가 변경되어 새
+항목이 조정되기 전에 이전 Application과 네임스페이스가 정리될 수 있습니다.
+이름 변경은 실제 migration 작업으로 취급하고 병합 전에 예상되는 삭제 및 재생성
+동작을 검토하세요.
 
-## Editing rules
+## 편집 규칙
 
-- Keep each application in one layout; do not let two generators discover the
-  same path.
-- Preserve the repository URL and `main` revision unless the GitOps policy
-  changes deliberately.
-- Treat generator, project, namespace, and sync-policy changes as platform-wide
-  changes.
+- 각 애플리케이션에는 한 레이아웃만 사용하고 두 generator가 같은 경로를 검색하지
+  않도록 합니다.
+- GitOps 정책을 의도적으로 변경하는 경우가 아니라면 저장소 URL과 `main` 리비전을
+  유지합니다.
+- generator, 프로젝트, 네임스페이스, sync policy 변경은 플랫폼 전체 변경으로
+  취급합니다.
 
-Each generated Application enables automated sync, pruning, self-healing, and
-namespace creation. Managed Applications ignore Reloader's pod-template
-annotation so a Secret-triggered rolling deployment does not conflict with Argo
-CD self-healing.
-Application namespaces receive the labels required for public Gateway routes and
-restricted pod security.
+생성된 각 Application은 자동 sync, 정리, 자동 복구, 네임스페이스 생성을
+활성화합니다. 관리형 Application은 Reloader의 pod template annotation을 무시하므로
+Secret으로 시작된 rolling deployment가 Argo CD 자동 복구와 충돌하지 않습니다.
+애플리케이션 네임스페이스에는 공개 Gateway 라우트와 제한된 pod security에 필요한
+label이 지정됩니다.
 
-See [`../projects/README.md`](../projects/README.md) for the permissions of the
-`applications` AppProject.
+`applications` AppProject의 권한은
+[`../projects/README.md`](../projects/README.md)를 참조하세요.

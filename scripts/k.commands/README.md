@@ -1,31 +1,30 @@
-# `k` command implementation
+한국어 | [English](README.en.md)
 
-This directory implements the command tree exposed by [`../k`](../k).
-The shell files are sourced by the dispatcher, not executed as standalone
-scripts.
-They use shared paths, state values, validation functions, and helpers
-initialized by `k`.
+# `k` 명령 구현
 
-## Layout
+이 디렉터리는 [`../k`](../k)가 제공하는 명령 트리를 구현합니다.
+셸 파일은 독립 실행 파일이 아니라 디스패처가 source로 불러옵니다.
+이 파일들은 `k`에서 초기화한 공유 경로, 상태 값, 검증 함수, helper를 사용합니다.
 
-- Top-level scripts implement direct commands and grouped dispatch.
+## 구성
+
+- 최상위 스크립트는 직접 명령과 그룹 디스패치를 구현합니다.
 - `ensure/`, `forward/`, `initialize/`, `install/`, `render/`, `secrets/`,
-  `upgrade/`, and `wait/` contain grouped subcommands.
-- The Markdown file beside each shell script provides its user-facing help.
+  `upgrade/`, `wait/`에는 그룹별 하위 명령이 있습니다.
+- 각 셸 스크립트 옆의 Markdown 파일은 사용자용 도움말을 제공합니다.
 
-The dispatcher uses the first summary line of each document in command lists.
-Keep the matching document current when behavior, usage, prerequisites, or
-safety properties change.
+디스패처는 각 문서의 첫 번째 요약 문장을 명령 목록에 사용합니다.
+동작, 사용법, 전제 조건, 안전 속성이 변경되면 해당 문서도 최신 상태로 유지하세요.
 
-## Adding a command
+## 명령 추가
 
-Add matching `.sh` and `.md` files under the appropriate path.
-Reuse the existing `require_*` helpers, return usage errors for invalid
-arguments, and preserve the repository-root working directory.
-Add a nested directory only when a command has subcommands.
+적절한 경로 아래에 대응하는 `.sh` 및 `.md` 파일을 추가하세요.
+기존 `require_*` helper를 재사용하고, 잘못된 인자에는 사용법 오류를 반환하며,
+저장소 루트를 작업 디렉터리로 유지하세요.
+하위 명령이 있는 경우에만 중첩 디렉터리를 추가하세요.
 
-Do not duplicate dispatcher initialization or bypass shared helpers.
-Test help and shell syntax from the development shell:
+디스패처 초기화를 중복하거나 공유 helper를 우회하지 마세요.
+개발 셸에서 도움말과 셸 구문을 테스트하세요.
 
 ```bash
 k --help
@@ -33,5 +32,4 @@ k <command> --help
 bash -n scripts/k scripts/k.commands/<changed-command>.sh
 ```
 
-Do not invoke mutating commands against a live cluster just to test their shell
-behavior.
+셸 동작을 테스트하기 위한 목적으로 실제 클러스터에 변경 명령을 실행하지 마세요.

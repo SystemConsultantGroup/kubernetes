@@ -1,30 +1,32 @@
-# Applications
+한국어 | [English](README.en.md)
 
-This directory contains workloads deployed by the SCG platform.
-Application owners normally change these files and submit pull requests.
-Merging to `main` makes the declared state available to Argo CD.
+# 애플리케이션
 
-Choose one layout for the application directory:
+이 디렉터리에는 SCG 플랫폼에 배포되는 워크로드가 있습니다.
+애플리케이션 담당자는 일반적으로 이 파일들을 변경하고 풀 리퀘스트를 제출합니다.
+`main`에 병합하면 선언된 상태를 Argo CD가 사용할 수 있게 됩니다.
 
-| Layout | Use it when | Entrypoint |
+애플리케이션 디렉터리에는 다음 레이아웃 중 하나를 선택하세요.
+
+| 레이아웃 | 사용 시점 | 진입점 |
 | --- | --- | --- |
-| Managed | The shared Deployment, Service, routing, and secret conventions fit | `meta.yaml` and `instances/` |
-| Custom | The application needs Kubernetes resources the shared chart does not expose | `kustomization.yaml` |
+| 관리형 | 공유 Deployment, Service, 라우팅, 시크릿 규칙으로 충분할 때 | `meta.yaml` 및 `instances/` |
+| 사용자 정의 | 공유 차트가 제공하지 않는 Kubernetes 리소스가 필요할 때 | `kustomization.yaml` |
 
-Do not mix the layouts or put credentials in application files. Start with the
-managed layout unless it cannot express the workload; it provides stricter
-validation and consistent previews.
+레이아웃을 섞거나 애플리케이션 파일에 자격 증명을 넣지 마세요. 워크로드를 표현할 수
+없는 경우가 아니라면 관리형 레이아웃으로 시작하세요. 더 엄격한 검증과 일관된
+프리뷰를 제공합니다.
 
-## Managed application
+## 관리형 애플리케이션
 
-The normal workflow is:
+일반적인 워크플로는 다음과 같습니다.
 
-1. define runtime behavior once in `meta.yaml`;
-1. add an immutable production lock for every workload;
-1. optionally add testing or pull-request preview locks; and
-1. submit the changes together so metadata and locks remain consistent.
+1. `meta.yaml`에 런타임 동작을 한 번 정의합니다.
+1. 각 워크로드의 변경 불가능한 프로덕션 잠금 파일을 추가합니다.
+1. 선택적으로 테스팅 또는 풀 리퀘스트 프리뷰 잠금 파일을 추가합니다.
+1. 메타데이터와 잠금 파일의 일관성이 유지되도록 변경을 함께 제출합니다.
 
-A managed application has this shape:
+관리형 애플리케이션의 구조는 다음과 같습니다.
 
 ```text
 applications/example/
@@ -37,27 +39,27 @@ applications/example/
         123.yaml
 ```
 
-`meta.yaml` contains workload names and runtime configuration, but never
-`source` or `image`. Stable instance files contain exactly those immutable
-source and image locks. Production is required; testing is optional. Preview
-identity comes from the preview file path.
+`meta.yaml`에는 워크로드 이름과 런타임 구성이 있지만 `source`나 `image`는 절대
+포함하지 않습니다. 안정 인스턴스 파일에는 변경 불가능한 소스와 이미지 잠금만
+정확히 포함합니다. 프로덕션은 필수이고 테스팅은 선택 사항입니다. 프리뷰의 식별자는
+프리뷰 파일 경로에서 결정됩니다.
 
-Application, workload, and generated identity components use lowercase DNS-style
-names. Each complete Argo CD identity must fit 63 characters, including
-`-production`, `-testing`, or `-preview-<workload>-<pull-request>`. Internal
-workload resources can use stable hash suffixes when needed, but Application and
-namespace identities cannot.
+애플리케이션, 워크로드, 생성된 식별자 구성 요소에는 소문자 DNS 형식 이름을
+사용합니다. 전체 Argo CD 식별자는 `-production`, `-testing` 또는
+`-preview-<workload>-<pull-request>`를 포함하여 63자 이하여야 합니다. 내부
+워크로드 리소스는 필요하면 안정적인 해시 접미사를 사용할 수 있지만 Application과
+네임스페이스 식별자는 사용할 수 없습니다.
 
-After bootstrap, application repositories can maintain these locks through the
-shared [application delivery workflows](../.github/). The workflow publishes an
-immutable image for `main`, `testing`, or a same-repository pull request and then
-applies the corresponding production, testing, or preview lock here. Closing a
-pull request removes its preview lock.
+부트스트랩 후 애플리케이션 저장소는 공유
+[애플리케이션 배포 워크플로](../.github/)를 통해 이 잠금 파일을 관리할 수 있습니다.
+워크플로는 `main`, `testing` 또는 같은 저장소의 풀 리퀘스트에 대해 변경 불가능한
+이미지를 게시한 뒤 해당 프로덕션, 테스팅 또는 프리뷰 잠금 파일을 이곳에 적용합니다.
+풀 리퀘스트를 닫으면 해당 프리뷰 잠금 파일을 제거합니다.
 
-### Minimal example
+### 최소 예시
 
-The repository's minimal public HTTP example is
-[`example/`](example/).
+저장소의 최소 공개 HTTP 예시는
+[`example/`](example/)입니다.
 
 `applications/example/meta.yaml`:
 
@@ -68,9 +70,9 @@ fe:
     domain: example.scg.sh
 ```
 
-The production, testing, and preview lock files all use the same immutable
-source and image pair in this example.
-The generated identities are:
+이 예시의 프로덕션, 테스팅, 프리뷰 잠금 파일은 모두 같은 변경 불가능한 소스 및
+이미지 쌍을 사용합니다.
+생성되는 식별자는 다음과 같습니다.
 
 ```text
 example-production
@@ -78,15 +80,15 @@ example-testing
 example-preview-fe-1
 ```
 
-Each instance creates a Deployment and Service named `example-fe`.
-The Service listens on port 80 and targets container port 8080.
-Production routing uses `example.scg.sh`; testing and preview use the
-platform-generated hostnames.
-See the chart README for the complete naming and routing rules.
+각 인스턴스는 `example-fe`라는 Deployment와 Service를 생성합니다.
+Service는 포트 80에서 수신하고 컨테이너 포트 8080을 대상으로 합니다.
+프로덕션 라우팅은 `example.scg.sh`를 사용하고, 테스팅과 프리뷰는 플랫폼이 생성한
+호스트 이름을 사용합니다.
+전체 이름 및 라우팅 규칙은 차트 README를 참조하세요.
 
-### Full example
+### 전체 예시
 
-`meta.yaml` can configure multiple workloads and route between them:
+`meta.yaml`은 여러 워크로드와 워크로드 간 라우팅을 구성할 수 있습니다.
 
 ```yaml
 web:
@@ -147,13 +149,13 @@ api:
     port: 9000
 ```
 
-The `api` workload has a Service but no public route because it has no domain.
-The `web` rules route `/api` to the `api` Service and all other traffic to the
-`web` Service.
-Backend references use workload keys; the chart expands local workload
-references to their generated Service names.
+`api` 워크로드에는 도메인이 없으므로 Service는 있지만 공개 라우트는 없습니다.
+`web` 규칙은 `/api`를 `api` Service로 보내고 그 밖의 모든 트래픽을 `web`
+Service로 보냅니다.
+백엔드 참조에는 워크로드 키를 사용하며 차트가 로컬 워크로드 참조를 생성된 Service
+이름으로 확장합니다.
 
-The corresponding production instance must lock both workloads:
+해당 프로덕션 인스턴스는 두 워크로드를 모두 잠가야 합니다.
 
 ```yaml
 web:
@@ -169,20 +171,20 @@ api:
   image: registry.example.org/example/shop-api@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 ```
 
-Each source revision must be a full lowercase 40-character Git SHA.
-Each image must be a lowercase fully qualified OCI reference pinned by a
-64-character lowercase SHA-256 digest.
-The source and image should come from the same build.
+각 소스 리비전은 소문자 40자리 전체 Git SHA여야 합니다.
+각 이미지는 소문자 64자리 SHA-256 다이제스트로 고정된, 소문자로 된 정규화된 전체
+OCI 참조여야 합니다.
+소스와 이미지는 같은 빌드에서 나와야 합니다.
 
-### Preview instances
+### 프리뷰 인스턴스
 
-Place a preview lock at:
+프리뷰 잠금 파일을 다음 위치에 두세요.
 
 ```text
 applications/example/instances/preview/web/123.yaml
 ```
 
-The file contains only the selected workload's lock:
+이 파일에는 선택한 워크로드의 잠금만 포함합니다.
 
 ```yaml
 source:
@@ -191,31 +193,30 @@ source:
 image: registry.example.org/example/shop-web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
 
-The generated preview identity is:
+생성되는 프리뷰 식별자는 다음과 같습니다.
 
 ```text
 <application>-preview-<workload>-<pull-request>
 ```
 
-Preview deployments use one replica. A preview renders only the selected
-workload; references to other local workloads target their testing Services.
+프리뷰 배포는 복제본 하나를 사용합니다. 프리뷰는 선택한 워크로드만 렌더링하며,
+다른 로컬 워크로드에 대한 참조는 해당 테스팅 Service를 대상으로 합니다.
 
-### Managed secret values
+### 관리형 시크릿 값
 
-Managed workloads automatically receive environment values from the platform's
-Vault integration when a corresponding path exists. Application metadata never
-contains Vault configuration or plaintext values. Production and testing use
-their own paths; previews inherit testing values and then apply a shared preview
-override for the selected workload.
+관리형 워크로드는 해당 경로가 있으면 플랫폼의 Vault 연동에서 환경 값을 자동으로
+받습니다. 애플리케이션 메타데이터에는 Vault 구성이나 평문 값을 절대 넣지 않습니다.
+프로덕션과 테스팅은 각자의 경로를 사용합니다. 프리뷰는 테스팅 값을 상속한 뒤 선택한
+워크로드의 공유 프리뷰 재정의를 적용합니다.
 
-Applications must validate required values at startup because a missing Vault
-path is allowed. Testing credentials must be safe for preview code. Members
-responsible for secret values should follow the
-[Vault application-value workflow](../argocd/platform/vault/README.md#managing-application-values).
+Vault 경로가 없어도 허용되므로 애플리케이션은 시작할 때 필수 값을 검증해야 합니다.
+테스팅 자격 증명은 프리뷰 코드에서 사용해도 안전해야 합니다. 시크릿 값을 담당하는
+구성원은 [Vault 애플리케이션 값 워크플로](../argocd/platform/vault/README.md#%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EA%B0%92-%EA%B4%80%EB%A6%AC)를
+따라야 합니다.
 
-## Custom Kustomize application
+## 사용자 정의 Kustomize 애플리케이션
 
-A custom application has a standard Kustomize entrypoint at its root:
+사용자 정의 애플리케이션은 루트에 표준 Kustomize 진입점이 있습니다.
 
 ```text
 applications/example/
@@ -223,43 +224,44 @@ applications/example/
   resources.yaml
 ```
 
-The generated Argo CD Application and namespace are named:
+생성되는 Argo CD Application과 네임스페이스의 이름은 다음과 같습니다.
 
 ```text
 <application>
 ```
 
-Use `kustomization.yaml`, not `kustomize.yaml`. Do not add `meta.yaml` or an
-`instances/` tree. Custom applications do not receive managed testing or preview
-instances; define every desired resource in the Kustomization.
+`kustomize.yaml`이 아니라 `kustomization.yaml`을 사용하세요. `meta.yaml`이나
+`instances/` 트리를 추가하지 마세요. 사용자 정의 애플리케이션에는 관리형 테스팅
+또는 프리뷰 인스턴스가 제공되지 않으므로 원하는 모든 리소스를 Kustomization에
+정의하세요.
 
-Resources with an explicit namespace may target only the application's generated
-namespace, and a declared Namespace must use the application name. Platform
-review of merged Git changes is the authorization boundary; application
-developers receive no cluster or `k` credentials.
+명시적인 네임스페이스가 있는 리소스는 애플리케이션에 생성된 네임스페이스만 대상으로
+할 수 있고, 선언된 Namespace는 애플리케이션 이름을 사용해야 합니다. 애플리케이션
+개발자에게 클러스터 또는 `k` 자격 증명이 없으므로 병합된 Git 변경에 대한 플랫폼
+검토가 권한 부여 경계입니다.
 
-## Validation and detailed schema
+## 검증 및 상세 스키마
 
-Platform engineers run repository checks during review to validate the managed
-or custom layout, required production lock, workload consistency, preview
-identity, generated name limits, and local renders. Application developers do
-not need access to the platform-only `k` command.
+플랫폼 엔지니어는 검토 중에 저장소 검사를 실행하여 관리형 또는 사용자 정의
+레이아웃, 필수 프로덕션 잠금, 워크로드 일관성, 프리뷰 식별자, 생성된 이름 길이 제한,
+로컬 렌더링을 검증합니다. 애플리케이션 개발자에게는 플랫폼 전용 `k` 명령에 대한
+접근 권한이 필요하지 않습니다.
 
-Before requesting review, confirm that:
+검토를 요청하기 전에 다음 사항을 확인하세요.
 
-- the application directory uses only one layout;
-- every stable lock contains exactly the workloads in `meta.yaml`;
-- every lock uses a full commit SHA and digest-pinned image from the same build;
-- preview workload and pull-request identities match the file path;
-- domains, routes, and referenced Services are intentional; and
-- no plaintext credential or local configuration file is included.
+- 애플리케이션 디렉터리는 한 가지 레이아웃만 사용합니다.
+- 모든 안정 잠금 파일에는 `meta.yaml`의 워크로드가 정확히 포함됩니다.
+- 모든 잠금 파일은 같은 빌드의 전체 커밋 SHA와 다이제스트 고정 이미지를 사용합니다.
+- 프리뷰 워크로드 및 풀 리퀘스트 식별자가 파일 경로와 일치합니다.
+- 도메인, 라우트, 참조된 Service가 의도한 대로입니다.
+- 평문 자격 증명이나 로컬 구성 파일이 포함되어 있지 않습니다.
 
-The shared chart validates effective workload configuration with a generated
-strict JSON schema.
-It accepts only the fields documented in
-[`../argocd/charts/application/README.md`](../argocd/charts/application/README.md),
-including Kubernetes-native resources, environment sources, readiness probes,
-and Gateway API HTTP route rules.
+공유 차트는 생성된 엄격한 JSON 스키마로 실제 워크로드 구성을 검증합니다.
+Kubernetes 네이티브 리소스, 환경 소스, readiness probe, Gateway API HTTP 라우트
+규칙을 포함하여 허용되는 필드는
+[`../argocd/charts/application/README.md`](../argocd/charts/application/README.md)에
+문서화되어 있습니다.
 
-The ApplicationSets that turn these files into Argo CD Applications are
-explained in [`../argocd/application-sets/README.md`](../argocd/application-sets/README.md).
+이 파일을 Argo CD Application으로 변환하는 ApplicationSet은
+[`../argocd/application-sets/README.md`](../argocd/application-sets/README.md)에
+설명되어 있습니다.
