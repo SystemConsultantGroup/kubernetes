@@ -38,6 +38,8 @@ jobs:
       application: example
       workload: fe
       image: ghcr.io/systemconsultantgroup/kubernetes-example
+      build_args: |
+        NEXT_PUBLIC_OAUTH_CLIENT_ID=${{ vars.NEXT_PUBLIC_OAUTH_CLIENT_ID }}
     secrets:
       KUBERNETES_APP_ID: ${{ secrets.KUBERNETES_APP_ID }}
       KUBERNETES_APP_PRIVATE_KEY: ${{ secrets.KUBERNETES_APP_PRIVATE_KEY }}
@@ -66,6 +68,22 @@ The `image` input selects authentication from its fully qualified repository:
 - `docker.io` needs explicitly forwarded `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
 
 Images are deployed only by digest. Human-readable commit tags are published for inspection but are never written to instance locks.
+
+## Build-time configuration
+
+`build_args` optionally passes newline-separated non-secret `KEY=VALUE` Docker
+build arguments from the application repository to its root `Dockerfile`.
+Store reusable public values as GitHub Actions Variables in that application
+repository and pass only the values that its Dockerfile needs. For example, a
+Next.js OAuth client ID belongs in `NEXT_PUBLIC_OAUTH_CLIENT_ID`; declare the
+same name with `ARG` in the Dockerfile stage that runs `next build`.
+
+`NEXT_PUBLIC_*` values are compiled into the browser bundle by Next.js. They
+are public values, not secrets, and must be correct at build time. Do not put
+client secrets, tokens, credentials, or other sensitive values in `build_args`:
+they can be retained in build metadata or image history. Configure runtime
+environment variables and sensitive values through the application's
+Kubernetes configuration and managed Secrets instead.
 
 ## Dispatch authorization
 

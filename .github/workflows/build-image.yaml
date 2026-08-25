@@ -14,6 +14,11 @@ on:
         description: Fully qualified GHCR or Docker Hub image repository
         required: true
         type: string
+      build_args:
+        description: Non-secret Docker build arguments, one KEY=VALUE entry per line
+        required: false
+        default: ''
+        type: string
     secrets:
       KUBERNETES_APP_ID:
         description: ID of the GitHub App that can dispatch the Kubernetes apply workflow
@@ -130,6 +135,7 @@ jobs:
         with:
           cache-from: type=gha,scope=${{ inputs.application }}-${{ inputs.workload }}
           cache-to: type=gha,mode=max,scope=${{ inputs.application }}-${{ inputs.workload }}
+          build-args: ${{ inputs.build_args }}
           context: .
           labels: |
             org.opencontainers.image.revision=${{ needs.resolve.outputs.source_revision }}
