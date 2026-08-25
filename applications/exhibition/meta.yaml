@@ -1,0 +1,4 @@
+manager:
+  http:
+    port: 3000
+    domain: manage.exhibition.scg.sh
