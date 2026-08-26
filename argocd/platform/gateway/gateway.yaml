@@ -6,7 +6,7 @@ metadata:
   annotations:
     # Temporary E2S attachment safeguard: keep public DNS on SCC until
     # cross-node Cilium networking and Gateway exposure are validated.
-    external-dns.kubernetes.io/target: "115.145.134.232"
+    external-dns.alpha.kubernetes.io/target: "115.145.134.232"
 spec:
   gatewayClassName: cilium
   allowedListeners:

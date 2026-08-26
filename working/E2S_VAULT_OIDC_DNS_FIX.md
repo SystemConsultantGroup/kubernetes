@@ -13,7 +13,7 @@ Changed:
 - `argocd/platform/gateway/gateway.yaml` now sets the Gateway annotation:
 
   ```yaml
-  external-dns.kubernetes.io/target: "115.145.134.232"
+  external-dns.alpha.kubernetes.io/target: "115.145.134.232"
   ```
 
 This is a temporary safety boundary, not an E2S networking fix. Remove or
@@ -54,7 +54,9 @@ the required DNS safety boundary.
 
 The target annotation is deliberately placed on the `Gateway`, where the
 Gateway API ExternalDNS source reads target annotations. It is not placed on an
-HTTPRoute.
+HTTPRoute. The deployed ExternalDNS `v0.21.0` expects the `alpha` annotation
+name; the newer non-alpha spelling was initially tried but was ignored, so DNS
+continued to publish both addresses until this correction.
 
 ## Validation after reconciliation
 
@@ -79,9 +81,10 @@ E2S is uncordoned or used for local storage and PXC tests.
 
 ## Rollback and removal
 
-Rollback the temporary fix by removing the `external-dns.kubernetes.io/target`
-annotation from `argocd/platform/gateway/gateway.yaml`, then allowing Argo CD
-to reconcile the removal. Do not remove it while E2S still returns the observed
+Rollback the temporary fix by removing the
+`external-dns.alpha.kubernetes.io/target` annotation from
+`argocd/platform/gateway/gateway.yaml`, then allowing Argo CD to reconcile the
+removal. Do not remove it while E2S still returns the observed
 Gateway `503` response.
 
 Remove this temporary pin only after all of the following are true:
