@@ -1,28 +1,33 @@
 # E2S attachment rehearsal
 
-Date: 2026-08-21
+Date: 2026-08-28
 
 ## Outcome
 
-E2S was installed and joined successfully as the second Talos, etcd, and Kubernetes control-plane node. SCC remained available throughout the operation. E2S is currently cordoned because the Cilium cross-node pod datapath failed its connectivity rehearsal.
+E2S was installed and joined successfully as the second Talos, etcd, and
+Kubernetes control-plane node. The repaired Cilium VXLAN path passed the focused
+cross-node acceptance suite, E2S local storage was proven, and the supervised
+two-member PXC and HAProxy rehearsal completed successfully. SCC remained
+available throughout the operation.
 
 Current state:
 
-- Talos nodes `k8s` and `e2s` are running and ready;
-- both generated Talos configurations passed strict metal validation;
-- etcd has two healthy non-learner members;
-- Kubernetes nodes `k8s` and `e2s` are `Ready`;
-- E2S has a ready 497 GB `EPHEMERAL` volume;
-- E2S has a ready 1.9 TB `u-data` volume mounted at `/var/mnt/data`;
+- Talos nodes `k8s` and `e2s` are running, ready, and schedulable;
+- etcd has two healthy, consistent, non-learner control-plane members;
+- E2S has a ready 497 GB `EPHEMERAL` volume and a ready 1.9 TB `u-data` volume
+  mounted at `/var/mnt/data`;
 - Cilium and Envoy have one ready DaemonSet pod per node;
-- the public Gateway and public DNS remain restricted to SCC;
-- PXC remains one member on SCC;
-- HAProxy remains one instance on SCC;
-- Vault remains one member on SCC;
-- Local Path Provisioner still excludes E2S; and
-- Cilium operator remains at one replica pending datapath repair.
+- Cilium has two ready operator replicas, one per node;
+- `local-data` permits `k8s` and `e2s`, both at `/var/mnt/data`;
+- the public Gateway status remains restricted to SCC;
+- PXC has two ready, `Primary`, `Synced` members, one per node;
+- HAProxy has two ready instances, one per node;
+- each PXC member has a retained local PV with affinity to its own node; and
+- Vault remains one member on SCC.
 
-The remaining blocker is upstream network handling of Cilium VXLAN traffic toward SCC. PXC was deliberately not scaled while cross-node pod traffic was broken.
+ICMP echo from E2S to SCC remains blocked. It is optional Cilium health
+telemetry and is not a datapath or database blocker because TCP health, VXLAN,
+pod IP, ClusterIP, DNS readiness, NodePort, SST/IST, and Galera traffic passed.
 
 ## Agreed E2S identity and storage
 
@@ -167,7 +172,10 @@ Validation results:
 - `nix fmt -- --ci .` passed; and
 - `nix flake check` passed.
 
-The expanded six-file topology was validated only in a detached temporary worktree. Its storage and PXC changes have not been applied because live Cilium cross-node testing found a network blocker.
+The expanded topology was first validated in a detached temporary worktree. Its
+Gateway safety changes were applied before E2S joined. After the Cilium network
+rule was repaired and the focused datapath suite passed, commits `35af2fb` and
+`8a71162` applied the storage, operator, PXC, and HAProxy stages.
 
 ## Multi-node component decisions
 
@@ -255,12 +263,14 @@ After attachment, Cilium health and a cross-node connectivity test are mandatory
 
 ## Live execution
 
-The staged operation used four pushed commits:
+The staged operation used these pushed commits:
 
 - `0e4202c` labeled SCC for public Gateway listeners;
 - `5502029` restricted Cilium host-network listeners to labeled nodes;
-- `1a6862b` declared and configured E2S; and
-- `edcf5f2` fixed `k wait talos` to verify every declared node directly.
+- `1a6862b` declared and configured E2S;
+- `edcf5f2` fixed `k wait talos` to verify every declared node directly;
+- `35af2fb` enabled E2S local storage and the second Cilium operator; and
+- `8a71162` scaled PXC and HAProxy across SCC and E2S.
 
 Execution sequence and results:
 
@@ -276,44 +286,46 @@ Execution sequence and results:
 1. Talos health passed with both declared addresses supplied explicitly.
 1. E2S `u-data` provisioned and mounted successfully.
 1. Cilium and Envoy became ready on both nodes.
-1. E2S was cordoned after cross-node pod traffic failed.
+1. E2S was cordoned after the initial cross-node pod traffic test failed.
+1. Bidirectional UDP 8472 was repaired and focused Cilium acceptance passed 24
+   pod IP, ClusterIP, local NodePort, and remote NodePort actions.
+1. E2S was uncordoned after the network and Talos storage gates passed.
+1. A disposable claim proved E2S local provisioning, write/read behavior, node
+   affinity, and cleanup under `/var/mnt/data`.
+1. Cilium operator scaled to two ready replicas, one per node.
+1. PXC and HAProxy scaled to two and distributed one instance per node.
+1. XtraBackup SST initialized `mysql-pxc-1`; IST synchronized the restarted
+   `mysql-pxc-0`; both returned `Primary`, `Synced`, and ready.
+1. A write through HAProxy replicated to both members and the disposable test
+   schema was removed from both.
 
-No PXC, HAProxy, Vault, existing PVC, or existing PV configuration was changed.
+Vault and its existing retained PVCs were not changed. The SCC PXC volume and
+node affinity were preserved; one new retained PXC volume was provisioned on
+E2S.
 
-## Cilium datapath blocker
+## Cilium datapath resolution
 
-The first Cilium connectivity test attempt was rejected by the cluster's Pod Security baseline because the upstream test workloads require `NET_RAW`, host ports, and host networking. Its temporary namespaces were removed. The test was rerun with only its temporary namespaces labeled privileged.
+The first privileged test exposed asymmetric VXLAN handling: SCC-to-E2S UDP
+8472 arrived, while E2S-to-SCC replies did not. After the upstream rule was
+corrected, cross-node PXC port probes and Cilium endpoint HTTP checks worked in
+both directions.
 
-The privileged test scheduled workloads across both nodes but timed out on direct cross-node pod traffic. Follow-up checks found:
+A focused Cilium CLI run then selected only:
 
-- both Cilium agents and both Envoy pods ready;
-- each Cilium node had the expected pod CIDR;
-- direct pod traffic from SCC to E2S failed;
-- direct pod traffic from E2S to SCC failed;
-- Cilium health reported only one of two endpoint networks reachable;
-- host-level TCP health and etcd traffic remained reachable; and
-- etcd remained healthy with two members.
+- `no-policies/pod-to-pod`;
+- `no-policies/pod-to-service`;
+- `no-policies-extra/pod-to-remote-nodeport`; and
+- `no-policies-extra/pod-to-local-nodeport`.
 
-A simultaneous packet capture established the asymmetric network boundary:
+It completed 24 actions with no failures. Setup also proved DNS reachability to
+both echo pods and access to the Kubernetes ClusterIP. This functionally
+validated bidirectional VXLAN UDP 8472 across both pod CIDRs. Every temporary
+Cilium namespace and resource was removed afterward.
 
-- SCC emitted UDP VXLAN packets to E2S destination port 8472;
-- those packets arrived on E2S;
-- E2S emitted UDP VXLAN replies toward SCC destination port 8472; and
-- the replies did not arrive on SCC.
-
-The likely missing rule is inbound UDP 8472 toward SCC from E2S. The network path should permit UDP 8472 in both directions between the SCC and E2S node addresses before the next test.
-
-The failed test's temporary namespaces and resources were removed. E2S was cordoned without evicting or stopping its control-plane static pods or Cilium DaemonSets.
-
-After the network rule is corrected:
-
-1. rerun the privileged Cilium connectivity suite;
-1. require two of two Cilium endpoint networks reachable;
-1. verify cross-node DNS, ClusterIP, direct pod IP, and NodePort traffic;
-1. uncordon E2S;
-1. add E2S to Local Path Provisioner;
-1. increase the Cilium operator to two replicas; and
-1. continue with the two-member PXC and HAProxy rehearsal.
+The broader upstream suite still reports E2S-to-SCC ICMP echo failure and
+external `1.1.1.1` timeouts. Those checks are not required for the internal
+cluster acceptance boundary. TCP 4240 health works, and Cilium documents ICMP
+echo as optional when HTTP health is available.
 
 ## Kubernetes and etcd effect
 
@@ -331,52 +343,53 @@ A two-member etcd cluster has a quorum of two. Losing either SCC or E2S makes et
 
 Do not run `talosctl bootstrap` for E2S. The cluster is already bootstrapped, and new control-plane nodes join through the existing control-plane endpoint.
 
-## Storage effect
+## Storage result
 
-The Talos `data` user volume can be created on E2S only after the old 1.9 TB partition table is removed. Once created, it should appear as `u-data`, be ready, and mount at `/var/mnt/data`.
+E2S `u-data` is ready and mounted as XFS at `/var/mnt/data`. Commit `35af2fb`
+added `e2s` to the `local-data` allowed topology and node path map only after
+that mount and the Cilium datapath were verified.
 
-The current `local-data` StorageClass remains intentionally restricted to Kubernetes node `k8s`. Its `nodePathMap` has no path for E2S. Therefore simply joining E2S does not permit local persistent-volume provisioning there.
+A disposable 1 GiB PVC forced to E2S bound to a PV with:
 
-After E2S is healthy, perform a separate GitOps change to:
+- node affinity `e2s`;
+- host path under `/var/mnt/data`; and
+- successful synchronized write and read behavior.
 
-1. add `e2s` to the StorageClass allowed topology;
-1. add `e2s` with `/var/mnt/data` to `nodePathMap`;
-1. reconcile Local Path Provisioner;
-1. create a disposable storage test only with explicit authorization;
-1. verify the resulting PV has E2S node affinity and resides under `/var/mnt/data`; and
-1. remove the disposable test without touching retained production volumes.
+The test PV alone was changed to `Delete` for cleanup. Its namespace, claim, PV,
+and exact host path were removed, while every retained production PV remained
+unchanged. The real `local-data` StorageClass continues to use `Retain`.
 
-Do not enable E2S in Local Path Provisioner before its Talos data volume and mount are verified.
+The provisioner had accumulated intermittent false readiness failures from the
+upstream one-second HTTP timeout despite zero restarts and successful create and
+delete operations. The GitOps values now allow five seconds for readiness while
+retaining the upstream liveness behavior.
 
-## Database and Vault effect
+## Database and Vault result
 
-Current state:
+Before scaling, PXC reported `Primary`, `Synced`, `wsrep_ready=ON`, and cluster
+size one. It contained zero application schemas and zero application base
+tables. No Percona backup storage is configured, so no physical backup was
+possible; proceeding was limited to this empty, disposable rehearsal state.
 
-- PXC custom resource: ready;
-- PXC members: 1 of 1 ready;
-- HAProxy instances: 1 of 1 ready;
-- PXC and HAProxy are explicitly selected to Kubernetes node `k8s`;
-- PXC claim: retained 250 GiB `local-data` claim on SCC;
-- Vault: 1 of 1 ready;
-- Vault data and audit claims are retained on SCC;
-- all three retained claims resolve to SCC-local paths under `/var/mnt/data`.
+Commit `8a71162` removed the SCC-only PXC and HAProxy selectors, retained
+required hostname anti-affinity, set both sizes to two, and retained both unsafe
+size flags and `RollingUpdate`. Results:
 
-Attaching E2S does not move or replicate PXC or Vault. The existing selectors keep them on SCC, and the storage provisioner initially excludes E2S.
+- `mysql-pxc-0` and `mysql-haproxy-0` run on `k8s`;
+- `mysql-pxc-1` and `mysql-haproxy-1` run on `e2s`;
+- both 250 GiB PXC claims are bound to retained `local-data` PVs with matching
+  node affinity and `/var/mnt/data` paths;
+- XtraBackup SST initialized `mysql-pxc-1` from `mysql-pxc-0`;
+- IST synchronized `mysql-pxc-0` after its supervised template restart;
+- both members report `Primary`, `Synced`, connected, ready, and cluster size
+  two;
+- writes through the HAProxy service replicated to both members;
+- the HAProxy replicas service returned reads from both Galera members; and
+- the disposable replication schema was removed from both members.
 
-After E2S storage and Cilium pass their acceptance checks, the supervised PXC rehearsal may:
-
-1. permit `local-data` on `e2s`;
-1. remove the SCC-only PXC and HAProxy selectors;
-1. retain required hostname anti-affinity;
-1. set PXC size to two;
-1. set HAProxy size to two;
-1. retain both unsafe size flags;
-1. retain `RollingUpdate`; and
-1. verify SST, Galera Primary status, cluster size two, and one member and proxy per node.
-
-Do not interpret this as HA. Either PXC member's loss can remove Galera quorum. Do not perform member-failure testing unless a database outage and recovery exercise are explicitly authorized.
-
-Removing the SCC-only selectors changes both StatefulSet pod templates. Do not assume the operation only creates ordinal 1: the operator may also restart ordinal 0 and the existing HAProxy instance. Treat the transition as potentially disruptive, monitor the operator's update order, and take a fresh database backup first.
+Do not interpret this as HA. Both PXC members are required for Galera quorum.
+Do not perform member-failure testing or an unsupervised rollout. Vault remains
+one member on SCC and was not changed.
 
 After E1S joins and all three data volumes are proven:
 
@@ -390,57 +403,47 @@ Vault scaling is a separate operation and requires its own Raft and recovery pla
 
 ## Remaining execution sequence
 
-1. Permit UDP 8472 in both directions between SCC and E2S, with particular attention to inbound traffic toward SCC.
-1. Rerun the privileged Cilium connectivity test and clean up its temporary resources.
-1. Require direct cross-node pod traffic and two of two Cilium endpoint networks to pass.
-1. Uncordon E2S.
-1. Add E2S to Local Path Provisioner in a reviewed GitOps change.
-1. Prove E2S local provisioning before changing PXC.
-1. Increase Cilium operator replicas to two.
-1. Scale PXC and HAProxy to two with unsafe flags and `RollingUpdate` retained.
-1. Verify one PXC member, HAProxy instance, and local PXC volume per node.
-1. Verify SST, replicated writes, reads through HAProxy, and Galera status without simulating a node failure.
-1. Optionally add the public Gateway label to E2S in a separate test after all internal networking passes.
+The E2S attachment, storage proof, and two-member database rehearsal are
+complete. Follow-up work is separate:
+
+1. keep both nodes available until E1S can provide a third quorum member;
+1. configure and prove approved PXC backup, restore, PITR, and offsite storage
+   before production cutover;
+1. add E1S only after repeating the Talos, Cilium, and local-storage gates;
+1. scale PXC and HAProxy from two to three, restore `SmartUpdate`, and remove the
+   unsafe size flags only after three-member health is proven; and
+1. optionally test E2S as a public Gateway listener in a separate reviewed
+   operation.
 
 ## Acceptance status
 
 Passed:
 
-- E2S reports stage `running` and ready;
-- hostname is `e2s`, domain is `k8s`;
-- Talos member ID is unique;
-- `u-data` is ready and mounted at `/var/mnt/data`;
-- no Talos diagnostics are present;
-- nodes `k8s` and `e2s` are both `Ready`;
-- etcd shows exactly two healthy, non-learner members;
-- control-plane static pods are ready on both nodes;
-- two Cilium agents and two Envoy DaemonSet pods are ready;
-- Gateway status and public DNS remain SCC-only;
-- PXC remains one member on SCC and reports ready;
-- HAProxy remains ready on SCC;
-- Vault remains ready on SCC; and
-- existing retained PVCs and PV node affinity are unchanged.
+- both Talos APIs and the complete Talos/Kubernetes health check pass;
+- nodes `k8s` and `e2s` are `Ready` and schedulable;
+- etcd has exactly two healthy, consistent control-plane members;
+- E2S `u-data` is ready and mounted at `/var/mnt/data`;
+- the focused Cilium suite passed all 24 internal actions;
+- Cilium, Envoy, and two Cilium operators are ready across both nodes;
+- E2S local provisioning, affinity, write/read, and cleanup passed;
+- PXC and HAProxy are distributed one instance per node;
+- XtraBackup SST and the subsequent IST completed;
+- both PXC members report `Primary`, `Synced`, ready, and cluster size two;
+- HAProxy writes replicated to both members and replica reads reached both;
+- both unsafe size flags and `RollingUpdate` remain configured;
+- the Gateway status remains SCC-only;
+- Vault remains a single member on SCC;
+- Argo CD reports Cilium, Local Path Provisioner, and MySQL `Synced/Healthy`;
+  and
+- a final five-minute window held every target ready with no new warning events.
 
-Blocked:
+Accepted exceptions and future blockers:
 
-- Cilium cross-node endpoint health;
-- direct cross-node pod traffic;
-- enabling E2S in Local Path Provisioner;
-- increasing Cilium operator replicas;
-- uncordoning E2S; and
-- the two-member PXC and HAProxy rehearsal.
-
-Two-member PXC acceptance criteria remain:
-
-- PXC pods are distributed one per node;
-- each PXC claim binds to a PV on the same node as its member;
-- both members report `Synced`, `Primary`, and ready;
-- `wsrep_cluster_size` is two;
-- HAProxy has one ready instance per node;
-- writes through HAProxy replicate to both members;
-- both unsafe size flags remain enabled;
-- `RollingUpdate` remains configured; and
-- Vault remains a single member on SCC.
+- E2S-to-SCC ICMP echo is optional and remains blocked;
+- two-member etcd and PXC topologies are transitional, not highly available;
+- PXC backup, restore, PITR, and offsite replication remain production-cutover
+  blockers; and
+- no node-failure rehearsal is authorized for the two-member database.
 
 ## Rollback boundary
 
