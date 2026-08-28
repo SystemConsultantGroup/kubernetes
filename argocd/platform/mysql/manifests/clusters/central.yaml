@@ -1,0 +1,85 @@
+apiVersion: pxc.percona.com/v1
+kind: PerconaXtraDBCluster
+metadata:
+  name: central
+  namespace: mysql
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+  finalizers:
+    - percona.com/delete-pxc-pods-in-order
+spec:
+  crVersion: 1.20.0
+  secretsName: central-system-users
+  tls:
+    enabled: true
+  unsafeFlags:
+    pxcSize: true
+    proxySize: true
+  updateStrategy: RollingUpdate
+  upgradeOptions:
+    versionServiceEndpoint: https://check.percona.com
+    apply: disabled
+    schedule: "0 4 * * *"
+  pxc:
+    size: 2
+    image: percona/percona-xtradb-cluster:8.0.45-36.1@sha256:e34f43f3f2d3c38d27f0b32767057636b0f9dfb0b00cae28bd0fd612b51b7638
+    autoRecovery: true
+    configuration: |
+      [mysqld]
+      character_set_server=utf8mb4
+      collation_server=utf8mb4_general_ci
+      default_time_zone=+09:00
+      innodb_buffer_pool_size=12G
+      innodb_flush_log_at_trx_commit=1
+      lower_case_table_names=0
+      max_connections=500
+      pxc_strict_mode=ENFORCING
+      skip_name_resolve=ON
+      sync_binlog=1
+    resources:
+      requests:
+        cpu: "4"
+        memory: 16Gi
+    affinity:
+      antiAffinityTopologyKey: kubernetes.io/hostname
+    podDisruptionBudget:
+      maxUnavailable: 1
+    volumeSpec:
+      persistentVolumeClaim:
+        storageClassName: local-data
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi
+    gracePeriod: 600
+  haproxy:
+    enabled: true
+    size: 2
+    image: percona/haproxy:2.8.18-1@sha256:fa668cec0a541ce862ecd8fd781df4631e837e085dde6b5ae2a4bb678cc84024
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    affinity:
+      antiAffinityTopologyKey: kubernetes.io/hostname
+    podDisruptionBudget:
+      maxUnavailable: 1
+    gracePeriod: 30
+  proxysql:
+    enabled: false
+  logcollector:
+    enabled: true
+    image: percona/fluentbit:5.0.6-1@sha256:8e728120c36d78757d5f272f54aa49c67beb92b0b34bf875f558f51b6459aba1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 100Mi
+  pmm:
+    enabled: false
+    image: percona/pmm-client:3.8.0@sha256:9b497528b4c0d454911f37bbe7bea65dc2d7198f4bd8e63fc4fd828ed0d2647f
+    serverHost: monitoring-service
+  backup:
+    image: percona/percona-xtrabackup:8.0.35-35.1@sha256:f44162b0bede26d74f23c1cd3ab58efb0f43529f7fe09d221e3ad7b473463f0b
+    pitr:
+      enabled: false

@@ -2,44 +2,70 @@
 
 # MySQL 플랫폼
 
-이 Argo CD Application은 Percona operator와 별도로 PXC 클러스터의 네임스페이스
-범위 리소스를 소유합니다. Percona operator가 PXC 시스템 사용자 자격 증명의
-기준이며 Vault와 External Secrets는 데이터베이스 부트스트랩 의존성이 아닙니다.
+이 Argo CD Application은 네임스페이스 범위 Percona operator와 별도로 `mysql`
+namespace의 PXC 데이터베이스 클러스터를 소유합니다. operator는 이 namespace만
+감시합니다. 각 클러스터는 `manifests/clusters/` 아래에 이름이 있는 manifest로
+추가하고 `manifests/kustomization.yaml`에서 포함하세요.
 
-클러스터는 `spec.secretsName`을 `pxc-system-users`로 고정합니다. 해당 Secret이
-없으면 operator가 생성된 자격 증명으로 Secret을 만들고 PXC 시스템 사용자를
-관리합니다. 같은 Secret을 선언적으로 생성하거나 소유권을 두고 경쟁하는 다른
-controller를 도입하지 마세요.
+## 클러스터
 
-`pxc-system-users`를 민감한 데이터베이스 상태로 취급하세요. 값을 커밋하거나
-출력하지 마세요. 기존 데이터베이스 데이터를 이동하거나 복원하기 전에 승인된 암호화
-백업 워크플로로 보존하고 전체 Secret을 교체하는 대신 Percona가 지원하는 암호 교체
-절차를 사용하세요.
+| 클러스터 | 용도 | PXC | XtraBackup | Service |
+| --- | --- | --- | --- | --- |
+| `central` | 과거에 신 통합DB라고 불린 데이터베이스의 migration target | `8.0.45-36.1` | `8.0.35-35.1` | `central-haproxy.mysql` |
+| `alumni` | 동문 프로젝트용 새 데이터베이스 | `8.4.8-8.1` | `8.4.0-5.1` | `alumni-haproxy.mysql` |
 
-백업 및 PITR 자격 증명에는 별도 Secret이 필요합니다. onsite S3 endpoint, bucket,
-자격 증명 범위가 승인될 때까지 추가하지 마세요. 애플리케이션 데이터베이스 사용자도
-별도의 최소 권한 Secret이 필요합니다. 애플리케이션은 PXC 시스템 계정을 사용하면
-안 됩니다.
+`central`은 과거에 신 통합DB라고 불린 source의 target입니다. 별도의 구 통합 DB도
+migration할지는 아직 결정되지 않았습니다. migration한다면 `central`에 함께 넣지
+말고 별도로 검토된 identity를 부여하세요.
 
-`mysql` PerconaXtraDBCluster는 SCC와 E2S에 각각 PXC 구성원 하나와 HAProxy 하나를
-배치하는 명시적으로 안전하지 않은 2노드 rehearsal입니다. PXC 8.0.45를 사용하고
-`pxc-system-users`를 참조하며 `argocd.argoproj.io/sync-options: Prune=false`를
-지정합니다. 각 데이터베이스 구성원은 유지되는 250 GiB `local-data` claim, 16 GiB
-메모리, 12 GiB InnoDB buffer pool을 요청합니다. 로컬 hostPath provisioning은
-250 GiB 요청을 파일 시스템 quota로 강제하지 않으므로 저장소 모니터링으로 각 데이터
-볼륨의 여유 공간을 보호해야 합니다.
+image version과 digest는 고정되어 있습니다. Alumni는 Percona Operator 1.20.0에서
+인증된 PXC 8.4 및 XtraBackup version을 사용합니다. 자동 version 적용은 비활성화되어
+upgrade가 별도로 검토되는 GitOps 변경으로 유지됩니다.
 
-2개 구성원 및 2개 proxy 크기에는 `unsafeFlags.pxcSize`와
-`unsafeFlags.proxySize`가 모두 필요합니다. 이 토폴로지를 고가용성으로 취급하지
-마세요. Galera quorum에는 두 PXC 구성원이 모두 필요하므로 어느 하나라도 손실되면
-데이터베이스를 사용할 수 없습니다. 감독되는 rehearsal에서는 `RollingUpdate`를
-유지하며 구성원 장애 또는 무감독 update를 시험하지 마세요. 프로덕션 전환 전에 백업
-복원과 offsite 복제를 입증하세요. 물리 노드 세 대가 모두 준비되면 두 크기를 모두
-3으로 설정하고 `SmartUpdate`를 복원한 뒤 unsafe flag를 제거하기 전에 엄격한
-호스트 이름 anti-affinity를 확인하세요.
+## 자격 증명 및 lifecycle 안전성
 
-PXC strict mode, 내구성 있는 transaction log 설정, 소스 문자 설정, 소스 시간대는
-사용자 정의 MySQL 구성에 명시되어 있습니다. Kubernetes reverse lookup 지연을 피하기
-위해 DNS 호스트 이름 확인은 비활성화되어 있으므로 사용자 grant에는 DNS 호스트 이름
-대신 `%` 또는 주소 패턴을 사용해야 합니다. 데이터베이스 버전 변경이 별도로 검토되는
-GitOps 작업으로 유지되도록 업그레이드 검사는 비활성화되어 있습니다.
+각 클러스터에는 고유한 `spec.secretsName`이 있습니다. Secret이 없으면 operator가
+생성된 자격 증명으로 Secret을 만들고 PXC 시스템 사용자를 관리합니다. 같은 Secret을
+선언적으로 만들거나 다른 controller가 소유권을 두고 경쟁하게 하지 마세요. 자격 증명
+값을 커밋하거나 출력하지 말고 전체 Secret을 교체하는 대신 Percona가 지원하는 암호
+교체 절차를 사용하세요.
+
+모든 cluster CR에는 다음 두 보호 설정이 있습니다.
+
+```yaml
+argocd.argoproj.io/sync-options: Prune=false,Delete=false
+```
+
+manifest를 제거하거나 Argo CD Application을 삭제해도 데이터베이스 클러스터가 자동으로
+삭제되면 안 됩니다. Decommission에는 client를 중지하고 recovery material을 확인하며
+이 보호 설정을 의도적으로 제거하고 retained volume을 명시적으로 처리하는 별도의 검토
+절차가 필요합니다.
+
+## Topology 및 resource
+
+두 클러스터는 현재 PXC 구성원 2개와 HAProxy instance 2개를 실행하며 필수 hostname
+anti-affinity로 각각 하나씩 `k8s`와 `e2s`에 배치합니다. 두 size 관련 unsafe flag는
+계속 필요합니다. 이는 과도기 topology이며 고가용성이 아닙니다. Galera quorum에는 두
+PXC 구성원이 모두 필요하므로 어느 하나라도 손실되면 해당 클러스터를 사용할 수
+없습니다. 구성원 장애 또는 무감독 rollout을 시험하지 마세요.
+
+manifest는 CPU 및 memory request를 유지하지만 현재 의도적으로 resource limit을
+설정하지 않습니다. 실제 workload를 측정한 뒤 검토된 limit을 추가하세요. 각 PXC
+구성원은 retained 200 GiB `local-data` claim, 16 GiB memory, 12 GiB InnoDB buffer
+pool을 요청합니다. hostPath provisioner는 PVC request를 filesystem quota로 강제하지
+않으므로 각 data volume의 실제 사용량과 여유 공간을 모니터링하세요.
+
+감독되는 2개 구성원 단계에서는 `RollingUpdate`를 유지합니다. 물리 노드 3대와 각
+storage를 입증한 뒤 각 클러스터를 3개로 scale하고 `SmartUpdate`를 복원하세요. 엄격한
+배치, SST, quorum, readiness 검사를 통과한 뒤에만 unsafe flag를 제거하세요.
+
+## 데이터베이스 및 recovery 설정
+
+PXC strict mode, 내구성 있는 transaction log 설정, UTF-8 기본값, source 호환 설정,
+`+09:00` timezone이 명시되어 있습니다. Kubernetes reverse lookup 지연을 피하기 위해
+DNS hostname resolution은 비활성화되어 있으므로 grant에는 DNS hostname 대신 `%`
+또는 address pattern을 사용해야 합니다.
+
+Backup 및 PITR 자격 증명에는 별도 Secret이 필요합니다. onsite S3 endpoint, bucket,
+클러스터별 prefix, 자격 증명 범위가 승인될 때까지 추가하지 마세요. Backup restore,
+PITR, 독립 offsite copy는 두 클러스터 모두의 production cutover 요구 사항입니다.

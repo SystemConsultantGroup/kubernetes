@@ -1,15 +1,15 @@
 apiVersion: pxc.percona.com/v1
 kind: PerconaXtraDBCluster
 metadata:
-  name: mysql
+  name: alumni
   namespace: mysql
   annotations:
-    argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   finalizers:
     - percona.com/delete-pxc-pods-in-order
 spec:
   crVersion: 1.20.0
-  secretsName: pxc-system-users
+  secretsName: alumni-system-users
   tls:
     enabled: true
   unsafeFlags:
@@ -22,7 +22,7 @@ spec:
     schedule: "0 4 * * *"
   pxc:
     size: 2
-    image: percona/percona-xtradb-cluster:8.0.45-36.1
+    image: percona/percona-xtradb-cluster:8.4.8-8.1@sha256:c901e20ed8bdb6c6a1da5195b31aa30cdaa34e5a54b8e4b2f5151f998e3eadc4
     autoRecovery: true
     configuration: |
       [mysqld]
@@ -40,9 +40,6 @@ spec:
       requests:
         cpu: "4"
         memory: 16Gi
-      limits:
-        cpu: "16"
-        memory: 24Gi
     affinity:
       antiAffinityTopologyKey: kubernetes.io/hostname
     podDisruptionBudget:
@@ -54,19 +51,16 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 250Gi
+            storage: 200Gi
     gracePeriod: 600
   haproxy:
     enabled: true
     size: 2
-    image: percona/haproxy:2.8.18-1
+    image: percona/haproxy:2.8.18-1@sha256:fa668cec0a541ce862ecd8fd781df4631e837e085dde6b5ae2a4bb678cc84024
     resources:
       requests:
         cpu: 500m
         memory: 1Gi
-      limits:
-        cpu: "2"
-        memory: 2Gi
     affinity:
       antiAffinityTopologyKey: kubernetes.io/hostname
     podDisruptionBudget:
@@ -76,19 +70,16 @@ spec:
     enabled: false
   logcollector:
     enabled: true
-    image: percona/fluentbit:5.0.6-1
+    image: percona/fluentbit:5.0.6-1@sha256:8e728120c36d78757d5f272f54aa49c67beb92b0b34bf875f558f51b6459aba1
     resources:
       requests:
         cpu: 200m
         memory: 100Mi
-      limits:
-        cpu: 500m
-        memory: 256Mi
   pmm:
     enabled: false
-    image: percona/pmm-client:3.8.0
+    image: percona/pmm-client:3.8.0@sha256:9b497528b4c0d454911f37bbe7bea65dc2d7198f4bd8e63fc4fd828ed0d2647f
     serverHost: monitoring-service
   backup:
-    image: percona/percona-xtrabackup:8.0.35-35.1
+    image: percona/percona-xtrabackup:8.4.0-5.1@sha256:1c7e20fac192f70de2233e471a9243ba9a65399e9667cf954f5fc5afba1b9aa4
     pitr:
       enabled: false

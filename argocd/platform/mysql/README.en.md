@@ -2,47 +2,75 @@
 
 # MySQL platform
 
-This Argo CD Application owns the PXC cluster's namespaced resources separately
-from the Percona operator. The Percona operator is authoritative for PXC
-system-user credentials; Vault and External Secrets are not database bootstrap
-dependencies.
+This Argo CD Application owns the PXC database clusters in the `mysql`
+namespace separately from the namespaced Percona operator. The operator watches
+only this namespace. Add each cluster as a named manifest under
+`manifests/clusters/` and include it from `manifests/kustomization.yaml`.
 
-The cluster fixes `spec.secretsName` as `pxc-system-users`. When that Secret is
-absent, the operator creates it with generated credentials and manages the PXC
-system users. Do not declaratively create the same Secret or introduce another
-controller that competes for its ownership.
+## Clusters
 
-Treat `pxc-system-users` as sensitive database state. Never commit or print its
-values. Preserve it through an approved encrypted backup workflow before moving
-or restoring existing database data, and use Percona's supported password
-rotation procedure rather than replacing the complete Secret.
+| Cluster | Purpose | PXC | XtraBackup | Service |
+| --- | --- | --- | --- | --- |
+| `central` | Migration target for the database historically called 신 통합DB | `8.0.45-36.1` | `8.0.35-35.1` | `central-haproxy.mysql` |
+| `alumni` | New database for the alumni project | `8.4.8-8.1` | `8.4.0-5.1` | `alumni-haproxy.mysql` |
 
-Backup and PITR credentials require a separate Secret. Do not add them until the
-onsite S3 endpoint, bucket, and credential scope are approved. Application
-database users also require separate least-privilege Secrets; applications must
-not use PXC system accounts.
+`central` is the target for the source historically called 신 통합DB. Whether
+the separate 구 통합 DB will also be migrated remains undecided; if it is, give
+that migration its own reviewed identity rather than overloading `central`.
 
-The `mysql` PerconaXtraDBCluster is an explicitly unsafe two-node rehearsal with
-one PXC member and one HAProxy on each of SCC and E2S. It uses PXC 8.0.45,
-references `pxc-system-users`, and carries
-`argocd.argoproj.io/sync-options: Prune=false`. Each database member requests a
-retained 250 GiB `local-data` claim, 16 GiB of memory, and a 12 GiB InnoDB
-buffer pool. Local hostPath provisioning does not enforce the 250 GiB request as
-a filesystem quota, so storage monitoring must protect headroom on each data
-volume.
+The image versions and digests are pinned. Alumni uses the PXC 8.4 and
+XtraBackup versions certified with Percona Operator 1.20.0. Automatic version
+application is disabled so upgrades remain separate reviewed GitOps changes.
 
-The two-member and two-proxy sizes require both `unsafeFlags.pxcSize` and
-`unsafeFlags.proxySize`. Do not treat this topology as highly available: both
-PXC members are required for Galera quorum, so losing either member makes the
-database unavailable. The supervised rehearsal retains `RollingUpdate`; do not
-perform a member-failure or unsupervised update test. Before production cutover,
-prove backup restoration and offsite replication. After all three physical
-nodes are ready, set both sizes to three, restore `SmartUpdate`, and verify
-strict hostname anti-affinity before removing either unsafe flag.
+## Credentials and lifecycle safety
 
-PXC strict mode, durable transaction-log settings, source character settings,
-and the source timezone are explicit in the custom MySQL configuration. DNS
-hostname resolution is disabled to avoid Kubernetes reverse-lookup delays, so
-user grants must use `%` or address patterns instead of DNS hostnames. Upgrade
-checks are disabled so database version changes remain separate reviewed GitOps
-operations.
+Each cluster has a unique `spec.secretsName`. When its Secret is absent, the
+operator creates it with generated credentials and manages the PXC system users.
+Do not declaratively create the same Secret or let another controller compete
+for its ownership. Never commit or print credential values, and use Percona's
+supported password-rotation procedure rather than replacing the complete
+Secret.
+
+Every cluster CR carries both protections:
+
+```yaml
+argocd.argoproj.io/sync-options: Prune=false,Delete=false
+```
+
+Removing a manifest or deleting the Argo CD Application must not automatically
+delete a database cluster. Decommissioning requires a separate reviewed
+procedure that freezes clients, verifies recovery material, removes these
+protections deliberately, and handles retained volumes explicitly.
+
+## Topology and resources
+
+Both clusters currently run two PXC members and two HAProxy instances, with
+required hostname anti-affinity placing one of each on `k8s` and `e2s`. Both
+size-related unsafe flags remain required. This is a transitional topology, not
+high availability: both PXC members are required for Galera quorum, so losing
+either member makes that cluster unavailable. Do not perform member-failure or
+unsupervised rollout tests.
+
+The manifests retain CPU and memory requests but intentionally set no resource
+limits for now. Add reviewed limits after measuring the real workloads. Each PXC
+member requests a retained 200 GiB `local-data` claim and 16 GiB of memory with
+a 12 GiB InnoDB buffer pool. The hostPath provisioner does not enforce the PVC
+request as a filesystem quota, so monitor each data volume's actual use and
+headroom.
+
+`RollingUpdate` remains configured for this supervised two-member stage. After
+three physical nodes and their storage are proven, scale each cluster to three,
+restore `SmartUpdate`, and remove the unsafe flags only after strict placement,
+SST, quorum, and readiness checks pass.
+
+## Database and recovery settings
+
+PXC strict mode, durable transaction-log settings, UTF-8 defaults, source
+compatibility settings, and the `+09:00` timezone are explicit. DNS hostname
+resolution is disabled to avoid Kubernetes reverse-lookup delays, so grants must
+use `%` or address patterns instead of DNS hostnames.
+
+Backup and PITR credentials require separate Secrets. Do not add them until the
+onsite S3 endpoint, bucket, per-cluster prefixes, and credential scopes are
+approved. Backup restoration, PITR, and independent offsite copies remain
+production-cutover requirements for both clusters.

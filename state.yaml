@@ -30,7 +30,9 @@ local-path-provisioner:
 percona-operator:
   version: "1.20.0"
 pxc:
-  version: "8.0.45"
+  versions:
+    alumni: "8.4.8"
+    central: "8.0.45"
 reloader:
   chart: "2.2.16"
 vault:
