@@ -22,21 +22,23 @@ onsite S3 endpoint, bucket, and credential scope are approved. Application
 database users also require separate least-privilege Secrets; applications must
 not use PXC system accounts.
 
-The `mysql` PerconaXtraDBCluster starts as an explicitly unsafe rehearsal with
-one PXC member and one HAProxy on SCC. It uses PXC 8.0.45, references
-`pxc-system-users`, and carries `argocd.argoproj.io/sync-options: Prune=false`.
-The database requests a retained 250 GiB `local-data` claim, 16 GiB of memory,
-and a 12 GiB InnoDB buffer pool. Local hostPath provisioning does not enforce
-the 250 GiB request as a filesystem quota, so storage monitoring must protect
-headroom on the shared data volume.
+The `mysql` PerconaXtraDBCluster is an explicitly unsafe two-node rehearsal with
+one PXC member and one HAProxy on each of SCC and E2S. It uses PXC 8.0.45,
+references `pxc-system-users`, and carries
+`argocd.argoproj.io/sync-options: Prune=false`. Each database member requests a
+retained 250 GiB `local-data` claim, 16 GiB of memory, and a 12 GiB InnoDB
+buffer pool. Local hostPath provisioning does not enforce the 250 GiB request as
+a filesystem quota, so storage monitoring must protect headroom on each data
+volume.
 
-The single-member and single-proxy sizes require both `unsafeFlags.pxcSize` and
-`unsafeFlags.proxySize`. Do not treat this topology as highly available. The
-rehearsal uses `RollingUpdate` because `SmartUpdate` cannot safely progress a
-restart without another ready member. Before production cutover, prove backup
-restoration and offsite replication. After all three physical nodes are ready,
-remove the SCC-only selectors, set both sizes to three, restore `SmartUpdate`,
-and verify strict hostname anti-affinity before removing either unsafe flag.
+The two-member and two-proxy sizes require both `unsafeFlags.pxcSize` and
+`unsafeFlags.proxySize`. Do not treat this topology as highly available: both
+PXC members are required for Galera quorum, so losing either member makes the
+database unavailable. The supervised rehearsal retains `RollingUpdate`; do not
+perform a member-failure or unsupervised update test. Before production cutover,
+prove backup restoration and offsite replication. After all three physical
+nodes are ready, set both sizes to three, restore `SmartUpdate`, and verify
+strict hostname anti-affinity before removing either unsafe flag.
 
 PXC strict mode, durable transaction-log settings, source character settings,
 and the source timezone are explicit in the custom MySQL configuration. DNS
