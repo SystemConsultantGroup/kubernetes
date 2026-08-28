@@ -12,8 +12,12 @@ storageClass:
         - key: kubernetes.io/hostname
           values:
             - k8s
+            - e2s
 nodePathMap:
   - node: k8s
+    paths:
+      - /var/mnt/data
+  - node: e2s
     paths:
       - /var/mnt/data
   - node: DEFAULT_PATH_FOR_NON_LISTED_NODES

@@ -1,5 +1,5 @@
 operator:
-  replicas: 1
+  replicas: 2
 ipam:
   mode: kubernetes
 kubeProxyReplacement: true

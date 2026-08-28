@@ -14,8 +14,8 @@ storageClassName: local-data
 ```
 
 Volumes bind with `WaitForFirstConsumer`, so scheduling selects the node before
-the local path is created. The class currently permits only Kubernetes node
-`k8s` and stores data on its ready Talos `data` user volume at:
+the local path is created. The class permits Kubernetes nodes `k8s` and `e2s`
+and stores data on each node's ready Talos `data` user volume at:
 
 ```text
 /var/mnt/data
@@ -23,8 +23,9 @@ the local path is created. The class currently permits only Kubernetes node
 
 Unlisted nodes have no provisioning paths. SCC's retained Vault claims were
 migrated from the previous `EPHEMERAL` path before this provisioning path
-changed. Add another node only after its intended user volume, mount, and
-durability are verified.
+changed. E2S was added only after its user volume, mount, and cross-node Cilium
+datapath were verified. Add another node only after completing the same storage
+and networking checks.
 
 The reclaim policy is `Retain`. Deleting a claim does not erase its local data or
 make its PersistentVolume automatically reusable. An operator must inspect and

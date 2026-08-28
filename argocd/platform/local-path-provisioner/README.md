@@ -14,8 +14,8 @@ storageClassName: local-data
 ```
 
 볼륨은 `WaitForFirstConsumer`로 binding되므로 로컬 경로를 만들기 전에 스케줄링에서
-노드를 선택합니다. 현재 class는 Kubernetes 노드 `k8s`만 허용하며 준비된 Talos
-`data` 사용자 볼륨의 다음 경로에 데이터를 저장합니다.
+노드를 선택합니다. 이 class는 Kubernetes 노드 `k8s`와 `e2s`를 허용하며 각 노드의
+준비된 Talos `data` 사용자 볼륨의 다음 경로에 데이터를 저장합니다.
 
 ```text
 /var/mnt/data
@@ -23,7 +23,8 @@ storageClassName: local-data
 
 목록에 없는 노드에는 provisioning 경로가 없습니다. SCC에 유지된 Vault claim은 이
 provisioning 경로가 변경되기 전에 이전 `EPHEMERAL` 경로에서 migration되었습니다.
-의도한 사용자 볼륨, 마운트, 내구성을 확인한 뒤에만 다른 노드를 추가하세요.
+E2S는 사용자 볼륨, 마운트, 노드 간 Cilium datapath를 확인한 뒤에만 추가되었습니다.
+다른 노드도 동일한 storage 및 network 검사를 완료한 뒤에만 추가하세요.
 
 reclaim policy는 `Retain`입니다. claim을 삭제해도 로컬 데이터가 지워지거나
 PersistentVolume을 자동으로 재사용할 수 있게 되지 않습니다. 운영자는
