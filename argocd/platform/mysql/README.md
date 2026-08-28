@@ -74,13 +74,16 @@ DNS hostname resolution은 비활성화되어 있으므로 grant에는 DNS hostn
 
 Bucket은 versioning, 14일 Governance retention 및 lifecycle expiry를 사용합니다.
 필수 full backup이나 binlog를 삭제하면 PITR chain이 끊길 수 있으므로 Operator의 remote
-삭제 retention은 비활성화 상태로 유지합니다. on-demand full backup은 disposable PXC
-8.0 및 8.4 cluster에 성공적으로 restore되었습니다. live cluster는 이제 staggered daily
-full backup(central 02:00, alumni 03:00)과 60초 간격 PITR binlog upload를 실행합니다.
-cron schedule은 Operator 설정 timezone을 사용하므로 첫 scheduled run을 명시적으로
-확인하세요. MinIO가 유일한 backup tier이므로 MinIO system 손실은 수용된 residual risk로
-남습니다.
+삭제 retention은 비활성화 상태로 유지합니다. on-demand full backup은 disposable PXC 8.0 및 8.4 cluster에 성공적으로 restore되었습니다. PITR이
+활성화된 fresh full backup으로 두 cluster의 timestamp-restore proof도 완료했습니다. 각
+restore에서 post-backup marker는 복원되고 이후 marker는 제외되었습니다. live cluster는
+이제 staggered daily full backup(central 02:00, alumni 03:00)과 60초 간격 PITR binlog
+upload를 실행합니다. cron schedule은 Operator 설정 timezone을 사용하며 첫 scheduled
+실행은 아직 대기 중입니다. MinIO가 유일한 backup tier이므로 MinIO system 손실은 수용된
+residual risk로 남습니다.
 
-첫 scheduled backup과 PITR upload health는 recoverability 자체의 증명이 아닙니다. 각
-scheduled backup이 `Succeeded`인지 확인하고 PITR uploader error와 binlog gap을 검사한
-뒤 PITR timestamp restore를 완료해야 production recovery system으로 간주할 수 있습니다.
+첫 scheduled backup과 PITR upload health는 여전히 운영 gate입니다. 각 scheduled
+backup이 `Succeeded`인지 확인하고 PITR uploader error와 binlog gap을 검사하며, MinIO
+lifecycle rule이 non-current version과 delete marker를 의도대로 만료하는지 확인하세요.
+기능적 backup 및 PITR restore proof는 통과했지만 scheduled 실행과 lifecycle 검증을
+기록하기 전에는 production recovery readiness를 최종 완료로 간주하지 않습니다.

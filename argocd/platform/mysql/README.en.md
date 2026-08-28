@@ -81,14 +81,18 @@ access.
 The buckets use versioning, 14-day Governance retention, and lifecycle expiry.
 Operator-side remote deletion retention remains disabled because deleting a
 required full backup or binlog can break PITR. The on-demand full backups have
-been restored successfully into disposable PXC 8.0 and 8.4 clusters. The live
-clusters now run staggered daily full backups (central at 02:00 and alumni at
-03:00) and upload PITR binlogs every 60 seconds. The cron schedules use the
-Operator's configured timezone; verify the first scheduled runs explicitly.
+been restored successfully into disposable PXC 8.0 and 8.4 clusters. A fresh
+full backup with PITR enabled was then used for timestamp-restore proofs on both
+clusters; each restored the post-backup marker and excluded a later marker. The
+live clusters now run staggered daily full backups (central at 02:00 and alumni
+at 03:00) and upload PITR binlogs every 60 seconds. The cron schedules use the
+Operator's configured timezone; the first scheduled executions remain pending.
 MinIO is the only backup tier, so loss of the MinIO system remains an accepted
 residual risk.
 
-The first scheduled backups and PITR upload health are operational gates, not
-proof of recoverability by themselves. Confirm each scheduled backup reaches
-`Succeeded`, inspect PITR uploader errors and binlog gaps, and complete a
-PITR timestamp restore before treating this as a production recovery system.
+The first scheduled backups and PITR upload health remain operational gates.
+Confirm each scheduled backup reaches `Succeeded`, inspect PITR uploader errors
+and binlog gaps, and verify that MinIO lifecycle rules expire non-current
+versions and delete markers as intended. The functional backup and PITR restore
+proof has passed, but production recovery readiness is not final until those
+scheduled-run and lifecycle checks are recorded.
