@@ -27,6 +27,11 @@ changed. E2S was added only after its user volume, mount, and cross-node Cilium
 datapath were verified. Add another node only after completing the same storage
 and networking checks.
 
+The readiness probe allows five seconds because the upstream one-second default
+produced intermittent false negatives while the provisioner remained responsive
+and continued provisioning successfully. Liveness keeps the upstream health
+check behavior.
+
 The reclaim policy is `Retain`. Deleting a claim does not erase its local data or
 make its PersistentVolume automatically reusable. An operator must inspect and
 clean retained data before deleting or replacing the PersistentVolume.

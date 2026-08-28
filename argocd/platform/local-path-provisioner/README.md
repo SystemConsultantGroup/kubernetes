@@ -26,6 +26,10 @@ provisioning 경로가 변경되기 전에 이전 `EPHEMERAL` 경로에서 migra
 E2S는 사용자 볼륨, 마운트, 노드 간 Cilium datapath를 확인한 뒤에만 추가되었습니다.
 다른 노드도 동일한 storage 및 network 검사를 완료한 뒤에만 추가하세요.
 
+upstream의 1초 readiness timeout은 provisioner가 응답하고 provisioning을 계속
+성공하는 동안에도 간헐적인 false negative를 발생시켰으므로 readiness probe는 5초를
+허용합니다. liveness는 upstream health check 동작을 유지합니다.
+
 reclaim policy는 `Retain`입니다. claim을 삭제해도 로컬 데이터가 지워지거나
 PersistentVolume을 자동으로 재사용할 수 있게 되지 않습니다. 운영자는
 PersistentVolume을 삭제하거나 교체하기 전에 유지된 데이터를 검사하고 정리해야
