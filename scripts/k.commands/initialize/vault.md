@@ -16,6 +16,7 @@ Argo CD가 조정하는 Vault 배포를 초기화하고 구성합니다.
 1. 일회성 초기화 응답을 즉시 `secrets/vault-recovery.yaml`에 암호화합니다.
 1. file audit device, `kv`의 KV v2, Kubernetes 인증을 활성화합니다.
 1. 공유 관리형 애플리케이션 policy와 Kubernetes auth role을 생성합니다.
+1. namespace 범위의 MySQL backup policy와 Kubernetes auth role을 생성합니다.
 1. Argo CD Dex를 통한 GitHub 인증을 구성하고 기본 web UI 방식으로 지정하며,
    `active` 및 `platform` 팀을 Vault policy에 연결합니다.
 1. `https://vault.platform.scg.sh/v1/sys/health`를 기다립니다.

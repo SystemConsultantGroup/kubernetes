@@ -66,6 +66,15 @@ PXC strict mode, 내구성 있는 transaction log 설정, UTF-8 기본값, sourc
 DNS hostname resolution은 비활성화되어 있으므로 grant에는 DNS hostname 대신 `%`
 또는 address pattern을 사용해야 합니다.
 
-Backup 및 PITR 자격 증명에는 별도 Secret이 필요합니다. onsite S3 endpoint, bucket,
-클러스터별 prefix, 자격 증명 범위가 승인될 때까지 추가하지 마세요. Backup restore,
-PITR, 독립 offsite copy는 두 클러스터 모두의 production cutover 요구 사항입니다.
+두 클러스터는 독립 MinIO S3 API인 `https://api.minio.scg.skku.ac.kr`을 사용하며
+`pxc-central`과 `pxc-alumni` bucket을 분리합니다. 전용 Vault Kubernetes auth role은
+`kv/platform/mysql/s3`만 읽을 수 있고 External Secrets는 해당 경로의 access key 속성
+2개를 공유 `mysql-backup-s3` Secret으로 매핑합니다. MinIO policy는 이 두 bucket으로
+제한하며 object 삭제, Governance 우회, KMS 및 관리 권한을 제외합니다.
+
+Bucket은 versioning, 14일 Governance retention 및 lifecycle expiry를 사용합니다.
+필수 full backup이나 binlog를 삭제하면 PITR chain이 끊길 수 있으므로 Operator의 remote
+삭제 retention은 비활성화 상태로 유지해야 합니다. 먼저 storage만 구성하고 backup
+schedule과 PITR은 비활성화 상태로 유지합니다. on-demand full backup을 disposable
+cluster에 restore한 뒤에만 활성화하세요. MinIO가 유일한 backup tier이므로 MinIO system
+손실은 수용된 residual risk로 남습니다.

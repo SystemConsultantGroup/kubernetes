@@ -143,6 +143,20 @@ Use portable environment-variable keys such as `DATABASE_URL`. Enter values
 through an approved secret-handling workflow; do not put plaintext values in Git,
 shell history, command output, or documentation.
 
+## MySQL backup access
+
+The dedicated `mysql-backups` Kubernetes-auth role accepts only the
+`mysql/mysql-backup-vault-auth` ServiceAccount and can read only
+`kv/data/platform/mysql/s3`. The MySQL `ExternalSecret` maps the MinIO access
+key properties from that path into the Operator-compatible
+`mysql/mysql-backup-s3` Secret. It never uses the namespace-wildcard managed
+application role.
+
+The bootstrap script records this policy and role for a new Vault. Because the
+initial root token has been revoked, changes to their live definitions require
+a platform operator to authenticate through OIDC and apply them as an explicit
+planned operation.
+
 ## Operations
 
 Use the public address for operator commands:

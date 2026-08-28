@@ -81,5 +81,14 @@ spec:
     serverHost: monitoring-service
   backup:
     image: percona/percona-xtrabackup:8.0.35-35.1@sha256:f44162b0bede26d74f23c1cd3ab58efb0f43529f7fe09d221e3ad7b473463f0b
+    storages:
+      minio:
+        type: s3
+        s3:
+          bucket: pxc-central
+          credentialsSecret: mysql-backup-s3
+          endpointUrl: https://api.minio.scg.skku.ac.kr
+          forcePathStyle: true
+          region: us-east-1
     pitr:
       enabled: false

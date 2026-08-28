@@ -134,6 +134,19 @@ Reloader가 영향을 받는 관리형 Deployment를 rolling restart합니다.
 워크플로를 통해 값을 입력하세요. 평문 값을 Git, 셸 기록, 명령 출력, 문서에 넣지
 마세요.
 
+## MySQL backup 접근
+
+전용 `mysql-backups` Kubernetes auth role은
+`mysql/mysql-backup-vault-auth` ServiceAccount만 허용하며
+`kv/data/platform/mysql/s3`만 읽을 수 있습니다. MySQL `ExternalSecret`은 해당
+경로의 MinIO access key 속성을 Operator 호환 `mysql/mysql-backup-s3` Secret으로
+매핑합니다. namespace wildcard를 사용하는 관리형 애플리케이션 role은 사용하지
+않습니다.
+
+부트스트랩 스크립트는 새 Vault를 위해 이 policy와 role을 기록합니다. 초기 root
+토큰은 폐기되었으므로 live 정의를 변경하려면 플랫폼 운영자가 OIDC로 인증하고 명시적으로
+계획된 작업으로 적용해야 합니다.
+
 ## 운영
 
 운영자 명령에는 공개 주소를 사용하세요.

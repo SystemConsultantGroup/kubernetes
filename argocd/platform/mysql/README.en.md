@@ -70,7 +70,17 @@ compatibility settings, and the `+09:00` timezone are explicit. DNS hostname
 resolution is disabled to avoid Kubernetes reverse-lookup delays, so grants must
 use `%` or address patterns instead of DNS hostnames.
 
-Backup and PITR credentials require separate Secrets. Do not add them until the
-onsite S3 endpoint, bucket, per-cluster prefixes, and credential scopes are
-approved. Backup restoration, PITR, and independent offsite copies remain
-production-cutover requirements for both clusters.
+Both clusters use the independent MinIO S3 API at
+`https://api.minio.scg.skku.ac.kr`, with separate `pxc-central` and `pxc-alumni`
+buckets. A dedicated Vault Kubernetes-auth role can read only
+`kv/platform/mysql/s3`; External Secrets maps its two access-key properties into
+the shared `mysql-backup-s3` Secret. The MinIO policy is limited to those two
+buckets and excludes object deletion, Governance bypass, KMS, and administrative
+access.
+
+The buckets use versioning, 14-day Governance retention, and lifecycle expiry.
+Operator-side remote deletion retention must remain disabled because deleting a
+required full backup or binlog can break PITR. Storage is configured first while
+backup schedules and PITR remain disabled. Enable them only after an on-demand
+full backup has been restored into a disposable cluster. MinIO is the only
+backup tier, so loss of the MinIO system remains an accepted residual risk.

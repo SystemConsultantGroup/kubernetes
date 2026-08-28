@@ -18,6 +18,7 @@ The command:
    `secrets/vault-recovery.yaml`;
 1. enables the file audit device, KV v2 at `kv`, and Kubernetes authentication;
 1. creates the shared managed-application policy and Kubernetes-auth role;
+1. creates the namespace-scoped MySQL backup policy and Kubernetes-auth role;
 1. configures GitHub authentication through Argo CD Dex, makes it the default
    web UI method, and maps the `active` and `platform` teams to Vault policies;
    and
