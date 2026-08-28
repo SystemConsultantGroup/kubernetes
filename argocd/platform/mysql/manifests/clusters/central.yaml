@@ -90,5 +90,11 @@ spec:
           endpointUrl: https://api.minio.scg.skku.ac.kr
           forcePathStyle: true
           region: us-east-1
+    schedule:
+      - name: daily-full
+        schedule: "0 2 * * *"
+        storageName: minio
     pitr:
-      enabled: false
+      enabled: true
+      storageName: minio
+      timeBetweenUploads: 60
