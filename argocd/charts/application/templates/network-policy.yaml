@@ -34,11 +34,14 @@
       {{- $port := $workload.http.port -}}
       {{- /* Cilium CNP CRD requires the port as a string; toString avoids re-quoting in toYaml. */ -}}
       {{- $port = $port | toString -}}
-      {{- $clusterRule := dict "fromEntities" (list "cluster") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")))) -}}
+      {{- /* Allow Cilium-managed pods, but not the reserved ingress identity. */ -}}
+      {{- $internalSource := dict "matchExpressions" (list (dict "key" "k8s:io.kubernetes.pod.namespace" "operator" "Exists")) -}}
+      {{- $clusterRule := dict "fromEndpoints" (list $internalSource) "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")))) -}}
       {{- $ingressRules := list $clusterRule -}}
-      {{- if gt (len $headerMatches) 0 -}}
-        {{- $l7Rules := dict "http" (list (dict "headerMatches" $headerMatches)) -}}
-        {{- $gatewayRule := dict "fromEntities" (list "ingress") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP" "rules" $l7Rules)))) -}}
+      {{- range $headerMatch := $headerMatches -}}
+        {{- /* Cilium ORs separate HTTP rules; HeaderMatches within one rule are ANDed. */ -}}
+        {{- $l7Rules := dict "http" (list (dict "headerMatches" (list $headerMatch))) -}}
+        {{- $gatewayRule := dict "fromEntities" (list "ingress") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")) "rules" $l7Rules)) -}}
         {{- $ingressRules = append $ingressRules $gatewayRule -}}
       {{- end -}}
 ---

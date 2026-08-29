@@ -94,11 +94,22 @@ validate_cnp_port_types() {
 }
 
 validate_cnp_header_matches() {
-  local output="$1" expected="$2" header_matches legacy_matches
-  header_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.ports[]?.rules.http[]?.headerMatches[]?] | length' "$output")"
-  legacy_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.ports[]?.rules.http[]?.hdrMatches? | select(. != null)] | length' "$output")"
-  [[ $header_matches == "$expected" && $legacy_matches == 0 ]] || {
-    echo "CiliumNetworkPolicy header matches must use headerMatches in $output, got: headerMatches=$header_matches hdrMatches=$legacy_matches" >&2
+  local output="$1" expected="$2" header_matches http_rules legacy_matches
+  header_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.rules.http[]?.headerMatches[]?] | length' "$output")"
+  http_rules="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.rules.http[]?] | length' "$output")"
+  legacy_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.rules.http[]?.hdrMatches? | select(. != null)] | length' "$output")"
+  [[ $header_matches == "$expected" && $http_rules == "$expected" && $legacy_matches == 0 ]] || {
+    echo "CiliumNetworkPolicy must render one headerMatches HTTP rule per CIDR directly under toPorts.rules in $output, got: headerMatches=$header_matches httpRules=$http_rules hdrMatches=$legacy_matches" >&2
+    return 1
+  }
+}
+
+validate_cnp_internal_sources() {
+  local output="$1" expected="$2" endpoint_rules cluster_rules
+  endpoint_rules="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.fromEndpoints[]?.matchExpressions[]? | select(.key == "k8s:io.kubernetes.pod.namespace" and .operator == "Exists")] | length' "$output")"
+  cluster_rules="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.fromEntities[]? | select(. == "cluster")] | length' "$output")"
+  [[ $endpoint_rules == "$expected" && $cluster_rules == 0 ]] || {
+    echo "CiliumNetworkPolicy must allow managed internal endpoints without allowing reserved ingress in $output, got: endpointRules=$endpoint_rules clusterRules=$cluster_rules" >&2
     return 1
   }
 }
@@ -247,6 +258,7 @@ EOF
 validate_render "$TEMPORARY_DIRECTORY/cidr-production.yaml" cidrcheck-production --values "$cidr_values" --set _context.instance.type=production --set "_context.access.defaultCIDRs={$platform_cidrs}"
 validate_cnp_port_types "$TEMPORARY_DIRECTORY/cidr-production.yaml"
 validate_cnp_header_matches "$TEMPORARY_DIRECTORY/cidr-production.yaml" 2
+validate_cnp_internal_sources "$TEMPORARY_DIRECTORY/cidr-production.yaml" 1
 policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-production.yaml" | grep -v '^---$' | paste -sd, -)"
 [[ $policies == cidrcheck-manage ]] || {
   echo "Expected exactly one CIDR policy for manage in production render, got: $policies" >&2
@@ -256,6 +268,7 @@ policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.n
 validate_render "$TEMPORARY_DIRECTORY/cidr-testing.yaml" cidrcheck-testing --values "$cidr_values" --set _context.instance.type=testing --set "_context.access.defaultCIDRs={$platform_cidrs}"
 validate_cnp_port_types "$TEMPORARY_DIRECTORY/cidr-testing.yaml"
 validate_cnp_header_matches "$TEMPORARY_DIRECTORY/cidr-testing.yaml" 2
+validate_cnp_internal_sources "$TEMPORARY_DIRECTORY/cidr-testing.yaml" 2
 policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-testing.yaml" | grep -v '^---$' | sort | paste -sd, -)"
 [[ $policies == cidrcheck-manage,cidrcheck-web ]] || {
   echo "Expected CIDR policies for every workload in testing render, got: $policies" >&2

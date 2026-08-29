@@ -655,7 +655,7 @@ workload.
 
 - CIDRs must be octet-aligned (`/8`, `/16`, `/24`) or single IPs (`/32`).
   Non-aligned ranges such as `/20` are not supported.
-- Cluster-internal traffic is always allowed.
+- Traffic from Cilium-managed in-cluster workloads is always allowed.
   Other workloads, such as fe and be, can still call a restricted workload.
 - The filter applies to the Gateway API path only.
 

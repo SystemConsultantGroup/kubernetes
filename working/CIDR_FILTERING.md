@@ -76,7 +76,7 @@ Cilium routes all Gateway traffic through a per-node Envoy proxy:
 | # | Option | Per-workload | Security boundary | Effort | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | A | CNP on the backend pod, L3 `fromCIDR` | yes (chart-generated) | **none — does not work** through the Gateway (Envoy re-originates connections) | low | Rejected; documented as the trap to avoid |
-| B | CNP on the backend pod, L7 `hdrMatches` on `X-Envoy-External-Address` | yes (chart-generated) | enforced at the gateway-side Envoy before proxying; spoof-resistant header | medium | **Recommended** |
+| B | CNP on the backend pod, L7 `headerMatches` on `X-Envoy-External-Address` | yes (chart-generated) | enforced at the gateway-side Envoy before proxying; spoof-resistant header | medium | **Recommended** |
 | C | Platform-wide `world → ingress` CIDR policy | no (whole Gateway) | strong L3 | low | Useful only for "restrict everything", not per-workload |
 | D | Raw `CiliumEnvoyConfig` with Envoy RBAC (`source_ip` permissions) per listener | per-listener | strong | high (fragile raw config alongside chart routes) | Fallback for strict-boundary needs; track upstream first |
 | E | Sidecar / dedicated auth-proxy (nginx allow/deny on real IP, Traefik ipWhiteList middleware) per restricted workload | yes | strong | high (new component per workload) | Rejected for now; revisit if B proves insufficient |
@@ -114,7 +114,7 @@ Upstream to track (may become the long-term primitive):
 
 ## 3. Recommendation (best practice for this repo)
 
-Chart-generated `CiliumNetworkPolicy` with L7 `hdrMatches` on
+Chart-generated `CiliumNetworkPolicy` with L7 `headerMatches` on
 `X-Envoy-External-Address` (Option B), for both feature areas:
 
 1. **Production allowlist**: `applications/<app>/meta.yaml` gains an optional
@@ -160,17 +160,18 @@ so denial happens before the request is proxied upstream.
                    protocol: TCP
                rules:
                  http:
-                   - hdrMatches:
+                   - headerMatches:
                        - name: X-Envoy-External-Address
                          match: prefix   # octet-aligned /16
                          value: "115.145."
      ```
 
-   - multiple CIDRs = multiple HTTP rules (OR semantics); `hdrMatches` inside
+   - multiple CIDRs = multiple HTTP rules (OR semantics); `headerMatches` inside
      one rule are ANDed, one match per rule here;
 
-   - cluster-internal traffic is always allowed; a second ingress rule from
-     the `cluster` entity permits other workloads to call a restricted
+   - Cilium-managed internal endpoints are always allowed by a separate
+     `fromEndpoints` rule. Do not use the `cluster` entity: it includes the
+     reserved `ingress` identity and would bypass the L7 allowlist.
      workload east-west (fe/be → manage).
 1. **Schema + ApplicationSet**:
    - extend `argocd/charts/application/values.schema.source.json` with
