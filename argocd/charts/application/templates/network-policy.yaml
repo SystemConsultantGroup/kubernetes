@@ -32,6 +32,8 @@
         {{- end -}}
       {{- end -}}
       {{- $port := $workload.http.port -}}
+      {{- /* Cilium CNP CRD requires the port as a string; toString avoids re-quoting in toYaml. */ -}}
+      {{- $port = $port | toString -}}
       {{- $clusterRule := dict "fromEntities" (list "cluster") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")))) -}}
       {{- $ingressRules := list $clusterRule -}}
       {{- if gt (len $headerMatches) 0 -}}
