@@ -84,6 +84,25 @@ validate_render() {
   done < <(yq eval-all -r 'select(.kind == "HTTPRoute") | .spec.hostnames[]?' "$output")
 }
 
+validate_cnp_port_types() {
+  local output="$1" types
+  types="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.ports[]?.port | type' "$output" | grep -v '^---$' | sort -u | paste -sd, -)"
+  [[ $types == '!!str' ]] || {
+    echo "CiliumNetworkPolicy ports must render as strings in $output, got: ${types:-none}" >&2
+    return 1
+  }
+}
+
+validate_cnp_header_matches() {
+  local output="$1" expected="$2" header_matches legacy_matches
+  header_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.ports[]?.rules.http[]?.headerMatches[]?] | length' "$output")"
+  legacy_matches="$(yq eval-all -r '[select(.kind == "CiliumNetworkPolicy") | .spec.ingress[]?.toPorts[]?.ports[]?.rules.http[]?.hdrMatches? | select(. != null)] | length' "$output")"
+  [[ $header_matches == "$expected" && $legacy_matches == 0 ]] || {
+    echo "CiliumNetworkPolicy header matches must use headerMatches in $output, got: headerMatches=$header_matches hdrMatches=$legacy_matches" >&2
+    return 1
+  }
+}
+
 # Platform default CIDRs injected by the managed instance ApplicationSets.
 # The ApplicationSet's `values` field is an inline YAML string; write it out and re-parse.
 platform_values="$TEMPORARY_DIRECTORY/platform-values.yaml"
@@ -226,6 +245,8 @@ manage:
 EOF
 
 validate_render "$TEMPORARY_DIRECTORY/cidr-production.yaml" cidrcheck-production --values "$cidr_values" --set _context.instance.type=production --set "_context.access.defaultCIDRs={$platform_cidrs}"
+validate_cnp_port_types "$TEMPORARY_DIRECTORY/cidr-production.yaml"
+validate_cnp_header_matches "$TEMPORARY_DIRECTORY/cidr-production.yaml" 2
 policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-production.yaml" | grep -v '^---$' | paste -sd, -)"
 [[ $policies == cidrcheck-manage ]] || {
   echo "Expected exactly one CIDR policy for manage in production render, got: $policies" >&2
@@ -233,6 +254,8 @@ policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.n
 }
 
 validate_render "$TEMPORARY_DIRECTORY/cidr-testing.yaml" cidrcheck-testing --values "$cidr_values" --set _context.instance.type=testing --set "_context.access.defaultCIDRs={$platform_cidrs}"
+validate_cnp_port_types "$TEMPORARY_DIRECTORY/cidr-testing.yaml"
+validate_cnp_header_matches "$TEMPORARY_DIRECTORY/cidr-testing.yaml" 2
 policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-testing.yaml" | grep -v '^---$' | sort | paste -sd, -)"
 [[ $policies == cidrcheck-manage,cidrcheck-web ]] || {
   echo "Expected CIDR policies for every workload in testing render, got: $policies" >&2

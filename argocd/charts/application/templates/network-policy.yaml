@@ -37,7 +37,7 @@
       {{- $clusterRule := dict "fromEntities" (list "cluster") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")))) -}}
       {{- $ingressRules := list $clusterRule -}}
       {{- if gt (len $headerMatches) 0 -}}
-        {{- $l7Rules := dict "http" (list (dict "hdrMatches" $headerMatches)) -}}
+        {{- $l7Rules := dict "http" (list (dict "headerMatches" $headerMatches)) -}}
         {{- $gatewayRule := dict "fromEntities" (list "ingress") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP" "rules" $l7Rules)))) -}}
         {{- $ingressRules = append $ingressRules $gatewayRule -}}
       {{- end -}}
