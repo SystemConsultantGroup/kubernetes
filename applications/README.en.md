@@ -202,6 +202,26 @@ The generated preview identity is:
 Preview deployments use one replica. A preview renders only the selected
 workload; references to other local workloads target their testing Services.
 
+### CIDR access filtering
+
+Declaring `http.allowCIDRs` in a workload's `meta.yaml` restricts incoming
+production requests to the listed CIDRs (office ranges, single IPs).
+No application code changes are required.
+
+```yaml
+manage:
+  http:
+    port: 9090
+    domain: manage.shop.example.org
+    allowCIDRs:
+      - 115.145.150.0/24
+```
+
+Workloads without the field (fe, be) remain unrestricted. Testing and preview
+instances are always limited to the platform CIDR list regardless of the
+declaration.
+See the [chart README](../argocd/charts/application/) for the detailed rules.
+
 ### Managed secret values
 
 Managed workloads automatically receive environment values from the platform's

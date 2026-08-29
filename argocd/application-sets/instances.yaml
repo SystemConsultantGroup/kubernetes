@@ -37,8 +37,8 @@ spec:
           helm:
             releaseName: '{{ index .path.segments 1 }}-{{ trimSuffix ".yaml" .path.filename }}'
             valueFiles:
-              - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
-              - '$values/{{ .path.path }}/{{ .path.filename }}'
+              - "$values/applications/{{ index .path.segments 1 }}/meta.yaml"
+              - "$values/{{ .path.path }}/{{ .path.filename }}"
             values: |
               _context:
                 application: '{{ index .path.segments 1 }}'
@@ -47,6 +47,10 @@ spec:
                 secrets:
                   enabled: true
                   server: https://vault.platform.scg.sh
+                access:
+                  # Platform default CIDRs: always applied to testing instances.
+                  defaultCIDRs:
+                    - 115.145.0.0/16
         - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
           targetRevision: main
           ref: values
@@ -60,7 +64,7 @@ spec:
         managedNamespaceMetadata:
           labels:
             gateway.scg.sh/public: "true"
-            platform.scg.sh/application: '{{ index .path.segments 1 }}'
+            platform.scg.sh/application: "{{ index .path.segments 1 }}"
             platform.scg.sh/instance-type: '{{ trimSuffix ".yaml" .path.filename }}'
             pod-security.kubernetes.io/enforce: restricted
             pod-security.kubernetes.io/enforce-version: latest
@@ -107,7 +111,7 @@ spec:
           helm:
             releaseName: '{{ index .path.segments 1 }}-preview-{{ index .path.segments 4 }}-{{ trimSuffix ".yaml" .path.filename }}'
             valueFiles:
-              - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
+              - "$values/applications/{{ index .path.segments 1 }}/meta.yaml"
             values: |
               _context:
                 application: '{{ index .path.segments 1 }}'
@@ -118,6 +122,10 @@ spec:
                 secrets:
                   enabled: true
                   server: https://vault.platform.scg.sh
+                access:
+                  # Platform default CIDRs: always applied to preview instances.
+                  defaultCIDRs:
+                    - 115.145.0.0/16
               '{{ index .path.segments 4 }}':
                 source:
                   repository: '{{ .source.repository }}'
@@ -136,7 +144,7 @@ spec:
         managedNamespaceMetadata:
           labels:
             gateway.scg.sh/public: "true"
-            platform.scg.sh/application: '{{ index .path.segments 1 }}'
+            platform.scg.sh/application: "{{ index .path.segments 1 }}"
             platform.scg.sh/instance-type: preview
             pod-security.kubernetes.io/enforce: restricted
             pod-security.kubernetes.io/enforce-version: latest

@@ -84,6 +84,16 @@ validate_render() {
   done < <(yq eval-all -r 'select(.kind == "HTTPRoute") | .spec.hostnames[]?' "$output")
 }
 
+# Platform default CIDRs injected by the managed instance ApplicationSets.
+# The ApplicationSet's `values` field is an inline YAML string; write it out and re-parse.
+platform_values="$TEMPORARY_DIRECTORY/platform-values.yaml"
+yq eval-all -r 'select(.kind == "ApplicationSet" and .metadata.name == "application-instances-static") | .spec.template.spec.sources[0].helm.values' argocd/application-sets/instances.yaml >"$platform_values"
+platform_cidrs="$(yq -r '._context.access.defaultCIDRs | .[]' "$platform_values" | paste -sd, -)"
+[[ -n $platform_cidrs ]] || {
+  echo "application-instances-static declares no _context.access.defaultCIDRs" >&2
+  exit 1
+}
+
 for application_directory in applications/*; do
   [[ -d $application_directory ]] || continue
   application="${application_directory##*/}"
@@ -142,7 +152,7 @@ for application_directory in applications/*; do
       echo "Generated Application name exceeds 63 characters: $identity" >&2
       exit 1
     }
-    validate_render "$TEMPORARY_DIRECTORY/$identity.yaml" "$identity" --values "$metadata" --values "$lock" --set "_context.application=$application" --set "_context.instance.type=$instance"
+    validate_render "$TEMPORARY_DIRECTORY/$identity.yaml" "$identity" --values "$metadata" --values "$lock" --set "_context.application=$application" --set "_context.instance.type=$instance" --set "_context.access.defaultCIDRs={$platform_cidrs}"
   done
   while IFS= read -r lock; do
     workload="$(basename "$(dirname "$lock")")"
@@ -167,7 +177,7 @@ for application_directory in applications/*; do
     }
     preview_values="$TEMPORARY_DIRECTORY/preview-values.yaml"
     yq -n "._context.application = \"$application\" | ._context.instance.type = \"preview\" | ._context.instance.workload = \"$workload\" | ._context.instance.pullRequest = $pull_request | .\"$workload\" = load(\"$lock\")" >"$preview_values"
-    validate_render "$TEMPORARY_DIRECTORY/$identity.yaml" "$identity" --values "$metadata" --values "$preview_values"
+    validate_render "$TEMPORARY_DIRECTORY/$identity.yaml" "$identity" --values "$metadata" --values "$preview_values" --set "_context.access.defaultCIDRs={$platform_cidrs}"
   done < <(find "$application_directory/instances/preview" -mindepth 2 -maxdepth 2 -name '*.yaml' -type f 2>/dev/null | sort)
 done
 
@@ -189,3 +199,48 @@ sharedprefix-two:
   image: example.org/example/example@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 EOF
 validate_render "$TEMPORARY_DIRECTORY/long-names-rendered.yaml" long-names --values "$synthetic_values"
+
+cidr_values="$TEMPORARY_DIRECTORY/cidr-filtering.yaml"
+cat >"$cidr_values" <<'EOF'
+_context:
+  application: cidrcheck
+web:
+  http:
+    port: 8080
+    domain: web.cidrcheck.example.scg.sh
+  source:
+    repository: https://github.com/example/example.git
+    revision: 0123456789abcdef0123456789abcdef01234567
+  image: example.org/example/example@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+manage:
+  http:
+    port: 9090
+    domain: manage.cidrcheck.example.scg.sh
+    allowCIDRs:
+      - 115.145.150.0/24
+      - 203.0.113.7/32
+  source:
+    repository: https://github.com/example/example.git
+    revision: 0123456789abcdef0123456789abcdef01234567
+  image: example.org/example/example@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+EOF
+
+validate_render "$TEMPORARY_DIRECTORY/cidr-production.yaml" cidrcheck-production --values "$cidr_values" --set _context.instance.type=production --set "_context.access.defaultCIDRs={$platform_cidrs}"
+policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-production.yaml" | grep -v '^---$' | paste -sd, -)"
+[[ $policies == cidrcheck-manage ]] || {
+  echo "Expected exactly one CIDR policy for manage in production render, got: $policies" >&2
+  exit 1
+}
+
+validate_render "$TEMPORARY_DIRECTORY/cidr-testing.yaml" cidrcheck-testing --values "$cidr_values" --set _context.instance.type=testing --set "_context.access.defaultCIDRs={$platform_cidrs}"
+policies="$(yq eval-all -r 'select(.kind == "CiliumNetworkPolicy") | .metadata.name' "$TEMPORARY_DIRECTORY/cidr-testing.yaml" | grep -v '^---$' | sort | paste -sd, -)"
+[[ $policies == cidrcheck-manage,cidrcheck-web ]] || {
+  echo "Expected CIDR policies for every workload in testing render, got: $policies" >&2
+  exit 1
+}
+
+sed 's#115.145.150.0/24#203.0.113.0/20#' "$cidr_values" >"$TEMPORARY_DIRECTORY/cidr-invalid.yaml"
+if helm template cidrcheck-invalid "$ROOT_DIRECTORY/argocd/charts/application" --values "$TEMPORARY_DIRECTORY/cidr-invalid.yaml" --set _context.instance.type=production >/dev/null 2>&1; then
+  echo "Chart accepted a non-octet-aligned CIDR" >&2
+  exit 1
+fi

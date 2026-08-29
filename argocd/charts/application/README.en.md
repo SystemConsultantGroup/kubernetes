@@ -21,6 +21,7 @@ field and rendering reference.
 - [Workload fields](#workload-fields)
 - [Managed Vault environment](#managed-vault-environment)
 - [HTTP services and routing](#http)
+- [CIDR access filtering](#cidr-access-filtering)
 - [Immutable locks](#immutable-locks)
 - [Instance behavior](#rendering-by-instance-type)
 - [Local rendering](#local-rendering)
@@ -631,6 +632,37 @@ Values use Gateway API duration syntax, such as `10s`, `1m`, or `1m30s`.
 When both are supplied, `backendRequest` cannot exceed `request` unless the
 request timeout is zero.
 
+## CIDR access filtering
+
+`http.allowCIDRs` restricts incoming HTTP requests for a workload's production
+instance to the listed source CIDRs (whitelist).
+Without this field in production, access is unrestricted.
+
+```yaml
+http:
+  port: 8080
+  domain: manage.shop.example.org
+  allowCIDRs:
+    - 115.145.150.0/24   # office network
+    - 203.0.113.7/32     # single IP
+```
+
+The chart renders a CiliumNetworkPolicy, and the gateway Envoy evaluates the
+client IP in the `X-Envoy-External-Address` header before forwarding requests
+to the workload.
+Requests outside the allowlist are rejected with 403 before they reach the
+workload.
+
+- CIDRs must be octet-aligned (`/8`, `/16`, `/24`) or single IPs (`/32`).
+  Non-aligned ranges such as `/20` are not supported.
+- Cluster-internal traffic is always allowed.
+  Other workloads, such as fe and be, can still call a restricted workload.
+- The filter applies to the Gateway API path only.
+
+Testing and preview instances are always restricted to the platform-defined
+CIDR list regardless of this field.
+The ApplicationSet injects this list; application owners cannot change it.
+
 ## Immutable locks
 
 ### `source`
@@ -696,6 +728,11 @@ instance:
 least `1`.
 Production and testing contexts must not include `workload` or `pullRequest`.
 
+The optional `access.defaultCIDRs` is the platform CIDR list applied to testing
+and preview instances.
+Only the ApplicationSet supplies it; application metadata must not define it.
+It is ignored in production.
+
 ## Rendering by instance type
 
 ### Production
@@ -703,15 +740,17 @@ Production and testing contexts must not include `workload` or `pullRequest`.
 - all workloads are rendered;
 - every workload needs a source and image lock;
 - configured replicas are used;
-- each domain gets production routing resources; and
-- non-external domains receive HTTPS and certificates.
+- each domain gets production routing resources;
+- non-external domains receive HTTPS and certificates; and
+- workloads with `allowCIDRs` get a CIDR filtering policy.
 
 ### Testing
 
 - all workloads are rendered;
 - every workload needs a source and image lock;
-- configured replicas are used; and
-- workloads with domains route through `<application>.testing.scg.sh`.
+- configured replicas are used;
+- workloads with domains route through `<application>.testing.scg.sh`; and
+- every HTTP workload gets a platform CIDR filtering policy.
 
 ### Preview
 

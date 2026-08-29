@@ -202,6 +202,25 @@ image: registry.example.org/example/shop-web@sha256:0123456789abcdef0123456789ab
 프리뷰 배포는 복제본 하나를 사용합니다. 프리뷰는 선택한 워크로드만 렌더링하며,
 다른 로컬 워크로드에 대한 참조는 해당 테스팅 Service를 대상으로 합니다.
 
+### CIDR 접근 필터링
+
+워크로드별 `meta.yaml`에서 `http.allowCIDRs`를 선언하면 프로덕션으로 들어오는
+요청이 나열된 CIDR(사무실 대역, 단일 IP)로만 허용됩니다. 앱 코드 변경은 필요
+없습니다.
+
+```yaml
+manage:
+  http:
+    port: 9090
+    domain: manage.shop.example.org
+    allowCIDRs:
+      - 115.145.150.0/24
+```
+
+선언하지 않은 워크로드(fe, be)는 제한 없이 접근됩니다. 테스팅과 프리뷰
+인스턴스는 선언과 무관하게 항상 플랫폼 CIDR 목록으로만 접근할 수 있습니다.
+상세 규칙은 [차트 README](../argocd/charts/application/)를 참조하세요.
+
 ### 관리형 시크릿 값
 
 관리형 워크로드는 해당 경로가 있으면 플랫폼의 Vault 연동에서 환경 값을 자동으로

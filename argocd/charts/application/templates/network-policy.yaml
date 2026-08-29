@@ -1,0 +1,59 @@
+{{- $context := .Values._context -}}
+{{- $instanceType := $context.instance.type -}}
+{{- $access := $context.access | default (dict) -}}
+{{- $defaultCIDRs := $access.defaultCIDRs | default (list) -}}
+{{- $workloads := omit .Values "_context" -}}
+{{- range $name, $workload := $workloads -}}
+  {{- if $workload.http -}}
+    {{- $cidrs := list -}}
+    {{- $render := true -}}
+    {{- if eq $instanceType "production" -}}
+      {{- $cidrs = $workload.http.allowCIDRs | default (list) -}}
+      {{- $render = gt (len $cidrs) 0 -}}
+    {{- else -}}
+      {{- $cidrs = $defaultCIDRs -}}
+    {{- end -}}
+    {{- if $render -}}
+      {{- $headerMatches := list -}}
+      {{- range $cidr := $cidrs -}}
+        {{- $parts := splitList "/" $cidr -}}
+        {{- $octets := splitList "." (index $parts 0) -}}
+        {{- $prefix := int (index $parts 1) -}}
+        {{- if or (ne (len $parts) 2) (ne (len $octets) 4) -}}
+          {{- fail (printf "allowCIDRs: %q is not a valid IPv4 CIDR" $cidr) -}}
+        {{- end -}}
+        {{- if eq $prefix 32 -}}
+          {{- $headerMatches = append $headerMatches (dict "name" "X-Envoy-External-Address" "match" "exact" "value" (index $parts 0)) -}}
+        {{- else if or (eq $prefix 8) (eq $prefix 16) (eq $prefix 24) -}}
+          {{- $value := printf "%s." (join "." (slice $octets 0 (div $prefix 8))) -}}
+          {{- $headerMatches = append $headerMatches (dict "name" "X-Envoy-External-Address" "match" "prefix" "value" $value) -}}
+        {{- else -}}
+          {{- fail (printf "allowCIDRs: %q must use an octet-aligned prefix (/8, /16, /24) or /32" $cidr) -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $port := $workload.http.port -}}
+      {{- $clusterRule := dict "fromEntities" (list "cluster") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP")))) -}}
+      {{- $ingressRules := list $clusterRule -}}
+      {{- if gt (len $headerMatches) 0 -}}
+        {{- $l7Rules := dict "http" (list (dict "hdrMatches" $headerMatches)) -}}
+        {{- $gatewayRule := dict "fromEntities" (list "ingress") "toPorts" (list (dict "ports" (list (dict "port" $port "protocol" "TCP" "rules" $l7Rules)))) -}}
+        {{- $ingressRules = append $ingressRules $gatewayRule -}}
+      {{- end -}}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "application.workloadName" (dict "root" $ "workload" $name) }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" $ "workload" $name) | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name | quote }}
+      app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+  ingress:
+    {{- toYaml $ingressRules | nindent 4 }}
+    {{ end }}
+{{ "\n" -}}
+  {{- end -}}
+{{- end -}}

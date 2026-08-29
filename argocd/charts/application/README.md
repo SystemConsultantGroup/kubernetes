@@ -21,6 +21,7 @@ ApplicationSet은 세 입력을 결합합니다.
 - [워크로드 필드](#%EC%9B%8C%ED%81%AC%EB%A1%9C%EB%93%9C-%ED%95%84%EB%93%9C)
 - [관리형 Vault 환경](#%EA%B4%80%EB%A6%AC%ED%98%95-vault-%ED%99%98%EA%B2%BD)
 - [HTTP Service 및 라우팅](#http)
+- [CIDR 접근 필터링](#cidr-%EC%A0%91%EA%B7%BC-%ED%95%84%ED%84%B0%EB%A7%81)
 - [변경 불가능한 잠금](#%EB%B3%80%EA%B2%BD-%EB%B6%88%EA%B0%80%EB%8A%A5%ED%95%9C-%EC%9E%A0%EA%B8%88)
 - [인스턴스 동작](#%EC%9D%B8%EC%8A%A4%ED%84%B4%EC%8A%A4-%EC%9C%A0%ED%98%95%EB%B3%84-%EB%A0%8C%EB%8D%94%EB%A7%81)
 - [로컬 렌더링](#%EB%A1%9C%EC%BB%AC-%EB%A0%8C%EB%8D%94%EB%A7%81)
@@ -624,6 +625,35 @@ timeouts:
 둘 다 제공할 때 request timeout이 0인 경우가 아니라면 `backendRequest`가 `request`를
 초과할 수 없습니다.
 
+## CIDR 접근 필터링
+
+`http.allowCIDRs`는 워크로드의 프로덕션 인스턴스로 들어오는 HTTP 요청을 나열된
+소스 CIDR로만 허용합니다 (화이트리스트).
+프로덕션에서 이 필드가 없으면 접근이 제한되지 않습니다.
+
+```yaml
+http:
+  port: 8080
+  domain: manage.shop.example.org
+  allowCIDRs:
+    - 115.145.150.0/24   # 사무실 대역
+    - 203.0.113.7/32     # 단일 IP
+```
+
+차트는 CiliumNetworkPolicy를 생성하고, 게이트웨이 Envoy는 요청을 워크로드에
+전달하기 전에 `X-Envoy-External-Address` 헤더의 클라이언트 IP를 평가합니다.
+허용 목록에 없는 요청은 워크로드에 도달하기 전에 403으로 거부됩니다.
+
+- CIDR은 옥텟 정렬(`/8`, `/16`, `/24`)이거나 단일 IP(`/32`)여야 합니다.
+  비정렬 대역(`/20` 등)은 지원하지 않습니다.
+- 클러스터 내부 트래픽은 항상 허용됩니다. fe, be 같은 다른 워크로드는
+  계속 제한된 워크로드를 호출할 수 있습니다.
+- 이 필터는 Gateway API 경로에만 적용됩니다.
+
+테스팅 및 프리뷰 인스턴스는 이 필드와 무관하게 항상 플랫폼이 정의한 CIDR
+목록으로만 접근할 수 있습니다. 이 목록은 ApplicationSet이 주입하며 애플리케이션
+담당자가 변경할 수 없습니다.
+
 ## 변경 불가능한 잠금
 
 ### `source`
@@ -690,6 +720,10 @@ instance:
 정수여야 합니다.
 프로덕션 및 테스팅 컨텍스트에는 `workload`나 `pullRequest`를 포함하면 안 됩니다.
 
+선택적 `access.defaultCIDRs`는 테스팅 및 프리뷰 인스턴스에 적용할 플랫폼 기준
+CIDR 목록입니다. ApplicationSet만 제공하며 애플리케이션 메타데이터에서 정의하면
+안 됩니다. 프로덕션에서는 무시됩니다.
+
 ## 인스턴스 유형별 렌더링
 
 ### 프로덕션
@@ -699,6 +733,7 @@ instance:
 - 구성된 복제본 수를 사용합니다.
 - 각 domain에 프로덕션 라우팅 리소스를 생성합니다.
 - external이 아닌 domain에는 HTTPS와 인증서를 제공합니다.
+- `allowCIDRs`를 선언한 워크로드에 CIDR 필터링 정책을 생성합니다.
 
 ### 테스팅
 
@@ -706,6 +741,7 @@ instance:
 - 모든 워크로드에 소스 및 이미지 잠금이 필요합니다.
 - 구성된 복제본 수를 사용합니다.
 - domain이 있는 워크로드는 `<application>.testing.scg.sh`를 통해 라우팅합니다.
+- 모든 HTTP 워크로드에 플랫폼 CIDR 필터링 정책을 생성합니다.
 
 ### 프리뷰
 
