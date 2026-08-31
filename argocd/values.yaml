@@ -44,7 +44,9 @@ applicationSet:
       external-dns.alpha.kubernetes.io/gateway-hostname-source: annotation-only
       external-dns.alpha.kubernetes.io/hostname: "*.platform.scg.sh"
     parentRefs:
-      - name: public
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: public
         namespace: gateway-system
         sectionName: platform-https
     hostnames:
