@@ -457,7 +457,9 @@ Preview DNS:   *.preview.scg.sh
 ```
 
 No per-instance Certificate is created. The `external` value does not change
-testing or preview listener behavior.
+testing or preview listener behavior. The Gateway ingress policy accepts
+internet traffic for these hostnames only from `115.145.150.0/24`; this is a
+platform boundary and is not configurable in application metadata.
 
 ## `http.rules`
 

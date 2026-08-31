@@ -1,0 +1,62 @@
+{{- $application := required "_context.application is required" .Values._context.application -}}
+{{- $httpsHosts := list -}}
+{{- $httpHosts := list -}}
+{{- range $workload := omit .Values "_context" -}}
+  {{- if and $workload.http $workload.http.domain -}}
+    {{- $domains := list $workload.http.domain -}}
+    {{- if kindIs "slice" $workload.http.domain -}}
+      {{- $domains = $workload.http.domain -}}
+    {{- end -}}
+    {{- range $domain := $domains -}}
+      {{- $hostname := $domain -}}
+      {{- $external := false -}}
+      {{- if kindIs "map" $domain -}}
+        {{- $hostname = $domain.name -}}
+        {{- $external = $domain.external -}}
+      {{- end -}}
+      {{- if or (hasSuffix ".testing.scg.sh" $hostname) (hasSuffix ".preview.scg.sh" $hostname) -}}
+        {{- fail (printf "production domain %q uses a restricted testing or preview suffix" $hostname) -}}
+      {{- else if $external -}}
+        {{- $httpHosts = append $httpHosts $hostname -}}
+      {{- else -}}
+        {{- $httpsHosts = append $httpsHosts $hostname -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if or (gt (len $httpsHosts) 0) (gt (len $httpHosts) 0) -}}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: {{ printf "ingress-%s" $application }}
+spec:
+  description: Allow public traffic to the managed production hosts for {{ $application }}
+  endpointSelector:
+    matchExpressions:
+      - key: reserved:ingress
+        operator: Exists
+  ingress:
+    - fromEntities:
+        - world
+      toPorts:
+        {{- if gt (len $httpsHosts) 0 }}
+        - ports:
+            - port: "443"
+              protocol: TCP
+          rules:
+            http:
+              {{- range $hostname := $httpsHosts }}
+              - host: {{ printf "^%s$" (replace "." "\\." $hostname) | quote }}
+              {{- end }}
+        {{- end }}
+        {{- if gt (len $httpHosts) 0 }}
+        - ports:
+            - port: "80"
+              protocol: TCP
+          rules:
+            http:
+              {{- range $hostname := $httpHosts }}
+              - host: {{ printf "^%s$" (replace "." "\\." $hostname) | quote }}
+              {{- end }}
+        {{- end }}
+{{- end -}}

@@ -451,7 +451,9 @@ Preview DNS:   *.preview.scg.sh
 ```
 
 인스턴스별 Certificate는 생성되지 않습니다. `external` 값은 테스팅 또는 프리뷰
-listener 동작을 변경하지 않습니다.
+listener 동작을 변경하지 않습니다. Gateway ingress 정책은 해당 호스트 이름에 대한
+인터넷 트래픽을 `115.145.150.0/24`에서만 허용합니다. 이는 플랫폼 경계이며
+애플리케이션 메타데이터에서 구성할 수 없습니다.
 
 ## `http.rules`
 

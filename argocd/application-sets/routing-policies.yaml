@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-routing-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+        revision: main
+        requeueAfterSeconds: 180
+        files:
+          - path: applications/*/meta.yaml
+  template:
+    metadata:
+      name: 'ingress-{{ index .path.segments 1 }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: platform
+      sources:
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          path: argocd/charts/application-ingress-policy
+          helm:
+            releaseName: 'ingress-{{ index .path.segments 1 }}'
+            valueFiles:
+              - '$values/applications/{{ index .path.segments 1 }}/meta.yaml'
+            values: |
+              _context:
+                application: '{{ index .path.segments 1 }}'
+        - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: gateway-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

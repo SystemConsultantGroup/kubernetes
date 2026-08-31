@@ -2,10 +2,10 @@
 
 # Public Gateway
 
-This directory defines the Cilium-backed `gateway-system/public` Gateway used by
-platform services and managed applications. Cilium and the pinned Gateway API
-CRDs are bootstrapped by `k install cilium`, then reconciled by their own Argo
-CD Applications.
+This directory defines the Cilium-backed `gateway-system/public` Gateway and
+its ingress policy for platform services and managed applications. Cilium and
+the pinned Gateway API CRDs are bootstrapped by `k install cilium`, then
+reconciled by their own Argo CD Applications.
 
 ## Listeners
 
@@ -18,6 +18,21 @@ CD Applications.
 cert-manager creates the referenced Secrets in `gateway-system`. Managed
 production domains attach through ListenerSets created by the application
 chart, with separate certificates where the platform owns TLS.
+
+## Client network boundary
+
+The `public-gateway-ingress` Cilium policy permits internet access to testing
+and preview hosts only from `115.145.150.0/24`. Traffic originating inside the
+cluster remains allowed. Platform hosts remain public, and the
+`application-routing-policies` ApplicationSet generates exact public-host rules
+for managed production domains. Requests from other internet source addresses
+to testing or preview hosts receive an Envoy `403 Forbidden` response.
+
+The policy selects Cilium's reserved ingress identity. Preserve both the CIDR
+rule and the absence of public testing or preview host rules when changing it.
+The explicit production hosts in the base policy are rollout safeguards for the
+applications that existed when enforcement was introduced; generated policies
+supply rules for new production hosts.
 
 ## Namespace boundary
 

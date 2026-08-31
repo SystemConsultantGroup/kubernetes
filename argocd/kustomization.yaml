@@ -4,6 +4,7 @@ resources:
   - projects/platform.yaml
   - projects/applications.yaml
   - application-sets/instances.yaml
+  - application-sets/routing-policies.yaml
   - application-sets/kustomize.yaml
   - platform/argocd/application.yaml
   - platform/gateway-api/application.yaml

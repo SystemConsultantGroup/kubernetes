@@ -122,6 +122,15 @@ for application_directory in applications/*; do
       exit 1
     fi
   done <<<"$metadata_workloads"
+  ingress_policy_identity="ingress-$application"
+  ((${#ingress_policy_identity} <= 63)) || {
+    echo "Generated ingress policy Application name exceeds 63 characters: $ingress_policy_identity" >&2
+    exit 1
+  }
+  helm template "$ingress_policy_identity" argocd/charts/application-ingress-policy \
+    --values "$metadata" \
+    --set "_context.application=$application" \
+    >"$TEMPORARY_DIRECTORY/$ingress_policy_identity.yaml"
   for instance in production testing; do
     lock="$application_directory/instances/$instance.yaml"
     [[ -f $lock ]] || continue

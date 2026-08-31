@@ -83,7 +83,8 @@ example-preview-fe-1
 Each instance creates a Deployment and Service named `example-fe`.
 The Service listens on port 80 and targets container port 8080.
 Production routing uses `example.scg.sh`; testing and preview use the
-platform-generated hostnames.
+platform-generated hostnames and accept internet clients only from
+`115.145.150.0/24`.
 See the chart README for the complete naming and routing rules.
 
 ### Full example

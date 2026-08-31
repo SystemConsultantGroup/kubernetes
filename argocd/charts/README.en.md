@@ -3,11 +3,14 @@
 # Helm charts
 
 This directory contains Helm charts used by Argo CD.
-The current chart, [`application/`](application/README.en.md), renders managed application
-instances from metadata, immutable locks, and an internal instance context.
+[`application/`](application/README.en.md) renders managed application instances
+from metadata, immutable locks, and an internal instance context.
+[`application-ingress-policy/`](application-ingress-policy/README.en.md) renders
+the corresponding public production-host policy.
 
 The application chart owns the managed application schema, resource naming,
-workload rendering, and Gateway routing behavior. Application owners should
+workload rendering, and Gateway routing behavior. The ingress-policy chart keeps
+production public while the Gateway policy restricts testing and preview. Application owners should
 start with the
 [`applications/` workflow](../../applications/README.en.md); the
 [chart README](application/README.en.md) is the exhaustive field and rendering
