@@ -14,7 +14,7 @@ spec:
     - https://argoproj.github.io/argo-helm
     - https://helm.cilium.io/
     - https://github.com/envoyproxy/gateway.git
-    - oci://docker.io/envoyproxy
+    - docker.io/envoyproxy
     - quay.io/jetstack/charts
     - https://charts.external-secrets.io
     - https://helm.releases.hashicorp.com

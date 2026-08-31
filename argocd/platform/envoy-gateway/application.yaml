@@ -10,7 +10,7 @@ metadata:
 spec:
   project: platform
   sources:
-    - repoURL: oci://docker.io/envoyproxy
+    - repoURL: docker.io/envoyproxy
       chart: gateway-helm
       targetRevision: v1.9.1
       helm:
