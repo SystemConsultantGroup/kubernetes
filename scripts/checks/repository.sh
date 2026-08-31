@@ -14,6 +14,10 @@ bash -n scripts/k scripts/k.completions "${shell_sources[@]}"
 shellcheck --shell=bash --exclude=SC1090,SC2016,SC2034,SC2148 scripts/k scripts/k.completions "${shell_sources[@]}"
 mapfile -t markdown_files < <(find . -name '*.md' -type f -not -path './workers/kms/node_modules/*' -print)
 lychee --offline --no-progress --exclude 'working/ignored/' "${markdown_files[@]}"
+(
+  cd argocd/charts/application/files
+  sha256sum --check envoy_html_injector.wasm.sha256
+)
 
 assert_value() {
   local state_expression="$1" manifest="$2" manifest_expression="$3" expected actual
@@ -27,6 +31,7 @@ assert_value() {
 
 assert_value '.argocd.version' argocd/platform/argocd/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cilium.version' argocd/platform/cilium/application.yaml '.spec.sources[0].targetRevision'
+assert_value '."envoy-gateway".version' argocd/platform/envoy-gateway/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '."gateway-api".version' argocd/platform/gateway-api/application.yaml '.spec.source.targetRevision | sub("^v"; "")'
 assert_value '.external-secrets.version' argocd/platform/external-secrets/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.revision' argocd/platform/local-path-provisioner/application.yaml '.spec.sources[0].targetRevision'
@@ -122,15 +127,6 @@ for application_directory in applications/*; do
       exit 1
     fi
   done <<<"$metadata_workloads"
-  ingress_policy_identity="ingress-$application"
-  ((${#ingress_policy_identity} <= 63)) || {
-    echo "Generated ingress policy Application name exceeds 63 characters: $ingress_policy_identity" >&2
-    exit 1
-  }
-  helm template "$ingress_policy_identity" argocd/charts/application-ingress-policy \
-    --values "$metadata" \
-    --set "_context.application=$application" \
-    >"$TEMPORARY_DIRECTORY/$ingress_policy_identity.yaml"
   for instance in production testing; do
     lock="$application_directory/instances/$instance.yaml"
     [[ -f $lock ]] || continue
@@ -198,3 +194,26 @@ sharedprefix-two:
   image: example.org/example/example@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 EOF
 validate_render "$TEMPORARY_DIRECTORY/long-names-rendered.yaml" long-names --values "$synthetic_values"
+
+injector_values="$TEMPORARY_DIRECTORY/html-injector.yaml"
+cat >"$injector_values" <<'EOF'
+_context:
+  application: injector-test
+  instance:
+    type: production
+web:
+  http:
+    port: 8080
+    domain: injector.example.org
+    inject: '<script src="/notice.js" defer></script>'
+  source:
+    repository: https://github.com/example/example.git
+    revision: 0123456789abcdef0123456789abcdef01234567
+  image: example.org/example/example@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+EOF
+injector_output="$TEMPORARY_DIRECTORY/html-injector-rendered.yaml"
+validate_render "$injector_output" injector-test --values "$injector_values"
+[[ $(yq eval-all -r 'select(.kind == "HTTPRoute") | .spec.rules[].backendRefs[].name' "$injector_output") == injector-test-web ]]
+[[ $(yq eval-all -r 'select(.kind == "Service" and .metadata.name == "injector-test-web") | .spec.ports[0].targetPort' "$injector_output") == http ]]
+[[ $(yq eval-all -r 'select(.kind == "EnvoyExtensionPolicy") | .spec.targetRefs[0].sectionName' "$injector_output") == injector-test-web-1 ]]
+[[ $(yq eval-all -r 'select(.kind == "EnvoyExtensionPolicy") | .spec.wasm[0].config' "$injector_output") == '<script src="/notice.js" defer></script>' ]]

@@ -87,6 +87,25 @@ platform-generated hostnames and accept internet clients only from
 `115.145.150.0/24`.
 See the chart README for the complete naming and routing rules.
 
+To inject an element into this workload's managed Gateway responses, add a
+non-empty `http.inject` string:
+
+```yaml
+fe:
+  http:
+    port: 8080
+    domain: example.scg.sh
+    inject: |
+      <script src="/notice.js" defer></script>
+```
+
+The platform attaches an Envoy Gateway Wasm response filter to the matching
+managed HTTPRoute rule when this field is present. Direct in-cluster calls to
+the workload Service remain unchanged. The value is public configuration and
+must not contain secrets. The application must listen on `127.0.0.1` or a
+wildcard address; see the chart README for the fixed response-selection and CSP
+behavior.
+
 ### Full example
 
 `meta.yaml` can configure multiple workloads and route between them:

@@ -1,5 +1,0 @@
-apiVersion: v2
-name: application-ingress-policy
-description: Allows public Gateway traffic to managed production application hosts
-type: application
-version: 0.1.0

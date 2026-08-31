@@ -1941,6 +1941,11 @@
         "domain": {
           "$ref": "#/$defs/domainOrDomains"
         },
+        "inject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
         "rules": {
           "type": "array",
           "minItems": 1,
@@ -1960,6 +1965,18 @@
             "required": [
               "domain"
             ]
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "inject"
+            ],
+            "properties": {
+              "port": {
+                "const": 15000
+              }
+            }
           }
         }
       ]
@@ -2014,11 +2031,39 @@
       "additionalProperties": false,
       "required": [
         "application",
-        "instance"
+        "instance",
+        "htmlInjector"
       ],
       "properties": {
         "application": {
           "$ref": "#/$defs/workloadName"
+        },
+        "htmlInjector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "wasm"
+          ],
+          "properties": {
+            "wasm": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "url",
+                "sha256"
+              ],
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
         },
         "instance": {
           "type": "object",

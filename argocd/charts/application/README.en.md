@@ -124,7 +124,7 @@ A workload may contain:
 | `env` | List of Kubernetes `EnvVar` | Passed to the container |
 | `envFrom` | List of Kubernetes `EnvFromSource` | Passed to the container |
 | `readinessProbe` | Kubernetes `Probe` | Rendered as the readiness probe |
-| `http` | SCG HTTP configuration | Adds a container port, Service, and optional routing |
+| `http` | SCG HTTP configuration | Adds a container port, Service, optional routing, and optional Gateway-response HTML injection |
 | `source` | Immutable source lock | Required for every rendered workload |
 | `image` | Immutable image lock | Required for every rendered workload |
 
@@ -371,6 +371,40 @@ Adding `http` creates:
 - `appProtocol: http`.
 
 A workload without `http` receives no Service and no container port.
+
+## `http.inject`
+
+`inject` is an optional HTML element to insert into managed Gateway responses:
+
+```yaml
+http:
+  port: 8080
+  domain: shop.example.org
+  inject: |
+    <script src="/notice.js" defer></script>
+```
+
+The value is a non-empty string of at most 65,536 characters. It is public runtime
+configuration, not a Secret. The application must listen on `127.0.0.1` or a
+wildcard address.
+
+When enabled, the chart emits an Envoy Gateway `EnvoyExtensionPolicy` for each
+managed HTTPRoute rule that targets this workload. The route continues to target
+the application Service directly; ordinary in-cluster calls remain unchanged.
+The policy loads the platform's SHA-256-verified Wasm module into the shared
+Gateway proxy and passes this value as its JSON string configuration.
+
+The Proxy-Wasm filter injects only into successful `text/html` responses. It
+inserts before a case-insensitive closing `body` tag, or appends when no closing
+tag exists. It skips `HEAD`, attachment, compressed, and trailer-declaring
+responses. Response length and validator headers invalidated by the transformation
+are removed. Content Security Policy is not modified, so the application must
+already permit any injected script or style.
+
+The Wasm module is vendored at `files/envoy_html_injector.wasm` and referenced by
+its verified HTTPS URL and SHA-256 digest in the chart's internal context. The
+module can later be changed to an OCI Wasm artifact without changing the
+application-facing `http.inject` field.
 
 ## `http.domain`
 

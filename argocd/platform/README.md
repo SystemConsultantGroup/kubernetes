@@ -12,11 +12,12 @@
 | --- | --- |
 | [`argocd/`](argocd/) | Argo CD 차트, 네임스페이스 리소스, 공개 라우트 |
 | [`gateway-api/`](gateway-api/) | upstream 표준 Gateway API 정의 |
-| [`cilium/`](cilium/) | CNI, kube-proxy replacement, Gateway controller |
+| [`cilium/`](cilium/) | CNI, kube-proxy replacement, eBPF 및 network policy |
+| [`envoy-gateway/`](envoy-gateway/) | Envoy Gateway controller 및 전용 CRD |
 | [`cert-manager/`](cert-manager/) | ZeroSSL Cloudflare issuer 및 플랫폼 인증서 |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/) | `scg.sh` Gateway HTTPRoute용 Cloudflare 레코드 |
 | [`external-secrets/`](external-secrets/) | 외부 값을 네임스페이스 범위 Kubernetes Secret으로 동기화 |
-| [`gateway/`](gateway/) | Cilium 공개 Gateway 및 `gateway-system` 네임스페이스 |
+| [`gateway/`](gateway/) | Envoy 공개 Gateway, listener policy 및 `gateway-system` 네임스페이스 |
 | [`local-path-provisioner/`](local-path-provisioner/) | Talos 사용자 저장소의 동적 노드 로컬 볼륨 |
 | [`mysql/`](mysql/) | PXC 클러스터 리소스 및 네임스페이스 범위 Vault 연동 |
 | [`percona-operator/`](percona-operator/) | `mysql`의 Percona XtraDB Cluster 리소스 조정 |
@@ -38,8 +39,8 @@
 
 | Wave | 구성 요소 | 의존성 의도 |
 | --- | --- | --- |
-| 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | API, 네트워크, ingress, 저장소 기반 |
-| 2 | cert-manager, Percona PXC Operator, Reloader | 인증서 및 애플리케이션 지원 controller |
+| 1 | Gateway API, Cilium, Envoy Gateway, External Secrets, local path provisioner | API, 네트워크, Gateway controller, 저장소 기반 |
+| 2 | Gateway, cert-manager, Percona PXC Operator, Reloader | 공개 Gateway, 인증서 및 애플리케이션 지원 controller |
 | 3 | Argo CD, ExternalDNS, MySQL 리소스, Vault | 외부 라우팅 및 상태 저장 서비스 |
 
 wave는 child Application 조정을 순서대로 시작하며 다음 wave를 시작하기 전에 한 구성

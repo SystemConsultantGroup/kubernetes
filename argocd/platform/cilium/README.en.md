@@ -2,9 +2,10 @@
 
 # Cilium
 
-Cilium provides cluster networking, kube-proxy replacement, and the Gateway API
-implementation. Its chart version is pinned in `state.yaml`; the Application
-revision must match that pin.
+Cilium provides cluster networking, kube-proxy replacement, and network-policy
+and eBPF enforcement. Envoy Gateway owns the Gateway API implementation; Cilium
+remains the CNI and network-policy engine. Its chart version is pinned in
+`state.yaml`; the Application revision must match that pin.
 
 ## Bootstrap and ownership
 
@@ -20,20 +21,9 @@ upgrades. Do not use the Cilium CLI to create a second source of desired state.
 
 The values preserve the Talos requirements established by
 [`../../../patches/cilium.yaml`](../../../patches/cilium.yaml): Kubernetes IPAM,
-kube-proxy replacement, host cgroups, KubePrism on `localhost:7445`, explicit
-capabilities, host-networked Gateway Envoy, ALPN, and appProtocol support.
-Review the Talos patch and these values together when changing networking.
+kube-proxy replacement, host cgroups, KubePrism on `localhost:7445`, and explicit
+capabilities. Cilium's Gateway API controller is disabled because the platform
+Gateway is managed by Envoy Gateway.
 
-## Public listener placement
-
-Host-networked Gateway listeners run only on nodes labeled:
-
-```text
-gateway.scg.sh/listener=true
-```
-
-Cilium publishes selected node addresses in Gateway status, and ExternalDNS can
-publish those addresses for public routes. Add this label to a node only after
-its external reachability, Cilium health, and Gateway traffic have been tested.
-The Cilium agent and Envoy DaemonSet still run on every eligible Kubernetes node
-regardless of this listener selector.
+Cilium Envoy remains enabled while Cilium L7 policies are audited and migrated.
+Do not remove it in the same change as the Gateway controller migration.

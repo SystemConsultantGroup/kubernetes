@@ -13,6 +13,8 @@ spec:
     - https://github.com/rancher/local-path-provisioner.git
     - https://argoproj.github.io/argo-helm
     - https://helm.cilium.io/
+    - https://github.com/envoyproxy/gateway.git
+    - oci://docker.io/envoyproxy
     - quay.io/jetstack/charts
     - https://charts.external-secrets.io
     - https://helm.releases.hashicorp.com

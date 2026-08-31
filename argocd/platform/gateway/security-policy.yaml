@@ -1,0 +1,41 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: testing-access
+  namespace: gateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      sectionName: testing-https
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 115.145.150.0/24
+            # Preserve in-cluster calls to the restricted listeners. Current
+            # Kubernetes node PodCIDRs aggregate to 10.244.0.0/23.
+            - 10.244.0.0/23
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: preview-access
+  namespace: gateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      sectionName: preview-https
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 115.145.150.0/24
+            - 10.244.0.0/23

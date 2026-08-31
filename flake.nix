@@ -35,7 +35,6 @@
           ];
           settings.formatter.yamlfmt.excludes = [
             "argocd/charts/application/templates/*.yaml"
-            "argocd/charts/application-ingress-policy/templates/*.yaml"
             "secrets/*.yaml"
           ];
           settings.formatter.yamlfmt.includes = [

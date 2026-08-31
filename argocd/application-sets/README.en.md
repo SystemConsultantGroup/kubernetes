@@ -4,9 +4,8 @@
 
 These ApplicationSets turn paths in `main` into Argo CD Applications.
 They are included by [`../kustomization.yaml`](../kustomization.yaml). Workload
-Applications use the `applications` AppProject; generated ingress-policy
-Applications use the `platform` AppProject so application layouts cannot create
-cluster-scoped policy resources directly.
+Applications use the `applications` AppProject. Envoy Gateway listener and
+security policies are platform-owned resources in the `gateway` component.
 
 ## Generators
 
@@ -14,7 +13,6 @@ cluster-scoped policy resources directly.
 | --- | --- | --- |
 | `application-instances-static` | `applications/*/instances/production.yaml` and `testing.yaml` | Shared application chart |
 | `application-instances-dynamic` | `applications/*/instances/preview/*/*.yaml` | Shared chart with one preview workload |
-| `application-routing-policies` | `applications/*/meta.yaml` | Exact public-host policy for managed production domains |
 | `application-kustomize` | `applications/*/kustomization.yaml` | Application directory rendered directly |
 
 Managed metadata and stable instance locks are passed to the shared chart as
@@ -44,7 +42,6 @@ The application name is the first component of every generated identity.
 | production | `<application>-production` | `<application>-production` | `<application>-production` |
 | testing | `<application>-testing` | `<application>-testing` | `<application>-testing` |
 | preview | `<application>-preview-<workload>-<pull-request>` | same | same |
-| production ingress policy | `ingress-<application>` | same | `gateway-system` |
 | custom Kustomize | `<application>` | none | `<application>` |
 
 The Argo CD Application objects themselves live in the `argocd` namespace.

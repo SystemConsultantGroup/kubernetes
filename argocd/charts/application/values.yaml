@@ -1,2 +1,6 @@
 # Supplied by the generated Argo CD Application.
-_context: {}
+_context:
+  htmlInjector:
+    wasm:
+      url: https://raw.githubusercontent.com/SystemConsultantGroup/kubernetes/main/argocd/charts/application/files/envoy_html_injector.wasm
+      sha256: 2ce2ec75fe2a431046093e33fd327273ebacd4a288109f76c0a30db4e0aed33d

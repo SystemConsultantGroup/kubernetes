@@ -8,7 +8,7 @@ metadata:
     # cross-node Cilium networking and Gateway exposure are validated.
     external-dns.alpha.kubernetes.io/target: "115.145.134.232"
 spec:
-  gatewayClassName: cilium
+  gatewayClassName: envoy-gateway
   allowedListeners:
     namespaces:
       from: Selector

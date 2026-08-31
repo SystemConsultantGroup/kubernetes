@@ -3,10 +3,9 @@
 # ApplicationSet
 
 이 ApplicationSet은 `main`의 경로를 Argo CD Application으로 변환합니다.
-[`../kustomization.yaml`](../kustomization.yaml)에 포함됩니다. 워크로드
-Application은 `applications` AppProject를 사용합니다. 생성된 ingress 정책
-Application은 애플리케이션 레이아웃에서 cluster scope 정책 리소스를 직접 생성할 수
-없도록 `platform` AppProject를 사용합니다.
+[`../kustomization.yaml`](../kustomization.yaml)에 포함됩니다. 워크로드 Application은
+`applications` AppProject를 사용합니다. Envoy Gateway listener 및 보안 정책은
+`gateway` 구성 요소의 플랫폼 소유 리소스입니다.
 
 ## Generator
 
@@ -14,7 +13,6 @@ Application은 애플리케이션 레이아웃에서 cluster scope 정책 리소
 | --- | --- | --- |
 | `application-instances-static` | `applications/*/instances/production.yaml` 및 `testing.yaml` | 공유 애플리케이션 차트 |
 | `application-instances-dynamic` | `applications/*/instances/preview/*/*.yaml` | 프리뷰 워크로드 하나를 사용하는 공유 차트 |
-| `application-routing-policies` | `applications/*/meta.yaml` | 관리형 프로덕션 도메인의 정확한 공개 호스트 정책 |
 | `application-kustomize` | `applications/*/kustomization.yaml` | 애플리케이션 디렉터리를 직접 렌더링 |
 
 관리형 메타데이터와 안정 인스턴스 잠금 파일은 별도 values 파일로 공유 차트에
@@ -44,7 +42,6 @@ Webhook이 지연되거나 사용할 수 없을 때를 대비해 Git polling은 
 | 프로덕션 | `<application>-production` | `<application>-production` | `<application>-production` |
 | 테스팅 | `<application>-testing` | `<application>-testing` | `<application>-testing` |
 | 프리뷰 | `<application>-preview-<workload>-<pull-request>` | 동일 | 동일 |
-| 프로덕션 ingress 정책 | `ingress-<application>` | 동일 | `gateway-system` |
 | 사용자 정의 Kustomize | `<application>` | 없음 | `<application>` |
 
 Argo CD Application 객체 자체는 `argocd` 네임스페이스에 있습니다.

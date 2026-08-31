@@ -13,11 +13,12 @@ AppProject.
 | --- | --- |
 | [`argocd/`](argocd/README.en.md) | Argo CD chart, namespace resources, and public route |
 | [`gateway-api/`](gateway-api/README.en.md) | Upstream standard Gateway API definitions |
-| [`cilium/`](cilium/README.en.md) | CNI, kube-proxy replacement, and Gateway controller |
+| [`cilium/`](cilium/README.en.md) | CNI, kube-proxy replacement, eBPF, and network policy |
+| [`envoy-gateway/`](envoy-gateway/README.en.md) | Envoy Gateway controller and Gateway-specific CRDs |
 | [`cert-manager/`](cert-manager/README.en.md) | ZeroSSL Cloudflare issuer and platform certificates |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/README.en.md) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
 | [`external-secrets/`](external-secrets/README.en.md) | Synchronizes external values into namespaced Kubernetes Secrets |
-| [`gateway/`](gateway/README.en.md) | Cilium public Gateway and `gateway-system` namespace |
+| [`gateway/`](gateway/README.en.md) | Envoy public Gateway, listener policies, and `gateway-system` namespace |
 | [`local-path-provisioner/`](local-path-provisioner/README.en.md) | Dynamic node-local volumes from Talos user storage |
 | [`mysql/`](mysql/README.en.md) | PXC cluster resources and namespaced Vault integration |
 | [`percona-operator/`](percona-operator/README.en.md) | Reconciles Percona XtraDB Cluster resources in `mysql` |
@@ -39,8 +40,8 @@ this reconciliation order:
 
 | Wave | Components | Dependency intent |
 | --- | --- | --- |
-| 1 | Gateway API, Cilium, External Secrets, Gateway, local path provisioner | APIs, networking, ingress, and storage foundations |
-| 2 | cert-manager, Percona PXC Operator, Reloader | certificates and application support controllers |
+| 1 | Gateway API, Cilium, Envoy Gateway, External Secrets, local path provisioner | APIs, networking, Gateway controller, and storage foundations |
+| 2 | Gateway, cert-manager, Percona PXC Operator, Reloader | public Gateway, certificates, and application support controllers |
 | 3 | Argo CD, ExternalDNS, MySQL resources, Vault | externally routed and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for

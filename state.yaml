@@ -16,6 +16,8 @@ gateway-api:
   version: "1.6.1"
 cilium:
   version: "1.20.0"
+envoy-gateway:
+  version: "1.9.1"
 argocd:
   version: "10.2.2" # chart version
 cert-manager:

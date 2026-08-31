@@ -3,8 +3,9 @@
 # Gateway API definitions
 
 This Application reconciles the upstream standard Gateway API CRDs at the
-version pinned in `state.yaml`. Cilium and the platform Gateway depend on these
-cluster-scoped definitions.
+version pinned in `state.yaml`. Envoy Gateway and the platform Gateway depend
+on these cluster-scoped definitions; Cilium no longer reconciles Gateway API
+resources.
 
 The initial CRDs are rendered from the official release artifact and applied by
 `k install cilium` because Argo CD cannot run before Cilium. After the root

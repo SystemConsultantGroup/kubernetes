@@ -92,3 +92,59 @@ platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{ end }}
 {{ end }}
 {{- end }}
+
+{{- define "application.injectionForRule" -}}
+{{- $root := .root -}}
+{{- $workloads := .workloads -}}
+{{- $owner := .owner -}}
+{{- $rule := .rule -}}
+{{- $inject := "" -}}
+{{- if hasKey $rule "backendRefs" -}}
+  {{- range $backend := $rule.backendRefs -}}
+    {{- $groupName := get $backend "group" | default "" -}}
+    {{- $kind := get $backend "kind" | default "Service" -}}
+    {{- $name := get $backend "name" | default "" -}}
+    {{- if and (eq $groupName "") (eq $kind "Service") (hasKey $workloads $name) (not (hasKey $backend "namespace")) -}}
+      {{- $target := get $workloads $name -}}
+      {{- if and $target.http (hasKey $target.http "inject") -}}
+        {{- $candidate := $target.http.inject | toString -}}
+        {{- if and (ne $inject "") (ne $inject $candidate) -}}
+          {{- fail (printf "HTTPRoute rule has multiple different injection configurations: %s" $owner) -}}
+        {{- end -}}
+        {{- $inject = $candidate -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if hasKey $workloads $owner -}}
+  {{- $target := get $workloads $owner -}}
+  {{- if and $target.http (hasKey $target.http "inject") -}}
+    {{- $inject = $target.http.inject | toString -}}
+  {{- end -}}
+{{- end -}}
+{{- $inject -}}
+{{- end }}
+
+{{- define "application.envoyExtensionPolicy" -}}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyExtensionPolicy
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "application.commonLabels" (dict "root" .root "workload" .owner) | nindent 4 }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ .routeName }}
+      sectionName: {{ .ruleName }}
+  wasm:
+    - name: envoy-html-injector
+      rootID: envoy-html-injector
+      failOpen: false
+      code:
+        type: HTTP
+        http:
+          url: {{ .root.Values._context.htmlInjector.wasm.url | quote }}
+          sha256: {{ .root.Values._context.htmlInjector.wasm.sha256 | quote }}
+      config: {{ .inject | toJson }}
+{{- end }}

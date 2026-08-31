@@ -4,13 +4,13 @@
 
 이 디렉터리에는 Argo CD에서 사용하는 Helm 차트가 있습니다.
 [`application/`](application/)은 메타데이터, 변경 불가능한 잠금 파일, 내부
-인스턴스 컨텍스트를 사용하여 관리형 애플리케이션 인스턴스를 렌더링합니다.
-[`application-ingress-policy/`](application-ingress-policy/)는 이에 대응하는 공개
-프로덕션 호스트 정책을 렌더링합니다.
+인스턴스 컨텍스트를 사용하여 관리형 애플리케이션 인스턴스와 선택적인 응답 삽입용
+Envoy Gateway route policy를 렌더링합니다.
 
 애플리케이션 차트는 관리형 애플리케이션 스키마, 리소스 이름, 워크로드 렌더링,
-Gateway 라우팅 동작을 소유합니다. ingress 정책 차트는 Gateway 정책이 테스팅과
-프리뷰를 제한하는 동안 프로덕션을 공개 상태로 유지합니다. 애플리케이션 담당자는
+Gateway 라우팅 및 선택적인 Envoy Gateway extension policy를 소유합니다. Gateway
+구성 요소는 프로덕션, 테스팅 및 프리뷰의 공유 listener 접근 정책을 소유합니다.
+애플리케이션 담당자는
 [`applications/` 워크플로](../../applications/)로 시작해야 합니다. 고급 구성과
 플랫폼 변경을 위한 전체 필드 및 렌더링 참조는
 [차트 README](application/README.md)에 있습니다.

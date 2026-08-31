@@ -27,15 +27,11 @@ cgroup:
   hostRoot: /sys/fs/cgroup
 k8sServiceHost: localhost
 k8sServicePort: 7445
+# Envoy Gateway owns the Gateway API data plane. Cilium remains the CNI,
+# kube-proxy replacement, network-policy engine, and (while any Cilium L7
+# policies remain) Envoy sidecar runtime.
 gatewayAPI:
-  enabled: true
-  enableAlpn: true
-  enableAppProtocol: true
-  hostNetwork:
-    enabled: true
-    nodes:
-      matchLabels:
-        gateway.scg.sh/listener: "true"
+  enabled: false
 envoy:
   enabled: true
   securityContext:

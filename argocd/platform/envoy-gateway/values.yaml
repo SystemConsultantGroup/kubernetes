@@ -1,0 +1,24 @@
+# Envoy Gateway control-plane configuration. The Gateway API CRDs remain owned
+# by the separate gateway-api Application; this chart installs only its own CRDs.
+crds:
+  enabled: false
+# Keep this component independently reproducible when the chart's default image
+# changes. The version is checked against state.yaml.
+global:
+  images:
+    envoyGateway:
+      image: docker.io/envoyproxy/gateway:v1.9.1
+      pullPolicy: IfNotPresent
+config:
+  envoyGateway:
+    gateway:
+      controllerName: gateway.envoyproxy.io/gatewayclass-controller
+    provider:
+      type: Kubernetes
+    logging:
+      level:
+        default: info
+# Envoy Gateway itself is a small control plane and does not need to share the
+# public listener nodes with the managed Envoy data plane.
+deployment:
+  replicas: 2

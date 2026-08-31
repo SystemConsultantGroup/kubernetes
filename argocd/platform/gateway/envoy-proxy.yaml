@@ -1,0 +1,25 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: public
+  namespace: gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDaemonSet:
+        pod:
+          nodeSelector:
+            gateway.scg.sh/listener: "true"
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              template:
+                spec:
+                  hostNetwork: true
+                  dnsPolicy: ClusterFirstWithHostNet
+      envoyService:
+        type: ClusterIP
+      useListenerPortAsContainerPort: true
+  mergeGateways: false

@@ -75,7 +75,16 @@ spec:
     - {{ $hostname | quote }}
   rules:
     {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" (list $group)) | nindent 4 }}
-      {{- if not $external }}
+  {{- $rules := $http.rules | default (list (dict)) -}}
+  {{- range $index, $rule := $rules -}}
+    {{- $ruleName := get $rule "name" | default (printf "%s-%s-%d" $application $owner (add1 $index)) -}}
+    {{- $inject := include "application.injectionForRule" (dict "root" $ "workloads" $workloads "owner" $owner "rule" $rule) -}}
+    {{- if ne $inject "" }}
+---
+{{ include "application.envoyExtensionPolicy" (dict "root" $ "name" (include "application.resourceName" (dict "name" (printf "%s-%s-injector" $resourceName $ruleName))) "owner" $owner "routeName" $resourceName "ruleName" $ruleName "inject" $inject) }}
+    {{- end }}
+  {{- end }}
+  {{- if not $external }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -90,9 +99,9 @@ spec:
     name: zerossl-cloudflare
   dnsNames:
     - {{ $hostname | quote }}
-{{ end }}
-{{ end }}
-{{ end }}
+  {{- end }}
+{{- end }}
+{{- end }}
 {{ else if eq $instanceType "testing" -}}
   {{- if gt (len $allGroups) 0 -}}
 ---
@@ -119,6 +128,18 @@ spec:
     - {{ include "application.testingHostname" $ | quote }}
   rules:
     {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" $allGroups) | nindent 4 }}
+  {{- range $group := $allGroups -}}
+    {{- $owner := $group.owner -}}
+    {{- $rules := $group.http.rules | default (list (dict)) -}}
+    {{- range $index, $rule := $rules -}}
+      {{- $ruleName := get $rule "name" | default (printf "%s-%s-%d" $application $owner (add1 $index)) -}}
+      {{- $inject := include "application.injectionForRule" (dict "root" $ "workloads" $workloads "owner" $owner "rule" $rule) -}}
+      {{- if ne $inject "" }}
+---
+{{ include "application.envoyExtensionPolicy" (dict "root" $ "name" (include "application.resourceName" (dict "name" (printf "%s-%s-%s-injector" $application $owner $ruleName))) "owner" $owner "routeName" $application "ruleName" $ruleName "inject" $inject) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   {{- end }}
 {{- else if eq $instanceType "preview" -}}
   {{- $previewGroups := list -}}
@@ -186,6 +207,18 @@ spec:
     - {{ include "application.previewHostname" $ | quote }}
   rules:
     {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" $previewGroups) | nindent 4 }}
+  {{- range $group := $previewGroups -}}
+    {{- $owner := $group.owner -}}
+    {{- $rules := $group.http.rules | default (list (dict)) -}}
+    {{- range $index, $rule := $rules -}}
+      {{- $ruleName := get $rule "name" | default (printf "%s-%s-%d" $application $owner (add1 $index)) -}}
+      {{- $inject := include "application.injectionForRule" (dict "root" $ "workloads" $workloads "owner" $owner "rule" $rule) -}}
+      {{- if ne $inject "" }}
+---
+{{ include "application.envoyExtensionPolicy" (dict "root" $ "name" (include "application.resourceName" (dict "name" (printf "%s-%s-%s-injector" $application $owner $ruleName))) "owner" $owner "routeName" $application "ruleName" $ruleName "inject" $inject) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   {{- if $needsTesting }}
 ---
 apiVersion: gateway.networking.k8s.io/v1

@@ -122,7 +122,7 @@ JSON 스키마는 [`values.schema.source.json`](values.schema.source.json), Kube
 | `env` | Kubernetes `EnvVar` 목록 | 컨테이너에 전달 |
 | `envFrom` | Kubernetes `EnvFromSource` 목록 | 컨테이너에 전달 |
 | `readinessProbe` | Kubernetes `Probe` | readiness probe로 렌더링 |
-| `http` | SCG HTTP 구성 | 컨테이너 포트, Service, 선택적 라우팅 추가 |
+| `http` | SCG HTTP 구성 | 컨테이너 포트, Service, 선택적 라우팅 및 선택적 Gateway 응답 HTML 삽입 추가 |
 | `source` | 변경 불가능한 소스 잠금 | 렌더링되는 모든 워크로드에 필수 |
 | `image` | 변경 불가능한 이미지 잠금 | 렌더링되는 모든 워크로드에 필수 |
 
@@ -366,6 +366,37 @@ http:
 - `appProtocol: http`
 
 `http`가 없는 워크로드에는 Service나 컨테이너 포트가 생기지 않습니다.
+
+## `http.inject`
+
+`inject`는 관리형 Gateway 응답에 삽입할 선택적 HTML 요소입니다.
+
+```yaml
+http:
+  port: 8080
+  domain: shop.example.org
+  inject: |
+    <script src="/notice.js" defer></script>
+```
+
+값은 비어 있지 않은 65,536자 이하의 문자열이어야 합니다. 이는 공개 런타임 구성이며
+Secret이 아닙니다. 애플리케이션은 `127.0.0.1` 또는 wildcard 주소에서 수신해야 합니다.
+
+활성화하면 차트가 이 워크로드를 대상으로 하는 각 관리형 HTTPRoute 규칙에 대해
+Envoy Gateway `EnvoyExtensionPolicy`를 생성합니다. Route는 애플리케이션 Service를
+직접 대상으로 하므로 일반적인 클러스터 내부 호출은 변경되지 않습니다. 정책은
+공유 Gateway proxy에 플랫폼의 SHA-256 검증 Wasm 모듈을 로드하고 이 값을 JSON
+문자열 구성으로 전달합니다.
+
+Proxy-Wasm 필터는 성공한 `text/html` 응답에만 삽입합니다. 대소문자를 구분하지 않고
+닫는 `body` 태그 앞에 삽입하며 닫는 태그가 없으면 끝에 덧붙입니다. `HEAD`, attachment,
+압축 및 trailer를 선언한 응답은 건너뜁니다. 변환으로 무효화되는 응답 길이와 validator
+헤더는 제거합니다. Content Security Policy는 변경하지 않으므로 애플리케이션이
+삽입하는 script나 style을 이미 허용해야 합니다.
+
+Wasm 모듈은 `files/envoy_html_injector.wasm`에 포함되어 있으며 차트 내부 context에서
+검증된 HTTPS URL과 SHA-256 digest로 참조합니다. 나중에 애플리케이션이 사용하는
+`http.inject` 필드를 변경하지 않고 OCI Wasm artifact로 바꿀 수 있습니다.
 
 ## `http.domain`
 
