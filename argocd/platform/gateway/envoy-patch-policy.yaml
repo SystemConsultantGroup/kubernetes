@@ -13,6 +13,17 @@ spec:
     - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
       name: wasm_cluster
       operation:
+        op: remove
+        path: /cluster_type
+    - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: wasm_cluster
+      operation:
+        op: add
+        path: /type
+        value: STRICT_DNS
+    - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: wasm_cluster
+      operation:
         op: replace
-        path: /cluster_type/typed_config/dns_lookup_family
+        path: /dns_lookup_family
         value: V4_ONLY
