@@ -146,5 +146,5 @@ spec:
         http:
           url: {{ .root.Values._context.htmlInjector.wasm.url | quote }}
           sha256: {{ .root.Values._context.htmlInjector.wasm.sha256 | quote }}
-      config: {{ .inject | toJson }}
+      config: {{ .inject | quote }}
 {{- end }}
