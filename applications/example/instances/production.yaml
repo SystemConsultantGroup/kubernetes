@@ -1,5 +1,5 @@
 fe:
   source:
     repository: https://github.com/SystemConsultantGroup/kubernetes-example.git
-    revision: "66402e5a485a67b40f0decc2d13cc19a21ba7f67"
-  image: ghcr.io/systemconsultantgroup/kubernetes-example@sha256:440426c4b26f954622f99df7da5567abd4ad9efb5ff6d1e96be36c7db0ccab8a
+    revision: "801d3632a68825b3f5cb3c835b144055b6f09170"
+  image: ghcr.io/systemconsultantgroup/kubernetes-example@sha256:139ca7d146a7e2570f4dede4d1e0997023ba751d6bfa54d60e32df4d346f7986
