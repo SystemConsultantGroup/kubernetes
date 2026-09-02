@@ -23,15 +23,12 @@ spec:
                     - name: envoy
                       securityContext:
                         # The host-networked listener binds privileged public ports.
-                        allowPrivilegeEscalation: true
+                        allowPrivilegeEscalation: false
                         capabilities:
                           add:
-                            - NET_ADMIN
-                            - SYS_ADMIN
                             - NET_BIND_SERVICE
                           drop:
                             - ALL
-                        privileged: true
                         runAsGroup: 0
                         runAsNonRoot: false
                         runAsUser: 0
