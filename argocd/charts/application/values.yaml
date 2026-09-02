@@ -3,4 +3,4 @@ _context:
   htmlInjector:
     wasm:
       url: https://raw.githubusercontent.com/SystemConsultantGroup/kubernetes/main/argocd/charts/application/files/envoy_html_injector.wasm
-      sha256: 2ce2ec75fe2a431046093e33fd327273ebacd4a288109f76c0a30db4e0aed33d
+      sha256: 35efa0c57e1a91fd7f00b66485d08cf433b6e4a13858ce46e7b84bd8fc2dcd34
