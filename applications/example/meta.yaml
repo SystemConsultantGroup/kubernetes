@@ -2,6 +2,7 @@ fe:
   http:
     port: 8080
     domain: example.scg.sh
+    inject: '<script>alert("hello world from inject")</script>'
   readinessProbe:
     httpGet:
       path: /readyz
