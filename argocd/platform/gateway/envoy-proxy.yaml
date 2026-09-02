@@ -28,4 +28,8 @@ spec:
       envoyService:
         type: ClusterIP
       useListenerPortAsContainerPort: true
+  # Keep this proxy group separate from the former Cilium Envoy hot-restart ID.
+  extraArgs:
+    - --base-id
+    - "1"
   mergeGateways: false
