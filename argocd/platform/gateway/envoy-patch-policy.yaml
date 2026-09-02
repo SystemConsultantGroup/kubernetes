@@ -1,0 +1,18 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: wasm-cluster-ipv4-dns
+  namespace: gateway-system
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: public
+  type: JSONPatch
+  jsonPatches:
+    - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: wasm_cluster
+      operation:
+        op: replace
+        path: /cluster_type/typed_config/dns_lookup_family
+        value: V4_ONLY

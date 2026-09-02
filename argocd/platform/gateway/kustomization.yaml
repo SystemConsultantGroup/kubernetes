@@ -6,3 +6,4 @@ resources:
   - gatewayclass.yaml
   - gateway.yaml
   - security-policy.yaml
+  - envoy-patch-policy.yaml

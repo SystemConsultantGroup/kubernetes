@@ -46,6 +46,14 @@ The selector is part of the public-exposure boundary; do not broaden it merely
 to make an unreviewed route attach. Envoy Gateway's `GatewayClass` and
 `EnvoyProxy` resources are platform-owned.
 
+## Wasm fetch compatibility
+
+Envoy Gateway serves HTTP Wasm modules through its internal `envoy-gateway`
+Service. The shared proxy is patched to use IPv4-only DNS for that internal
+cluster because this cluster is IPv4-only; without it, Envoy's dual-stack DNS
+resolver can leave `wasm_cluster` with no healthy hosts and return HTTP 503
+before the application route is reached.
+
 ## Changes and diagnosis
 
 A route must have an accepted parent, a matching listener hostname, and a valid

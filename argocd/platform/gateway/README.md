@@ -46,6 +46,14 @@ selector는 공개 노출 경계의 일부입니다. 검토되지 않은 라우�
 목적으로 범위를 넓히지 마세요. Envoy Gateway의 `GatewayClass`와 `EnvoyProxy`
 리소스는 플랫폼이 소유합니다.
 
+## Wasm 가져오기 호환성
+
+Envoy Gateway는 HTTP Wasm 모듈을 내부 `envoy-gateway` Service를 통해 제공합니다.
+이 클러스터는 IPv4 전용이므로 공유 proxy의 해당 내부 cluster에는 IPv4 전용 DNS를
+사용하도록 patch를 적용합니다. 그렇지 않으면 Envoy의 dual-stack DNS resolver가
+`wasm_cluster`에 healthy host를 남기지 않아 애플리케이션 route에 도달하기 전에 HTTP
+503을 반환할 수 있습니다.
+
 ## 변경 및 진단
 
 라우트가 트래픽을 제공하려면 승인된 parent, 일치하는 listener 호스트 이름, 유효한
