@@ -49,10 +49,11 @@ selector는 공개 노출 경계의 일부입니다. 검토되지 않은 라우�
 ## Wasm 가져오기 호환성
 
 Envoy Gateway는 HTTP Wasm 모듈을 내부 `envoy-gateway` Service를 통해 제공합니다.
-이 클러스터는 IPv4 전용이므로 공유 proxy의 해당 내부 cluster에는 IPv4 전용 DNS를
-사용하도록 patch를 적용합니다. 그렇지 않으면 Envoy의 dual-stack DNS resolver가
-`wasm_cluster`에 healthy host를 남기지 않아 애플리케이션 route에 도달하기 전에 HTTP
-503을 반환할 수 있습니다.
+Envoy Gateway v1.9.1은 이를 `envoy.cluster.dns` custom cluster로 생성하지만, 이 IPv4
+전용 클러스터의 v1.39.1 proxy에서는 host가 생성되지 않았습니다. 따라서 공유 proxy의
+`wasm_cluster`를 `V4_ONLY`를 사용하는 기존 `STRICT_DNS` type으로 변환하는 호환성
+patch를 적용합니다. 이 patch가 없으면 fail-closed Wasm filter가 애플리케이션
+route에 도달하기 전에 HTTP 503을 반환합니다.
 
 ## 변경 및 진단
 

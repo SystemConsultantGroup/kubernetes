@@ -49,10 +49,11 @@ to make an unreviewed route attach. Envoy Gateway's `GatewayClass` and
 ## Wasm fetch compatibility
 
 Envoy Gateway serves HTTP Wasm modules through its internal `envoy-gateway`
-Service. The shared proxy is patched to use IPv4-only DNS for that internal
-cluster because this cluster is IPv4-only; without it, Envoy's dual-stack DNS
-resolver can leave `wasm_cluster` with no healthy hosts and return HTTP 503
-before the application route is reached.
+Service. Envoy Gateway v1.9.1 generates this as an `envoy.cluster.dns` custom
+cluster, but the v1.39.1 proxy in this IPv4-only cluster did not populate its
+host. The shared proxy therefore patches `wasm_cluster` to the legacy
+`STRICT_DNS` type with `V4_ONLY`; without this compatibility patch, fail-closed
+Wasm filters return HTTP 503 before the application route is reached.
 
 ## Changes and diagnosis
 
