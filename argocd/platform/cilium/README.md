@@ -25,5 +25,6 @@ cgroup, `localhost:7445`의 KubePrism 및 명시적 capability가 포함됩니�
 Gateway API controller는 플랫폼 Gateway를 Envoy Gateway가 관리하므로 비활성화되어
 있습니다.
 
-Cilium Envoy는 Cilium L7 정책을 감사하고 마이그레이션하는 동안 계속 활성화합니다.
-Gateway controller 마이그레이션과 같은 변경에서 이를 제거하지 마세요.
+Cilium Envoy는 Envoy Gateway가 host-network public proxy를 소유하므로 비활성화되어
+있습니다. 클러스터에는 남아 있는 Cilium L7 정책이 없으며, 같은 listener node에서
+host-network Envoy 구현을 동시에 활성화하지 마세요.

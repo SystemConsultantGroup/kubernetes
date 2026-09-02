@@ -25,5 +25,6 @@ kube-proxy replacement, host cgroups, KubePrism on `localhost:7445`, and explici
 capabilities. Cilium's Gateway API controller is disabled because the platform
 Gateway is managed by Envoy Gateway.
 
-Cilium Envoy remains enabled while Cilium L7 policies are audited and migrated.
-Do not remove it in the same change as the Gateway controller migration.
+Cilium Envoy is disabled because Envoy Gateway owns the host-networked public
+proxy. The cluster has no remaining Cilium L7 policies; do not enable both
+host-networked Envoy implementations on the same listener node.
