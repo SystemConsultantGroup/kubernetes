@@ -1,89 +1,96 @@
-한국어 | [English](README.en.md)
+# MySQL platform
 
-# MySQL 플랫폼
+This Argo CD Application owns the PXC database clusters in the `mysql`
+namespace separately from the namespaced Percona operator. The operator watches
+only this namespace. Add each cluster as a named manifest under
+`manifests/clusters/` and include it from `manifests/kustomization.yaml`.
 
-이 Argo CD Application은 네임스페이스 범위 Percona operator와 별도로 `mysql`
-namespace의 PXC 데이터베이스 클러스터를 소유합니다. operator는 이 namespace만
-감시합니다. 각 클러스터는 `manifests/clusters/` 아래에 이름이 있는 manifest로
-추가하고 `manifests/kustomization.yaml`에서 포함하세요.
+## Clusters
 
-## 클러스터
-
-| 클러스터 | 용도 | PXC | XtraBackup | Service |
+| Cluster | Purpose | PXC | XtraBackup | Service |
 | --- | --- | --- | --- | --- |
-| `central` | 과거에 신 통합DB라고 불린 데이터베이스의 migration target | `8.0.45-36.1` | `8.0.35-35.1` | `central-haproxy.mysql` |
-| `alumni` | 동문 프로젝트용 새 데이터베이스 | `8.4.8-8.1` | `8.4.0-5.1` | `alumni-haproxy.mysql` |
+| `central` | Migration target for the database historically called 신 통합DB | `8.0.45-36.1` | `8.0.35-35.1` | `central-haproxy.mysql` |
+| `alumni` | New database for the alumni project | `8.4.8-8.1` | `8.4.0-5.1` | `alumni-haproxy.mysql` |
 
-`central`은 과거에 신 통합DB라고 불린 source의 target입니다. 별도의 구 통합 DB도
-migration할지는 아직 결정되지 않았습니다. migration한다면 `central`에 함께 넣지
-말고 별도로 검토된 identity를 부여하세요.
+`central` is the target for the source historically called 신 통합DB. Whether
+the separate 구 통합 DB will also be migrated remains undecided; if it is, give
+that migration its own reviewed identity rather than overloading `central`.
 
-image version과 digest는 고정되어 있습니다. Alumni는 Percona Operator 1.20.0에서
-인증된 PXC 8.4 및 XtraBackup version을 사용합니다. 자동 version 적용은 비활성화되어
-upgrade가 별도로 검토되는 GitOps 변경으로 유지됩니다.
+The image versions and digests are pinned. Alumni uses the PXC 8.4 and
+XtraBackup versions certified with Percona Operator 1.20.0. Automatic version
+application is disabled so upgrades remain separate reviewed GitOps changes.
 
-## 자격 증명 및 lifecycle 안전성
+## Credentials and lifecycle safety
 
-각 클러스터에는 고유한 `spec.secretsName`이 있습니다. Secret이 없으면 operator가
-생성된 자격 증명으로 Secret을 만들고 PXC 시스템 사용자를 관리합니다. 같은 Secret을
-선언적으로 만들거나 다른 controller가 소유권을 두고 경쟁하게 하지 마세요. 자격 증명
-값을 커밋하거나 출력하지 말고 전체 Secret을 교체하는 대신 Percona가 지원하는 암호
-교체 절차를 사용하세요.
+Each cluster has a unique `spec.secretsName`. When its Secret is absent, the
+operator creates it with generated credentials and manages the PXC system users.
+Do not declaratively create the same Secret or let another controller compete
+for its ownership. Never commit or print credential values, and use Percona's
+supported password-rotation procedure rather than replacing the complete
+Secret.
 
-모든 cluster CR에는 다음 두 보호 설정이 있습니다.
+Every cluster CR carries both protections:
 
 ```yaml
 argocd.argoproj.io/sync-options: Prune=false,Delete=false
 ```
 
-manifest를 제거하거나 Argo CD Application을 삭제해도 데이터베이스 클러스터가 자동으로
-삭제되면 안 됩니다. Decommission에는 client를 중지하고 recovery material을 확인하며
-이 보호 설정을 의도적으로 제거하고 retained volume을 명시적으로 처리하는 별도의 검토
-절차가 필요합니다.
+Removing a manifest or deleting the Argo CD Application must not automatically
+delete a database cluster. Decommissioning requires a separate reviewed
+procedure that freezes clients, verifies recovery material, removes these
+protections deliberately, and handles retained volumes explicitly.
 
-## Topology 및 resource
+## Topology and resources
 
-두 클러스터는 현재 PXC 구성원 2개와 HAProxy instance 2개를 실행하며 필수 hostname
-anti-affinity로 각각 하나씩 `k8s`와 `e2s`에 배치합니다. 두 size 관련 unsafe flag는
-계속 필요합니다. 이는 과도기 topology이며 고가용성이 아닙니다. Galera quorum에는 두
-PXC 구성원이 모두 필요하므로 어느 하나라도 손실되면 해당 클러스터를 사용할 수
-없습니다. 구성원 장애 또는 무감독 rollout을 시험하지 마세요.
+Both clusters currently run two PXC members and two HAProxy instances, with
+required hostname anti-affinity placing one of each on `k8s` and `e2s`. Both
+size-related unsafe flags remain required. This is a transitional topology, not
+high availability: both PXC members are required for Galera quorum, so losing
+either member makes that cluster unavailable. Do not perform member-failure or
+unsupervised rollout tests.
 
-manifest는 CPU 및 memory request를 유지하지만 현재 의도적으로 resource limit을
-설정하지 않습니다. 실제 workload를 측정한 뒤 검토된 limit을 추가하세요. 각 PXC
-구성원은 retained 200 GiB `local-data` claim, 16 GiB memory, 12 GiB InnoDB buffer
-pool을 요청합니다. hostPath provisioner는 PVC request를 filesystem quota로 강제하지
-않으므로 각 data volume의 실제 사용량과 여유 공간을 모니터링하세요.
+The manifests retain CPU and memory requests but intentionally set no resource
+limits for now. Add reviewed limits after measuring the real workloads. Each PXC
+member requests a retained 200 GiB `local-data` claim and 16 GiB of memory with
+a 12 GiB InnoDB buffer pool. The hostPath provisioner does not enforce the PVC
+request as a filesystem quota, so monitor each data volume's actual use and
+headroom.
 
-감독되는 2개 구성원 단계에서는 `RollingUpdate`를 유지합니다. 물리 노드 3대와 각
-storage를 입증한 뒤 각 클러스터를 3개로 scale하고 `SmartUpdate`를 복원하세요. 엄격한
-배치, SST, quorum, readiness 검사를 통과한 뒤에만 unsafe flag를 제거하세요.
+`RollingUpdate` remains configured for this supervised two-member stage. After
+three physical nodes and their storage are proven, scale each cluster to three,
+restore `SmartUpdate`, and remove the unsafe flags only after strict placement,
+SST, quorum, and readiness checks pass.
 
-## 데이터베이스 및 recovery 설정
+## Database and recovery settings
 
-PXC strict mode, 내구성 있는 transaction log 설정, UTF-8 기본값, source 호환 설정,
-`+09:00` timezone이 명시되어 있습니다. Kubernetes reverse lookup 지연을 피하기 위해
-DNS hostname resolution은 비활성화되어 있으므로 grant에는 DNS hostname 대신 `%`
-또는 address pattern을 사용해야 합니다.
+PXC strict mode, durable transaction-log settings, UTF-8 defaults, source
+compatibility settings, and the `+09:00` timezone are explicit. DNS hostname
+resolution is disabled to avoid Kubernetes reverse-lookup delays, so grants must
+use `%` or address patterns instead of DNS hostnames.
 
-두 클러스터는 독립 MinIO S3 API인 `https://api.minio.scg.skku.ac.kr`을 사용하며
-`pxc-central`과 `pxc-alumni` bucket을 분리합니다. 전용 Vault Kubernetes auth role은
-`kv/platform/mysql/s3`만 읽을 수 있고 External Secrets는 해당 경로의 access key 속성
-2개를 공유 `mysql-backup-s3` Secret으로 매핑합니다. MinIO policy는 이 두 bucket으로
-제한하며 object 삭제, Governance 우회, KMS 및 관리 권한을 제외합니다.
+Both clusters use the independent MinIO S3 API at
+`https://api.minio.scg.skku.ac.kr`, with separate `pxc-central` and `pxc-alumni`
+buckets. A dedicated Vault Kubernetes-auth role can read only
+`kv/platform/mysql/s3`; External Secrets maps its two access-key properties into
+the shared `mysql-backup-s3` Secret. The MinIO policy is limited to those two
+buckets and excludes object deletion, Governance bypass, KMS, and administrative
+access.
 
-Bucket은 versioning, 14일 Governance retention 및 lifecycle expiry를 사용합니다.
-필수 full backup이나 binlog를 삭제하면 PITR chain이 끊길 수 있으므로 Operator의 remote
-삭제 retention은 비활성화 상태로 유지합니다. on-demand full backup은 disposable PXC 8.0 및 8.4 cluster에 성공적으로 restore되었습니다. PITR이
-활성화된 fresh full backup으로 두 cluster의 timestamp-restore proof도 완료했습니다. 각
-restore에서 post-backup marker는 복원되고 이후 marker는 제외되었습니다. live cluster는
-이제 staggered daily full backup(central 02:00, alumni 03:00)과 60초 간격 PITR binlog
-upload를 실행합니다. cron schedule은 Operator 설정 timezone을 사용하며 첫 scheduled
-실행은 아직 대기 중입니다. MinIO가 유일한 backup tier이므로 MinIO system 손실은 수용된
-residual risk로 남습니다.
+The buckets use versioning, 14-day Governance retention, and lifecycle expiry.
+Operator-side remote deletion retention remains disabled because deleting a
+required full backup or binlog can break PITR. The on-demand full backups have
+been restored successfully into disposable PXC 8.0 and 8.4 clusters. A fresh
+full backup with PITR enabled was then used for timestamp-restore proofs on both
+clusters; each restored the post-backup marker and excluded a later marker. The
+live clusters now run staggered daily full backups (central at 02:00 and alumni
+at 03:00) and upload PITR binlogs every 60 seconds. The cron schedules use the
+Operator's configured timezone; the first scheduled executions remain pending.
+MinIO is the only backup tier, so loss of the MinIO system remains an accepted
+residual risk.
 
-첫 scheduled backup과 PITR upload health는 여전히 운영 gate입니다. 각 scheduled
-backup이 `Succeeded`인지 확인하고 PITR uploader error와 binlog gap을 검사하며, MinIO
-lifecycle rule이 non-current version과 delete marker를 의도대로 만료하는지 확인하세요.
-기능적 backup 및 PITR restore proof는 통과했지만 scheduled 실행과 lifecycle 검증을
-기록하기 전에는 production recovery readiness를 최종 완료로 간주하지 않습니다.
+The first scheduled backups and PITR upload health remain operational gates.
+Confirm each scheduled backup reaches `Succeeded`, inspect PITR uploader errors
+and binlog gaps, and verify that MinIO lifecycle rules expire non-current
+versions and delete markers as intended. The functional backup and PITR restore
+proof has passed, but production recovery readiness is not final until those
+scheduled-run and lifecycle checks are recorded.

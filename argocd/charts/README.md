@@ -1,22 +1,20 @@
-한국어 | [English](README.en.md)
+# Helm charts
 
-# Helm 차트
+This directory contains Helm charts used by Argo CD.
+[`application/`](application/README.md) renders managed application instances
+from metadata, immutable locks, and an internal instance context, including
+Envoy Gateway route policies for optional response injection.
 
-이 디렉터리에는 Argo CD에서 사용하는 Helm 차트가 있습니다.
-[`application/`](application/)은 메타데이터, 변경 불가능한 잠금 파일, 내부
-인스턴스 컨텍스트를 사용하여 관리형 애플리케이션 인스턴스와 선택적인 응답 삽입용
-Envoy Gateway route policy를 렌더링합니다.
+The application chart owns the managed application schema, resource naming,
+workload rendering, Gateway routing, and optional Envoy Gateway extension policy.
+The Gateway component owns shared listener access policies for production,
+testing, and preview. Application owners should start with the
+[`applications/` workflow](../../applications/README.md); the
+[chart README](application/README.md) is the exhaustive field and rendering
+reference for advanced configuration and platform changes.
 
-애플리케이션 차트는 관리형 애플리케이션 스키마, 리소스 이름, 워크로드 렌더링,
-Gateway 라우팅 및 선택적인 Envoy Gateway extension policy를 소유합니다. Gateway
-구성 요소는 프로덕션, 테스팅 및 프리뷰의 공유 listener 접근 정책을 소유합니다.
-애플리케이션 담당자는
-[`applications/` 워크플로](../../applications/)로 시작해야 합니다. 고급 구성과
-플랫폼 변경을 위한 전체 필드 및 렌더링 참조는
-[차트 README](application/README.md)에 있습니다.
-
-이 차트는 범용 애플리케이션 차트가 아니라 플랫폼 코드입니다.
-변경 하나가 모든 관리형 애플리케이션에 영향을 줄 수 있습니다.
-풀 리퀘스트를 열기 전에 영향을 받는 values를 로컬에서 렌더링하고 Deployment,
-Service, 라우트, 인증서, 네임스페이스, 이미지 잠금을 검사하세요.
-일반 차트 검증을 위해 렌더링한 출력을 실제 클러스터에 적용하지 마세요.
+The chart is platform code rather than a general-purpose application chart.
+A change can affect every managed application.
+Render affected values locally and inspect Deployments, Services, routes,
+certificates, namespaces, and image locks before opening a pull request.
+Do not apply rendered output to a live cluster for ordinary chart validation.

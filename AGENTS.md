@@ -37,25 +37,14 @@ other need platform-only access or unnecessary implementation knowledge.
   README files.
 - Unsuffixed Markdown files corresponding to commands under
   `scripts/k.commands/` are the user-facing help displayed by `k`.
-  Update both language versions whenever command behavior, usage,
-  prerequisites, or safety properties change.
+  Update them whenever command behavior, usage, prerequisites, or safety
+  properties change.
+- Write human-facing documentation in English at unsuffixed paths such as
+  `README.md` and `scripts/k.commands/apply.md`.
+- Do not add language-suffixed or translated documentation unless repository
+  policy explicitly changes.
 - Use `AGENTS.md` for contributor instructions and README files for user
   documentation.
-
-### Translations
-
-- Publish human-facing Markdown in Korean at its unsuffixed path, such as
-  `README.md` or `scripts/k.commands/apply.md`.
-- Keep the canonical English source beside it with an `.en.md` suffix, such as
-  `README.en.md` or `scripts/k.commands/apply.en.md`.
-- Put reciprocal `한국어` and `English` links at the top of each translated pair
-  and keep the pair structurally equivalent.
-- Edit the English source first and update the Korean publication in the same
-  change. Have a Korean speaker review safety-sensitive documentation.
-- Keep commands, paths, identifiers, manifest fields, code blocks, URLs, and
-  product names unchanged unless a localized value is part of the interface.
-- Keep `AGENTS.md`, temporary notes under `working/`, and vendored documentation
-  in English without translated copies.
 
 ## Repository contracts
 
