@@ -1,0 +1,9 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: alumni-origin
+spec:
+  endpoints:
+    - ip:
+        address: "115.145.150.214"
+        port: 443
