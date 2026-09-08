@@ -8,22 +8,9 @@ spec:
       kind: Gateway
       name: public
       namespace: gateway-system
-      sectionName: alumni-passthrough
-
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: public
-      namespace: gateway-system
-      sectionName: alumni-subdomains-passthrough
-
+      sectionName: scg-skku-passthrough
   hostnames:
-    - "alumni.scg.skku.ac.kr"
-    - "admin.alumni.scg.skku.ac.kr"
-    - "api.alumni.scg.skku.ac.kr"
-    - "test.alumni.scg.skku.ac.kr"
-    - "api.test.alumni.scg.skku.ac.kr"
-    - "test.admin.alumi.scg.skku.ac.kr"
-
+    - "*.scg.skku.ac.kr"
   rules:
     - backendRefs:
         - group: gateway.envoyproxy.io

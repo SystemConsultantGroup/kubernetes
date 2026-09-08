@@ -12,10 +12,16 @@ Gateway owns the Gateway API controller and Envoy data plane.
 | `platform-https` | `*.platform.scg.sh` | `platform-wildcard-tls` |
 | `testing-https` | `*.testing.scg.sh` | `application-wildcards-tls` |
 | `preview-https` | `*.preview.scg.sh` | `application-wildcards-tls` |
+| `scg-skku-passthrough` | `*.scg.skku.ac.kr` | TLS passthrough; the legacy origin terminates TLS |
 
 cert-manager creates the referenced Secrets in `gateway-system`. Managed
 production domains attach through ListenerSets created by the application
 chart, with separate certificates where the platform owns TLS.
+
+The `scg-skku-passthrough` listener accepts HTTPS traffic only for hostnames
+whose DNS records are explicitly moved to the public Gateway. Its TLSRoute
+forwards the original TLS connection and SNI to the legacy cluster at
+`115.145.150.214:443`; it does not publish wildcard DNS or cover the zone apex.
 
 ## Client network boundary
 
