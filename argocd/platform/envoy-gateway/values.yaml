@@ -17,6 +17,7 @@ config:
       type: Kubernetes
     extensionApis:
       enableEnvoyPatchPolicy: true
+      enableBackend: true # 슈컴센 -> 구 k8s 클러스터 임시
     logging:
       level:
         default: info
