@@ -9,9 +9,12 @@ spec:
       name: public
       namespace: gateway-system
       sectionName: alumni-passthrough
+
   hostnames:
     - "alumni.scg.skku.ac.kr"
+
   rules:
     - backendRefs:
-        - name: alumni-origin
-          port: 443
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: alumni-origin
