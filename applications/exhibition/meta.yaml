@@ -2,3 +2,5 @@ manager:
   http:
     port: 3000
     domain: manage.exhibition.scg.sh
+    allowCIDRs:
+      - 115.145.150.0/24
