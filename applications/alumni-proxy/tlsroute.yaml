@@ -21,6 +21,8 @@ spec:
     - "admin.alumni.scg.skku.ac.kr"
     - "api.alumni.scg.skku.ac.kr"
     - "test.alumni.scg.skku.ac.kr"
+    - "api.test.alumni.scg.skku.ac.kr"
+    - "test.admin.alumi.scg.skku.ac.kr"
 
   rules:
     - backendRefs:
