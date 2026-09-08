@@ -19,6 +19,7 @@ field and rendering reference.
 - [Workload fields](#workload-fields)
 - [Managed Vault environment](#managed-vault-environment)
 - [HTTP services and routing](#http)
+- [Production client CIDRs](#httpallowcidrs)
 - [Immutable locks](#immutable-locks)
 - [Instance behavior](#rendering-by-instance-type)
 - [Local rendering](#local-rendering)
@@ -122,7 +123,7 @@ A workload may contain:
 | `env` | List of Kubernetes `EnvVar` | Passed to the container |
 | `envFrom` | List of Kubernetes `EnvFromSource` | Passed to the container |
 | `readinessProbe` | Kubernetes `Probe` | Rendered as the readiness probe |
-| `http` | SCG HTTP configuration | Adds a container port, Service, optional routing, and optional Gateway-response HTML injection |
+| `http` | SCG HTTP configuration | Adds a container port, Service, optional routing, production client CIDRs, and Gateway-response HTML injection |
 | `source` | Immutable source lock | Required for every rendered workload |
 | `image` | Immutable image lock | Required for every rendered workload |
 
@@ -369,6 +370,73 @@ Adding `http` creates:
 - `appProtocol: http`.
 
 A workload without `http` receives no Service and no container port.
+
+## `http.allowCIDRs`
+
+`allowCIDRs` optionally restricts this workload's managed production HTTP ingress:
+
+```yaml
+http:
+  port: 8080
+  domain: admin.example.org
+  allowCIDRs:
+    - 115.145.150.0/24
+    - 203.0.113.10/32
+```
+
+The value is a non-empty list of unique IPv4 CIDR strings with an explicit prefix
+length from `0` through `32`. Bare addresses, IPv6, leading-zero octets or
+prefixes, invalid addresses, `null`, and empty lists are rejected. Host bits are
+allowed and interpreted as the containing network.
+
+Omission means unrestricted access: the chart generates no CIDR policy for that
+workload. Removing the field prunes its policies and reopens access. Explicit
+`0.0.0.0/0` permits every IPv4 client. Testing and preview validate the field's
+syntax but never generate these policies; their platform listener restrictions
+remain unchanged.
+
+### Routing semantics
+
+The chart generates an Envoy Gateway `SecurityPolicy` for each restricted
+production HTTPRoute rule, on every applicable domain, including `external: true`
+domains. Policies target the route's rule name in the same namespace and use
+`defaultAction: Deny` with an `Allow` rule containing the configured CIDRs. Rule
+names targeted by policies must be unique within the route. No PodCIDR exception
+is added. The chart retains direct Service backends and can attach both CIDR and
+HTML-injection policies to the same rule.
+
+Access follows the **destination workload**, not the workload declaring a domain:
+
+- default backend rules use their owning workload;
+- explicit local `backendRefs` use the referenced workload's list, so a workload
+  without a domain can still be restricted;
+- generated Service names, including explicit references to the release namespace,
+  also resolve to the destination workload;
+- backend-free rules, such as redirects, use the owning workload; and
+- request mirrors in rule or backend filters also participate. Mirrors retain
+  native Gateway API Service names; workload-key alias expansion applies only to
+  ordinary rule `backendRefs`, as before.
+
+Authorization runs before backend selection. Every declared backend and mirror
+in a rule must therefore have the same CIDR strings, ignoring list order. This
+includes zero-weight backends and disabled mirrors. Textually different but
+equivalent networks are not normalized; use the same entries. A mixture of open
+and restricted destinations, or differing lists, fails rendering rather than
+broadening access. Split such routes into separate rules. References outside this
+instance, to non-Service backends, or to unknown Services have no managed list and
+are treated as unrestricted for this compatibility check.
+
+This is a managed-ingress restriction, not workload network isolation. It does
+not police direct Service calls, requests proxied by application code, custom
+Kustomize routes, or routes owned by another application. Platform review of
+merged Git remains the authorization boundary.
+
+Policies are submitted in Argo CD sync wave `-1`, before newly exposed routes.
+Controller reconciliation is not transactional: inspect policy acceptance and
+verify allowed and denied client paths after an authorized deployment, especially
+when changing existing routes. See the
+[Gateway operating boundary](../../platform/gateway/README.md#client-network-boundary)
+for real-client-IP handling and proxy prerequisites.
 
 ## `http.inject`
 
@@ -737,7 +805,8 @@ Production and testing contexts must not include `workload` or `pullRequest`.
 - all workloads are rendered;
 - every workload needs a source and image lock;
 - configured replicas are used;
-- each domain gets production routing resources; and
+- each domain gets production routing resources;
+- restricted rules receive workload-specific CIDR policies; and
 - non-external domains receive HTTPS and certificates.
 
 ### Testing
@@ -763,14 +832,16 @@ From the repository root:
 
 ```bash
 helm template example-production argocd/charts/application \
+  --namespace example-production \
   --values applications/example/meta.yaml \
   --values applications/example/instances/production.yaml \
   --set _context.application=example \
   --set _context.instance.type=production
 ```
 
-Inspect Deployments, Services, routes, certificates, namespaces, and image
-locks.
+Inspect Deployments, Services, routes, CIDR policies, certificates, namespaces,
+and image locks. Use the destination namespace when rendering so explicit
+same-namespace Service references are resolved as they will be by Argo CD.
 Do not apply rendered output to a cluster for ordinary validation.
 
 ## Generated schema

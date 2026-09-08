@@ -124,6 +124,87 @@ platform.scg.sh/instance-type: {{ .root.Values._context.instance.type | quote }}
 {{- $inject -}}
 {{- end }}
 
+{{/* Resolve only references that actually address a Service in this instance.
+Rule backendRefs support workload aliases; mirrors retain native Service names.
+Explicit namespaces disable alias expansion, just as in application.rules. */}}
+{{- define "application.accessWorkload" -}}
+{{- $backend := .backend -}}
+{{- $name := get $backend "name" | default "" -}}
+{{- $namespace := get $backend "namespace" | default .root.Release.Namespace -}}
+{{- if and (eq (get $backend "group" | default "") "") (eq (get $backend "kind" | default "Service") "Service") (eq $namespace .root.Release.Namespace) -}}
+  {{- if and .alias (not (hasKey $backend "namespace")) (hasKey .workloads $name) -}}
+    {{- $name -}}
+  {{- else -}}
+    {{- range $workload, $value := .workloads -}}
+      {{- if and $value.http (eq $name (include "application.workloadName" (dict "root" $.root "workload" $workload))) -}}
+        {{- $workload -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/* Authorization runs before backend selection. Every declared destination,
+including mirrors and zero-weight backends, must have the same allow-list.
+An unresolved/non-local destination is open, never an implicit restricted one. */}}
+{{- define "application.allowCIDRsForRule" -}}
+{{- $references := list -}}
+{{- $filters := .rule.filters | default (list) -}}
+{{- range $backend := (.rule.backendRefs | default (list)) -}}
+  {{- $references = append $references (dict "backend" $backend "alias" true) -}}
+  {{- $filters = concat $filters ($backend.filters | default (list)) -}}
+{{- end -}}
+{{- if eq (len $references) 0 -}}
+  {{- $references = append $references (dict "backend" (dict "name" .owner) "alias" true) -}}
+{{- end -}}
+{{- range $filter := $filters -}}
+  {{- if eq $filter.type "RequestMirror" -}}
+    {{- $references = append $references (dict "backend" $filter.requestMirror.backendRef "alias" false) -}}
+  {{- end -}}
+{{- end -}}
+{{- $allowed := list -}}
+{{- $seen := false -}}
+{{- range $reference := $references -}}
+  {{- $target := include "application.accessWorkload" (dict "root" $.root "workloads" $.workloads "backend" $reference.backend "alias" $reference.alias) -}}
+  {{- $candidate := list -}}
+  {{- if ne $target "" -}}
+    {{- $http := (get $.workloads $target).http | default (dict) -}}
+    {{- $candidate = $http.allowCIDRs | default (list) | sortAlpha -}}
+  {{- end -}}
+  {{- if and $seen (ne (toJson $allowed) (toJson $candidate)) -}}
+    {{- fail (printf "production HTTPRoute rule %s/%s has different allowCIDRs across backends or mirrors; use separate rules or identical CIDR lists (omitted means unrestricted)" $.owner $.ruleName) -}}
+  {{- end -}}
+  {{- $allowed = $candidate -}}
+  {{- $seen = true -}}
+{{- end -}}
+{{- toJson $allowed -}}
+{{- end }}
+
+{{- define "application.securityPolicy" -}}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ include "application.resourceName" (dict "name" (printf "%s-%s-access" .routeName .ruleName)) }}
+  annotations:
+    # Submit access policies before newly exposed routes. Reconciliation is not atomic.
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    {{- include "application.commonLabels" (dict "root" .root "workload" .owner) | nindent 4 }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ .routeName }}
+      sectionName: {{ .ruleName }}
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            {{- toYaml .cidrs | nindent 12 }}
+{{- end }}
+
 {{- define "application.envoyExtensionPolicy" -}}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyExtensionPolicy

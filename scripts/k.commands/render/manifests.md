@@ -20,6 +20,12 @@ Applications repeat remote revisions because Argo CD reads the repository
 without the operator command; repository checks require those revisions to
 match `state.yaml`.
 
+Managed instances render with their destination namespace, matching Argo CD's
+resolution of explicit local Service references. Production output includes
+rule-level CIDR policies when a workload declares `http.allowCIDRs`; testing and
+preview never receive these policies. Inspect them alongside the routes before
+requesting an operational change.
+
 ## Usage
 
 ```bash

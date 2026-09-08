@@ -27,7 +27,7 @@
       {{- end -}}
       {{- $suffix := trunc 8 (sha256sum $hostname) -}}
       {{- $resourceName := include "application.resourceName" (dict "name" (printf "%s-%s-%s" $application $owner $suffix) "limit" 59) -}}
-      {{- $listenerName := $resourceName -}}
+      {{- $listenerName := $resourceName }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: ListenerSet
@@ -76,8 +76,21 @@ spec:
   rules:
     {{- include "application.rules" (dict "root" $ "workloads" $workloads "groups" (list $group)) | nindent 4 }}
   {{- $rules := $http.rules | default (list (dict)) -}}
+  {{- $ruleNames := dict -}}
   {{- range $index, $rule := $rules -}}
     {{- $ruleName := get $rule "name" | default (printf "%s-%s-%d" $application $owner (add1 $index)) -}}
+    {{- $_ := set $ruleNames $ruleName (add1 (get $ruleNames $ruleName | default 0)) -}}
+  {{- end -}}
+  {{- range $index, $rule := $rules -}}
+    {{- $ruleName := get $rule "name" | default (printf "%s-%s-%d" $application $owner (add1 $index)) -}}
+    {{- $cidrs := include "application.allowCIDRsForRule" (dict "root" $ "workloads" $workloads "owner" $owner "rule" $rule "ruleName" $ruleName) | fromJsonArray -}}
+    {{- if gt (len $cidrs) 0 -}}
+      {{- if gt (get $ruleNames $ruleName | int) 1 -}}
+        {{- fail (printf "production HTTPRoute %s has duplicate rule name %s targeted by allowCIDRs" $resourceName $ruleName) -}}
+      {{- end }}
+---
+{{ include "application.securityPolicy" (dict "root" $ "owner" $owner "routeName" $resourceName "ruleName" $ruleName "cidrs" $cidrs) }}
+    {{- end }}
     {{- $inject := include "application.injectionForRule" (dict "root" $ "workloads" $workloads "owner" $owner "rule" $rule) -}}
     {{- if ne $inject "" }}
 ---

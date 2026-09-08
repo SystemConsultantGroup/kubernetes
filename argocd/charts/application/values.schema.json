@@ -1903,6 +1903,11 @@
         }
       ]
     },
+    "ipv4CIDR": {
+      "$comment": "IPv4 CIDR with bounded octets and prefix length; reject bare addresses and leading-zero octets or prefixes.",
+      "type": "string",
+      "pattern": "^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(?:0|[1-9]|[12][0-9]|3[0-2])$"
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
@@ -1940,6 +1945,14 @@
         },
         "domain": {
           "$ref": "#/$defs/domainOrDomains"
+        },
+        "allowCIDRs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/ipv4CIDR"
+          }
         },
         "inject": {
           "type": "string",

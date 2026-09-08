@@ -104,6 +104,42 @@ must not contain secrets. The application must listen on `127.0.0.1` or a
 wildcard address; see the chart README for the fixed response-selection and CSP
 behavior.
 
+### Production client CIDRs
+
+Production HTTP access is unrestricted unless the destination workload defines
+`http.allowCIDRs` in `meta.yaml`:
+
+```yaml
+admin:
+  http:
+    port: 8080
+    domain: admin.example.org
+    allowCIDRs:
+      - 115.145.150.0/24
+      - 203.0.113.10/32
+```
+
+Only clients in one of these CIDRs can reach this workload through its managed
+production routes. Omit the field to keep a workload public; removing it reopens
+access. An explicit `0.0.0.0/0` allows every IPv4 client. Only IPv4 CIDRs are
+supported; empty lists, `null`, bare addresses, IPv6, and invalid CIDRs are
+rejected. Testing and preview retain the platform's existing restrictions
+regardless of this field.
+
+The setting follows the destination workload, not the domain owner: if `web`
+routes `/api` to `api`, put the API's restriction on `api.http.allowCIDRs`, even
+if `api` has no domain. Destinations sharing a rule, including mirrors, must have
+identical lists; split the rules if their access requirements differ.
+
+This controls managed Gateway ingress, not direct Service calls, application
+proxying, or routes owned by another application. An upstream proxy's address is
+the client address unless the platform explicitly configures trusted client-IP
+forwarding. Ask platform reviewers to check that boundary before restricting a
+proxied domain. See the chart's
+[`http.allowCIDRs` reference](../argocd/charts/application/README.md#httpallowcidrs)
+for routing details. Application owners only edit metadata and submit a PR;
+no cluster credentials or `k` access are needed.
+
 ### Full example
 
 `meta.yaml` can configure multiple workloads and route between them:

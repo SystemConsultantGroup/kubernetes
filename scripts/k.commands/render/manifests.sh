@@ -50,6 +50,7 @@ for application_directory in "$ROOT_DIR"/applications/*; do
     [[ -f $lock ]] || continue
     identity="$application-$instance"
     helm template "$identity" "$ROOT_DIR/argocd/charts/application" \
+      --namespace "$identity" \
       --values "$metadata" \
       --values "$lock" \
       --set "_context.application=$application" \
@@ -63,6 +64,7 @@ for application_directory in "$ROOT_DIR"/applications/*; do
     preview_values="$temporary_directory/$identity-values.yaml"
     yq -n ".\"$workload\" = load(\"$lock\") | ._context.application = \"$application\" | ._context.instance.type = \"preview\" | ._context.instance.workload = \"$workload\" | ._context.instance.pullRequest = $pull_request" >"$preview_values"
     helm template "$identity" "$ROOT_DIR/argocd/charts/application" \
+      --namespace "$identity" \
       --values "$metadata" \
       --values "$preview_values" \
       >"$temporary_directory/applications/$identity.yaml"

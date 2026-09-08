@@ -2,8 +2,10 @@
 
 These ApplicationSets turn paths in `main` into Argo CD Applications.
 They are included by [`../kustomization.yaml`](../kustomization.yaml). Workload
-Applications use the `applications` AppProject. Envoy Gateway listener and
-security policies are platform-owned resources in the `gateway` component.
+Applications use the `applications` AppProject. Shared Envoy Gateway listener
+policies are platform-owned resources in the `gateway` component. The application
+chart owns optional production rule-level CIDR policies in each managed namespace;
+application metadata cannot change testing or preview listener restrictions.
 
 ## Generators
 
