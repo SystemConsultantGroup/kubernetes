@@ -5,6 +5,8 @@ hostname: e2s.k8s
 auto: off
 ---
 machine:
+  nodeLabels:
+    gateway.scg.sh/listener: "true"
   install:
     diskSelector:
       wwid: naa.61418770621bbc00321ac43f2b9a04af

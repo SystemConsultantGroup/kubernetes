@@ -4,8 +4,8 @@ metadata:
   name: public
   namespace: gateway-system
   annotations:
-    # Temporary E2S attachment safeguard: keep public DNS on SCC until
-    # cross-node Cilium networking and Gateway exposure are validated.
+    # Temporary E2S attachment safeguard: keep public DNS on SCC while
+    # E2S Gateway exposure is validated directly.
     external-dns.alpha.kubernetes.io/target: "115.145.134.232"
 spec:
   gatewayClassName: envoy-gateway

@@ -18,6 +18,28 @@ cert-manager creates the referenced Secrets in `gateway-system`. Managed
 production domains attach through ListenerSets created by the application
 chart, with separate certificates where the platform owns TLS.
 
+## Public endpoint placement
+
+The Envoy data plane runs as a host-networked DaemonSet only on nodes labeled
+`gateway.scg.sh/listener: "true"`. The Talos patches for SCC (`k8s`) and E2S
+(`e2s`) declare that label as desired state. Keep this opt-in label when adding
+nodes; do not expose a new node before its cross-node datapath and public ingress
+have been validated.
+
+Talos patches are not reconciled by Argo CD, so merging a label change does not
+open the listener on a running node. During a separately authorized operation,
+a platform engineer must keep the SCC-only DNS pin in place, review every node's
+address and disk selector, and run `k apply` from `nix develop`. That command has
+no confirmation prompt and reapplies the generated configuration to every node
+in `state.yaml`, validating all configurations before changing any node. Then
+confirm the E2S label and test an HTTPS hostname directly against the E2S address
+before considering DNS changes.
+
+The Gateway's target annotation intentionally keeps public DNS on SCC while
+E2S ingress is validated. The label controls where Envoy binds port 443; it does
+not change DNS publication. Remove the temporary DNS pin only in a separate
+reviewed change after the direct E2S test succeeds.
+
 The `scg-skku-passthrough` listener accepts HTTPS traffic only for hostnames
 whose DNS records are explicitly moved to the public Gateway. Its TLSRoute
 forwards the original TLS connection and SNI to the legacy cluster at
