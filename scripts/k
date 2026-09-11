@@ -246,7 +246,7 @@ decrypt_talos_secrets() {
 read_bootstrap_secret() {
   local name="$1"
   case "$name" in
-  ARGOCD_GITHUB_OAUTH_CLIENT_SECRET | ARGOCD_GITHUB_WEBHOOK_SECRET | CLOUDFLARE_API_TOKEN | VAULT_OIDC_CLIENT_SECRET | ZEROSSL_EAB_HMAC_KEY) ;;
+  ARGOCD_GITHUB_OAUTH_CLIENT_SECRET | ARGOCD_GITHUB_WEBHOOK_SECRET | CLOUDFLARE_API_TOKEN | GRAFANA_ADMIN_PASSWORD | GRAFANA_OIDC_CLIENT_SECRET | VAULT_OIDC_CLIENT_SECRET | ZEROSSL_EAB_HMAC_KEY) ;;
   *)
     echo "Unknown bootstrap secret: $name" >&2
     return 2
@@ -258,13 +258,45 @@ read_bootstrap_secret() {
 
 require_bootstrap_secrets() {
   local name value
-  for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET ARGOCD_GITHUB_WEBHOOK_SECRET CLOUDFLARE_API_TOKEN VAULT_OIDC_CLIENT_SECRET ZEROSSL_EAB_HMAC_KEY; do
+  for name in ARGOCD_GITHUB_OAUTH_CLIENT_SECRET ARGOCD_GITHUB_WEBHOOK_SECRET CLOUDFLARE_API_TOKEN GRAFANA_ADMIN_PASSWORD GRAFANA_OIDC_CLIENT_SECRET VAULT_OIDC_CLIENT_SECRET ZEROSSL_EAB_HMAC_KEY; do
     value="$(read_bootstrap_secret "$name")"
     [[ -n $value && $value != REPLACE_ME ]] || {
       echo "Set $name with: k secrets edit bootstrap" >&2
       return 1
     }
   done
+}
+
+materialize_grafana_secrets() {
+  local grafana_admin_password grafana_oidc_client_secret name value
+  grafana_admin_password="$(read_bootstrap_secret GRAFANA_ADMIN_PASSWORD)"
+  grafana_oidc_client_secret="$(read_bootstrap_secret GRAFANA_OIDC_CLIENT_SECRET)"
+  for name in GRAFANA_ADMIN_PASSWORD GRAFANA_OIDC_CLIENT_SECRET; do
+    if [[ $name == GRAFANA_ADMIN_PASSWORD ]]; then
+      value="$grafana_admin_password"
+    else
+      value="$grafana_oidc_client_secret"
+    fi
+    [[ -n $value && $value != REPLACE_ME ]] || {
+      echo "Set $name with: k secrets edit bootstrap" >&2
+      return 1
+    }
+  done
+
+  kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+  printf '%s' "$grafana_oidc_client_secret" |
+    kubectl -n argocd create secret generic argocd-grafana-oidc \
+      --from-file=oidc.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+  kubectl -n argocd label secret argocd-grafana-oidc app.kubernetes.io/part-of=argocd --overwrite
+  printf '%s' "$grafana_oidc_client_secret" |
+    kubectl -n monitoring create secret generic grafana-oidc \
+      --from-file=oidc.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+  printf '%s' "$grafana_admin_password" |
+    kubectl -n monitoring create secret generic grafana-admin \
+      --from-literal=admin-user=admin --from-file=admin-password=/dev/stdin \
+      --dry-run=client -o yaml | kubectl apply -f -
+  unset grafana_admin_password grafana_oidc_client_secret
 }
 
 read_vault_secret() {

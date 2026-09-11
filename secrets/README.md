@@ -21,7 +21,7 @@ approval. The detailed command help is available through `k <command> --help`.
 | File | Contents |
 | --- | --- |
 | `state.yaml` | Public recipient aliases and age recipients; no secret values |
-| `bootstrap.yaml` | Encrypted Argo CD OAuth and webhook, Cloudflare, and ZeroSSL bootstrap values |
+| `bootstrap.yaml` | Encrypted Argo CD OAuth and webhook, Dex client, Cloudflare, and ZeroSSL bootstrap values |
 | `talos.yaml` | Encrypted Talos cluster secrets |
 | `vault.yaml` | Encrypted Vault Transit seal token and recovery copy of the Worker key |
 | `vault-recovery.yaml` | Generated, encrypted recovery shares for the current Vault data; the temporary initial root token is removed after operator access is verified |
@@ -67,11 +67,15 @@ k secrets edit vault
 
 Before `k install` can complete, `bootstrap.yaml` must contain real values for
 `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `ARGOCD_GITHUB_WEBHOOK_SECRET`,
-`CLOUDFLARE_API_TOKEN`, `VAULT_OIDC_CLIENT_SECRET`, and
-`ZEROSSL_EAB_HMAC_KEY`. Before `k initialize vault`, `vault.yaml` must contain
-`VAULT_TRANSIT_SEAL_TOKEN` and `VAULT_TRANSIT_SEAL_KEY_V1`.
-The Cloudflare token must be allowed to read the relevant zone and edit its DNS
-records.
+`CLOUDFLARE_API_TOKEN`, `GRAFANA_ADMIN_PASSWORD`,
+`GRAFANA_OIDC_CLIENT_SECRET`, `VAULT_OIDC_CLIENT_SECRET`, and
+`ZEROSSL_EAB_HMAC_KEY`. Before
+`k initialize vault`, `vault.yaml` must contain
+`VAULT_TRANSIT_SEAL_TOKEN` and `VAULT_TRANSIT_SEAL_KEY_V1`. Run
+`k initialize monitoring` to materialize the Grafana OIDC and stable chart
+administrator Secrets into an existing cluster before the monitoring
+Application reconciles. The Cloudflare
+token must be allowed to read the relevant zone and edit its DNS records.
 
 Never print decrypted values, commit plaintext, or put credentials in
 application metadata, platform values, patches, or documentation.

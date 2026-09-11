@@ -30,6 +30,11 @@ configs:
             - http://localhost:8250/oidc/callback
             - https://vault.platform.scg.sh/ui/vault/auth/oidc/oidc/callback
           secret: $argocd-vault-oidc:oidc.clientSecret
+        - id: grafana
+          name: Grafana
+          redirectURIs:
+            - https://grafana.platform.scg.sh/login/generic_oauth
+          secret: $argocd-grafana-oidc:oidc.clientSecret
   secret:
     githubSecret: '$argocd-github-webhook:webhook.github.secret'
   rbac:

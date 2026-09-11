@@ -3,6 +3,8 @@ operator:
 ipam:
   mode: kubernetes
 kubeProxyReplacement: true
+bandwidthManager:
+  enabled: true
 securityContext:
   capabilities:
     ciliumAgent:

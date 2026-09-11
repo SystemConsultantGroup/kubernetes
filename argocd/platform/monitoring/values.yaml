@@ -1,0 +1,201 @@
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeProxy: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    windows: false
+additionalPrometheusRulesMap:
+  node-capacity:
+    groups:
+      - name: node-capacity
+        rules:
+          - alert: NodeCpuUsageHigh
+            expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 85
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Node CPU usage is above 85%
+          - alert: NodeMemoryUsageHigh
+            expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 85
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Node memory usage is above 85%
+          - alert: NodeNetworkReceiveUsageHigh
+            expr: rate(node_network_receive_bytes_total{device="eno1"}[5m]) / node_network_speed_bytes{device="eno1"} > 0.70
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: Node receive bandwidth on eno1 is above 70%
+          - alert: NodeNetworkTransmitUsageHigh
+            expr: rate(node_network_transmit_bytes_total{device="eno1"}[5m]) / node_network_speed_bytes{device="eno1"} > 0.70
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: Node transmit bandwidth on eno1 is above 70%
+          - alert: NodeDataFilesystemUsageHigh
+            expr: 100 * (1 - node_filesystem_avail_bytes{mountpoint="/var/mnt/data"} / node_filesystem_size_bytes{mountpoint="/var/mnt/data"}) > 75
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Node data filesystem usage is above 75%
+kubeApiServer:
+  enabled: true
+kubelet:
+  enabled: true
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+prometheus-node-exporter:
+  enabled: true
+  hostRootFsMount:
+    enabled: true
+    mountPropagation: HostToContainer
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+grafana:
+  enabled: true
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: utc
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  podAnnotations:
+    kubernetes.io/ingress-bandwidth: "10M"
+    kubernetes.io/egress-bandwidth: "5M"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    type: ClusterIP
+  envValueFrom:
+    GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
+      secretKeyRef:
+        name: grafana-oidc
+        key: oidc.clientSecret
+  grafana.ini:
+    server:
+      root_url: https://grafana.platform.scg.sh
+    auth:
+      disable_login_form: true
+    dashboards:
+      default_home_dashboard_path: /tmp/dashboards/node-overview.json
+    auth.anonymous:
+      enabled: false
+    auth.basic:
+      enabled: false
+    auth.generic_oauth:
+      enabled: true
+      name: Dex
+      allow_sign_up: true
+      auto_login: true
+      client_id: grafana
+      scopes: openid profile email groups
+      auth_url: https://argocd.platform.scg.sh/api/dex/auth
+      token_url: https://argocd.platform.scg.sh/api/dex/token
+      api_url: https://argocd.platform.scg.sh/api/dex/userinfo
+      use_pkce: true
+      groups_attribute_path: groups
+      allowed_groups: "SystemConsultantGroup:platform SystemConsultantGroup:active"
+      role_attribute_path: "contains(groups[*], 'SystemConsultantGroup:platform') && 'Admin' || contains(groups[*], 'SystemConsultantGroup:active') && 'Viewer' || ''"
+      role_attribute_strict: true
+      allow_assign_grafana_admin: false
+prometheus:
+  ingress:
+    enabled: false
+  route:
+    main:
+      enabled: false
+  service:
+    enabled: true
+    type: ClusterIP
+  servicePerReplica:
+    enabled: false
+  prometheusSpec:
+    replicas: 1
+    scrapeInterval: 60s
+    evaluationInterval: 60s
+    retention: 7d
+    retentionSize: 40GB
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
+    podMetadata:
+      annotations:
+        kubernetes.io/ingress-bandwidth: "10M"
+        kubernetes.io/egress-bandwidth: "5M"
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-data
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 50Gi
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  ingress:
+    enabled: false
+  route:
+    main:
+      enabled: false
+  service:
+    enabled: true
+    type: ClusterIP
+  servicePerReplica:
+    enabled: false

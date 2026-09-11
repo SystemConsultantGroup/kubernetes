@@ -18,4 +18,5 @@ resources:
   - platform/percona-operator/application.yaml
   - platform/mysql/application.yaml
   - platform/reloader/application.yaml
+  - platform/monitoring/application.yaml
   - platform/vault/application.yaml

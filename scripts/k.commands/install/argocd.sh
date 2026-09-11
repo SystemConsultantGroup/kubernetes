@@ -26,6 +26,7 @@ printf '%s' "$vault_oidc_client_secret" |
     --from-file=oidc.clientSecret=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n argocd label secret argocd-vault-oidc app.kubernetes.io/part-of=argocd --overwrite
 unset vault_oidc_client_secret
+materialize_grafana_secrets
 
 [[ ${RENDERED_MANIFESTS_CURRENT:-0} == 1 ]] || run render manifests
 argocd_manifest="$ROOT_DIR/.rendered/bootstrap/argocd.yaml"

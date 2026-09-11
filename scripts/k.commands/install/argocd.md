@@ -7,7 +7,9 @@ Bootstraps Argo CD and creates the repository's GitOps root.
 The command:
 
 1. creates the `argocd` namespace, GitHub OAuth and webhook Secrets, and the
-   Vault OIDC client Secret;
+   distinct Vault and Grafana Dex client Secrets;
+1. creates the `monitoring` namespace and its Grafana Dex client and stable
+   administrator Secrets;
 1. renders the pinned Argo CD chart and applies it with the same server-side
    field manager used by Argo CD;
 1. waits for every rendered chart Job and Argo CD deployment, then refreshes
@@ -33,7 +35,8 @@ k install argocd
 
 - `secrets/bootstrap.yaml` is decryptable and contains real values for
   `ARGOCD_GITHUB_OAUTH_CLIENT_SECRET`, `ARGOCD_GITHUB_WEBHOOK_SECRET`,
-  `CLOUDFLARE_API_TOKEN`, `VAULT_OIDC_CLIENT_SECRET`, and
+  `CLOUDFLARE_API_TOKEN`, `GRAFANA_ADMIN_PASSWORD`,
+  `GRAFANA_OIDC_CLIENT_SECRET`, `VAULT_OIDC_CLIENT_SECRET`, and
   `ZEROSSL_EAB_HMAC_KEY`.
 - Cilium is installed and the cluster is reachable.
 - The pinned Argo CD Helm repository is reachable.
@@ -42,3 +45,5 @@ k install argocd
 
 This is a live operation with no confirmation prompt. After bootstrap, change
 desired state in Git instead of rerunning this command for ordinary upgrades.
+Use `k initialize monitoring` to materialize or rotate only the Grafana OIDC
+Secrets on an existing cluster.

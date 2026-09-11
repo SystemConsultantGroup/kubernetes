@@ -40,14 +40,100 @@ assert_value '.percona-operator.version' argocd/platform/percona-operator/applic
 assert_value '.pxc.versions.alumni' argocd/platform/mysql/manifests/clusters/alumni.yaml '.spec.pxc.image | split("@")[0] | sub("^.*:"; "") | split("-")[0]'
 assert_value '.pxc.versions.central' argocd/platform/mysql/manifests/clusters/central.yaml '.spec.pxc.image | split("@")[0] | sub("^.*:"; "") | split("-")[0]'
 assert_value '.reloader.chart' argocd/platform/reloader/application.yaml '.spec.sources[0].targetRevision'
+assert_value '."kube-prometheus-stack".chart' argocd/platform/monitoring/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests; do
+for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done
+
+monitoring_chart="$TEMPORARY_DIRECTORY/monitoring-chart.yaml"
+monitoring_manifests="$TEMPORARY_DIRECTORY/argocd-platform-monitoring-manifests.yaml"
+monitoring_version="$(yq -r '."kube-prometheus-stack".chart' state.yaml)"
+if [[ -n ${MONITORING_CHART:-} ]]; then
+  helm template monitoring "$MONITORING_CHART" \
+    --include-crds \
+    --namespace monitoring \
+    --values argocd/platform/monitoring/values.yaml >"$monitoring_chart"
+else
+  helm template monitoring kube-prometheus-stack \
+    --repo https://prometheus-community.github.io/helm-charts \
+    --version "$monitoring_version" \
+    --include-crds \
+    --namespace monitoring \
+    --values argocd/platform/monitoring/values.yaml >"$monitoring_chart"
+fi
+
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .metadata.labels.chart | sub("^kube-prometheus-stack-"; "")' "$monitoring_chart") == "$monitoring_version" ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.replicas' "$monitoring_chart") == 1 ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.scrapeInterval' "$monitoring_chart") == 60s ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.evaluationInterval' "$monitoring_chart") == 60s ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.retention' "$monitoring_chart") == 7d ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.retentionSize' "$monitoring_chart") == 40GB ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.storage.volumeClaimTemplate.spec.storageClassName' "$monitoring_chart") == local-data ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.storage.volumeClaimTemplate.spec.accessModes[]' "$monitoring_chart") == ReadWriteOnce ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.storage.volumeClaimTemplate.spec.resources.requests.storage' "$monitoring_chart") == 50Gi ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.podMetadata.annotations."kubernetes.io/ingress-bandwidth"' "$monitoring_chart") == 10M ]]
+[[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.podMetadata.annotations."kubernetes.io/egress-bandwidth"' "$monitoring_chart") == 5M ]]
+[[ $(yq -r '.bandwidthManager.enabled' argocd/platform/cilium/values.yaml) == true ]]
+
+for service in monitoring-kube-prometheus-prometheus monitoring-kube-prometheus-alertmanager monitoring-grafana; do
+  [[ $(SERVICE="$service" yq eval-all -rN 'select(.kind == "Service" and .metadata.name == strenv(SERVICE)) | .spec.type' "$monitoring_chart") == ClusterIP ]]
+done
+[[ $(yq eval-all '[select(.kind == "Namespace" and .metadata.name == "monitoring" and .metadata.labels."pod-security.kubernetes.io/enforce" == "privileged" and .metadata.labels."pod-security.kubernetes.io/audit" == "restricted" and .metadata.labels."pod-security.kubernetes.io/warn" == "restricted")] | length' "$monitoring_manifests") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "HTTPRoute" and .metadata.name == "grafana" and .spec.hostnames[] == "grafana.platform.scg.sh" and .spec.rules[].backendRefs[].name == "monitoring-grafana")] | length' "$monitoring_manifests") == 1 ]]
+[[ $(yq eval-all '[select((.kind == "HTTPRoute" or .kind == "Ingress") and (.metadata.name | test("prometheus|alertmanager")))] | length' "$monitoring_chart" "$monitoring_manifests") == 0 ]]
+if grep -Eiq 'loki|alloy|podlogs' "$monitoring_chart" "$monitoring_manifests"; then
+  echo "Log collection resources are outside the metrics-first monitoring scope" >&2
+  exit 1
+fi
+
+for monitor in monitoring-prometheus-node-exporter monitoring-kube-prometheus-kubelet; do
+  [[ $(MONITOR="$monitor" yq eval-all '[select(.kind == "ServiceMonitor" and .metadata.name == strenv(MONITOR))] | length' "$monitoring_chart") == 1 ]]
+done
+for monitor in monitoring-kube-prometheus-coredns monitoring-kube-prometheus-apiserver; do
+  [[ $(MONITOR="$monitor" yq eval-all '[select(.kind == "ServiceMonitor" and .metadata.name == strenv(MONITOR))] | length' "$monitoring_chart") == 1 ]]
+done
+[[ $(yq eval-all '[select(.kind == "ServiceMonitor" and (.metadata.name | test("etcd|controller-manager|kube-proxy|scheduler")))] | length' "$monitoring_chart") == 0 ]]
+[[ $(yq eval-all '[select(.kind == "PrometheusRule" and .metadata.name == "monitoring-kube-prometheus-node-capacity") | .spec.groups[].rules[] | select(.alert == "NodeCpuUsageHigh" or .alert == "NodeMemoryUsageHigh" or .alert == "NodeNetworkReceiveUsageHigh" or .alert == "NodeNetworkTransmitUsageHigh" or .alert == "NodeDataFilesystemUsageHigh")] | length' "$monitoring_chart") == 5 ]]
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.metadata.annotations."kubernetes.io/ingress-bandwidth"' "$monitoring_chart") == 10M ]]
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.metadata.annotations."kubernetes.io/egress-bandwidth"' "$monitoring_chart") == 5M ]]
+
+grafana_ini="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana") | .data."grafana.ini"' "$monitoring_chart")"
+grep -qxF 'enabled = false' <<<"$(sed -n '/^\[auth.anonymous\]$/,/^\[/p' <<<"$grafana_ini" | head -n 2 | tail -n 1)"
+grep -qxF 'enabled = false' <<<"$(sed -n '/^\[auth.basic\]$/,/^\[/p' <<<"$grafana_ini" | head -n 2 | tail -n 1)"
+grep -qF 'disable_login_form = true' <<<"$grafana_ini"
+grep -qF '[auth.generic_oauth]' <<<"$grafana_ini"
+grep -qF 'enabled = true' <<<"$(sed -n '/^\[auth.generic_oauth\]$/,/^\[/p' <<<"$grafana_ini")"
+grep -qF 'client_id = grafana' <<<"$grafana_ini"
+grep -qF 'role_attribute_strict = true' <<<"$grafana_ini"
+grep -qF "role_attribute_path = contains(groups[*], 'SystemConsultantGroup:platform') && 'Admin' || contains(groups[*], 'SystemConsultantGroup:active') && 'Viewer' || ''" <<<"$grafana_ini"
+grep -qF 'default_home_dashboard_path = /tmp/dashboards/node-overview.json' <<<"$grafana_ini"
+[[ $(yq eval-all '[select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana-node-overview" and .metadata.namespace == "monitoring" and .metadata.labels.grafana_dashboard == "1" and (.data | has("node-overview.json")))] | length' "$monitoring_manifests") == 1 ]]
+node_dashboard="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana-node-overview") | .data."node-overview.json"' "$monitoring_manifests")"
+[[ $(yq -r '.title' <<<"$node_dashboard") == "Node Overview" ]]
+[[ $(yq -r '[.panels[] | select(.title == "Node readiness" or .title == "CPU usage by node" or .title == "Memory usage by node" or .title == "Network throughput by node" or .title == "Data filesystem usage by node")] | length' <<<"$node_dashboard") == 5 ]]
+if grep -qF 'client_secret =' <<<"$grafana_ini"; then
+  echo "Grafana OAuth client secret was rendered into grafana.ini" >&2
+  exit 1
+fi
+[[ $(yq eval-all '[select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.spec.containers[] | select(.name == "grafana") | .env[] | select(.name == "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET" and .valueFrom.secretKeyRef.name == "grafana-oidc" and .valueFrom.secretKeyRef.key == "oidc.clientSecret")] | length' "$monitoring_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.spec.containers[] | select(.name == "grafana") | .env[] | select(.name == "GF_SECURITY_ADMIN_USER" and .valueFrom.secretKeyRef.name == "grafana-admin" and .valueFrom.secretKeyRef.key == "admin-user")] | length' "$monitoring_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.spec.containers[] | select(.name == "grafana") | .env[] | select(.name == "GF_SECURITY_ADMIN_PASSWORD" and .valueFrom.secretKeyRef.name == "grafana-admin" and .valueFrom.secretKeyRef.key == "admin-password")] | length' "$monitoring_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Secret" and .metadata.name == "monitoring-grafana")] | length' "$monitoring_chart") == 0 ]]
+[[ $(yq -r '.configs.cm."dex.config" | from_yaml | .staticClients[] | select(.id == "grafana") | .redirectURIs[0]' argocd/values.yaml) == https://grafana.platform.scg.sh/login/generic_oauth ]]
+[[ $(yq -r '.configs.cm."dex.config" | from_yaml | .staticClients[] | select(.id == "grafana") | .secret' argocd/values.yaml) == '$argocd-grafana-oidc:oidc.clientSecret' ]]
+grep -q '^GRAFANA_ADMIN_PASSWORD: ENC\[' secrets/bootstrap.yaml
+grep -q '^GRAFANA_OIDC_CLIENT_SECRET: ENC\[' secrets/bootstrap.yaml
+grep -q 'read_bootstrap_secret GRAFANA_ADMIN_PASSWORD' scripts/k
+grep -q 'read_bootstrap_secret GRAFANA_OIDC_CLIENT_SECRET' scripts/k
+grep -q 'materialize_grafana_secrets' scripts/k.commands/install/argocd.sh
+grep -q 'materialize_grafana_secrets' scripts/k.commands/initialize/monitoring.sh
+[[ $(yq eval-all '[select(.kind == "AppProject" and .metadata.name == "platform") | .spec.sourceRepos[] | select(. == "https://prometheus-community.github.io/helm-charts")] | length' argocd/projects/platform.yaml) == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Application" and .metadata.name == "monitoring" and .spec.syncPolicy.syncOptions[] == "ServerSideApply=true")] | length' "$TEMPORARY_DIRECTORY/argocd.yaml") == 1 ]]
 
 validate_custom_render() {
   local output="$1" application="$2" resource_kind resource_namespace resource_name

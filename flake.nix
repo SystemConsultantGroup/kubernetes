@@ -66,6 +66,10 @@
                   shellcheck
                   yq-go
                 ];
+                MONITORING_CHART = pkgs.fetchurl {
+                  url = "https://github.com/prometheus-community/helm-charts/releases/download/kube-prometheus-stack-90.0.0/kube-prometheus-stack-90.0.0.tgz";
+                  hash = "sha256-BLkKP0qrS0BXJYUJUzElm8jwAyjkD57FiOVM25qmpV8=";
+                };
               }
               ''
                 export HOME="$TMPDIR/home"

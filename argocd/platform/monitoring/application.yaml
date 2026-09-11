@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 90.0.0
+      helm:
+        releaseName: monitoring
+        valueFiles:
+          - $values/argocd/platform/monitoring/values.yaml
+    - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+      targetRevision: main
+      path: argocd/platform/monitoring/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Prometheus Operator CRDs exceed the client-side apply annotation limit.
+      - ServerSideApply=true
