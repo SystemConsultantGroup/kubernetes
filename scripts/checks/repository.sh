@@ -172,6 +172,8 @@ done
 [[ $(yq eval-all '[select(.kind == "PrometheusRule" and .metadata.name == "monitoring-kube-prometheus-node-capacity") | .spec.groups[].rules[] | select(.alert == "NodeCpuUsageHigh" or .alert == "NodeMemoryUsageHigh" or .alert == "NodeNetworkReceiveUsageHigh" or .alert == "NodeNetworkTransmitUsageHigh" or .alert == "NodeDataFilesystemUsageHigh")] | length' "$monitoring_chart") == 5 ]]
 [[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.metadata.annotations."kubernetes.io/ingress-bandwidth"' "$monitoring_chart") == 10M ]]
 [[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.metadata.annotations."kubernetes.io/egress-bandwidth"' "$monitoring_chart") == 5M ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.spec.containers[] | select(.name == "grafana") | .env[] | select(.name == "GF_PLUGINS_PREINSTALL_DISABLED" and .value == "true")] | length' "$monitoring_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" and .metadata.name == "monitoring-grafana") | .spec.template.spec.containers[] | select(.name == "grafana") | .env[] | select(.name == "GF_PLUGINS_PREINSTALL_AUTO_UPDATE" and .value == "false")] | length' "$monitoring_chart") == 1 ]]
 
 grafana_ini="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana") | .data."grafana.ini"' "$monitoring_chart")"
 grep -qxF 'enabled = false' <<<"$(sed -n '/^\[auth.anonymous\]$/,/^\[/p' <<<"$grafana_ini" | head -n 2 | tail -n 1)"

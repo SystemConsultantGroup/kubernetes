@@ -33,6 +33,11 @@ host root mount. Restricted-policy audit and warning labels remain enabled. Only
 platform-owned resources may target this Namespace; do not place application
 workloads in it.
 
+Grafana plugin preinstallation and automatic plugin updates are disabled. Its
+container filesystem is read-only, and attempting to update bundled datasource
+plugins can stop the running Prometheus and Loki plugin processes. Upgrade those
+plugins through the pinned Grafana chart and image instead.
+
 Prometheus runs as one replica with these storage bounds:
 
 | Setting | Value |

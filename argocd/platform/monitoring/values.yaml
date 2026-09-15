@@ -111,6 +111,9 @@ grafana:
       memory: 512Mi
   service:
     type: ClusterIP
+  env:
+    GF_PLUGINS_PREINSTALL_AUTO_UPDATE: "false"
+    GF_PLUGINS_PREINSTALL_DISABLED: "true"
   additionalDataSources:
     - name: Loki
       uid: loki
