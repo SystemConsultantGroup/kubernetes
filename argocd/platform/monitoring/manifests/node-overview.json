@@ -60,7 +60,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -124,15 +124,17 @@
               },
               {
                 "color": "orange",
-                "value": 70
+                "value": 0.7
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 0.85
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -165,7 +167,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval])))",
+          "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))",
           "format": "time_series",
           "instant": true,
           "range": false,
@@ -194,15 +196,17 @@
               },
               {
                 "color": "orange",
-                "value": 70
+                "value": 0.7
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 0.85
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -235,7 +239,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
+          "expr": "1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)",
           "format": "time_series",
           "instant": true,
           "range": false,
@@ -264,15 +268,17 @@
               },
               {
                 "color": "orange",
-                "value": 70
+                "value": 0.7
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 0.85
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -305,7 +311,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - sum(node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / sum(node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}))",
+          "expr": "1 - sum(node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / sum(node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"})",
           "format": "time_series",
           "instant": true,
           "range": false,
@@ -366,15 +372,17 @@
               },
               {
                 "color": "orange",
-                "value": 70
+                "value": 0.7
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 0.85
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -408,7 +416,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval])))",
+          "expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "range": true,
@@ -469,15 +477,17 @@
               },
               {
                 "color": "orange",
-                "value": 70
+                "value": 0.7
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 0.85
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -511,7 +521,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+          "expr": "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "range": true,
@@ -563,7 +573,7 @@
               "mode": "off"
             }
           },
-          "unit": "decbytes/sec"
+          "unit": "bps"
         },
         "overrides": []
       },
@@ -597,7 +607,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (instance) (rate(node_network_receive_bytes_total{device=\"eno1\"}[$__rate_interval]))",
+          "expr": "8 * sum by (instance) (rate(node_network_receive_bytes_total{device=\"eno1\"}[$__rate_interval]))",
           "format": "time_series",
           "legendFormat": "{{instance}} receive",
           "range": true,
@@ -609,7 +619,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{device=\"eno1\"}[$__rate_interval]))",
+          "expr": "8 * sum by (instance) (rate(node_network_transmit_bytes_total{device=\"eno1\"}[$__rate_interval]))",
           "format": "time_series",
           "legendFormat": "{{instance}} transmit",
           "range": true,
@@ -670,15 +680,17 @@
               },
               {
                 "color": "orange",
-                "value": 75
+                "value": 0.75
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 0.9
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -712,7 +724,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - max by (instance) (node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / max by (instance) (node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}))",
+          "expr": "1 - max by (instance) (node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / max by (instance) (node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"})",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "range": true,

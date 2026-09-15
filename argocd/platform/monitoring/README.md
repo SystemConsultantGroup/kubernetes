@@ -1,7 +1,8 @@
 # Monitoring
 
-This component deploys `kube-prometheus-stack` for cluster and node metrics.
-Grafana is available to application developers and platform engineers at
+This component deploys `kube-prometheus-stack` for cluster and node metrics and
+provides the Grafana UI for metrics and application logs. Grafana is available
+to application developers and platform engineers at
 <https://grafana.platform.scg.sh>; Prometheus and Alertmanager have no public
 route and remain ClusterIP-only.
 
@@ -13,7 +14,10 @@ collect CPU, memory, network, and filesystem metrics from both Talos nodes.
 Default node dashboards, recording rules, and alerts are enabled. A
 Git-managed `Node Overview` dashboard is also provisioned and configured as
 Grafana's home dashboard. It shows readiness plus CPU, memory, network, and
-`/var/mnt/data` filesystem metrics for every node in one view. Additional rules
+`/var/mnt/data` filesystem metrics for every node in one view. Usage ratios use
+Grafana's zero-to-one percent unit with fixed 0–100% display bounds. Network
+counters are converted from bytes to bits and displayed with decimal bit/s
+prefixes, matching the bundled node-exporter dashboards. Additional rules
 warn on sustained CPU or memory use above 85%, `eno1` receive or transmit use
 above 70%, and `/var/mnt/data` use above 75%.
 
@@ -81,19 +85,29 @@ explicitly authorized initialization operation before Argo CD reconciles the
 Dex and Grafana resources. Changing encrypted values alone does not update
 existing Kubernetes Secrets.
 
-## Scope
+## Application logs
 
-This rollout is metrics-first. It does **not** deploy Loki, Grafana Alloy,
-`PodLogs`, or any production log collection. Logging requires a separate design
-and approval after the metrics platform has been measured.
+Grafana provisions the internal Loki service as a read-only datasource and the
+Git-managed `Application Logs` dashboard. Loki and Alloy remain separate
+platform Applications so a logging failure or upgrade does not own the
+Prometheus and Grafana lifecycle.
+
+Alloy collects only labeled application Pod stdout and stderr. Platform and
+system logs are excluded. The application-facing label contract, retention, and
+sensitive-data boundary are documented in the
+[application guide](../../../applications/README.md#application-logs); backend
+and collector operations are documented in the [Loki](../loki/README.md) and
+[Alloy](../alloy/README.md) guides. Loki has no public route, and browser clients
+query it only through Grafana's server-side datasource proxy.
 
 ## Validation and operations
 
-Local repository checks render the pinned chart and enforce retention, storage,
-intervals, bandwidth annotations, internal Prometheus/Alertmanager exposure,
-Grafana routing, OAuth role mapping, the provisioned Node Overview dashboard,
-custom capacity alerts, and the expected node scrape integrations. They do not
-contact or mutate the live cluster.
+Local repository checks render the pinned charts and enforce retention,
+storage, intervals, bandwidth annotations, internal Prometheus, Alertmanager,
+and Loki exposure, Grafana routing and datasources, OAuth role mapping, the
+provisioned Node Overview and Application Logs dashboards, application-only
+Alloy discovery, custom capacity alerts, and the expected node scrape
+integrations. They do not contact or mutate the live cluster.
 
 Alerts are initially visible in Prometheus and Grafana only. Delivering them to
 email, Slack, or another external receiver requires a separate destination and

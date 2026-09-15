@@ -21,7 +21,9 @@ AppProject.
 | [`mysql/`](mysql/README.md) | PXC cluster resources and namespaced Vault integration |
 | [`percona-operator/`](percona-operator/README.md) | Reconciles Percona XtraDB Cluster resources in `mysql` |
 | [`reloader/`](reloader/README.md) | Rolls managed workloads when referenced Secrets change |
-| [`monitoring/`](monitoring/README.md) | Prometheus node metrics and Dex-authenticated Grafana |
+| [`monitoring/`](monitoring/README.md) | Prometheus metrics and Dex-authenticated Grafana |
+| [`loki/`](loki/README.md) | Node-local, seven-day application log storage |
+| [`alloy/`](alloy/README.md) | Collects labeled application Pod logs from every node for Loki |
 | [`vault/`](vault/README.md) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/README.md) | Inactive RFC2136 reference configuration |
 
@@ -41,7 +43,7 @@ this reconciliation order:
 | --- | --- | --- |
 | 1 | Gateway API, Cilium, Envoy Gateway, External Secrets, local path provisioner | APIs, networking, Gateway controller, and storage foundations |
 | 2 | Gateway, cert-manager, Percona PXC Operator, Reloader | public Gateway, certificates, and application support controllers |
-| 3 | Argo CD, ExternalDNS, monitoring, MySQL resources, Vault | externally routed and stateful services |
+| 3 | Argo CD, ExternalDNS, monitoring, Loki, Alloy, MySQL resources, Vault | externally routed, observability, and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for
 one component's complete health before starting the next wave. Bootstrap

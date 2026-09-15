@@ -8,6 +8,9 @@ configMapGenerator:
   - name: monitoring-grafana-node-overview
     files:
       - node-overview.json
+  - name: monitoring-grafana-application-logs
+    files:
+      - application-logs.json
 generatorOptions:
   disableNameSuffixHash: true
   labels:

@@ -41,11 +41,13 @@ assert_value '.pxc.versions.alumni' argocd/platform/mysql/manifests/clusters/alu
 assert_value '.pxc.versions.central' argocd/platform/mysql/manifests/clusters/central.yaml '.spec.pxc.image | split("@")[0] | sub("^.*:"; "") | split("-")[0]'
 assert_value '.reloader.chart' argocd/platform/reloader/application.yaml '.spec.sources[0].targetRevision'
 assert_value '."kube-prometheus-stack".chart' argocd/platform/monitoring/application.yaml '.spec.sources[0].targetRevision'
+assert_value '.loki.chart' argocd/platform/loki/application.yaml '.spec.sources[0].targetRevision'
+assert_value '.alloy.chart' argocd/platform/alloy/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests; do
+for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done
@@ -67,6 +69,37 @@ else
     --values argocd/platform/monitoring/values.yaml >"$monitoring_chart"
 fi
 
+loki_chart="$TEMPORARY_DIRECTORY/loki-chart.yaml"
+alloy_chart="$TEMPORARY_DIRECTORY/alloy-chart.yaml"
+loki_manifests="$TEMPORARY_DIRECTORY/argocd-platform-loki-manifests.yaml"
+alloy_manifests="$TEMPORARY_DIRECTORY/argocd-platform-alloy-manifests.yaml"
+loki_version="$(yq -r '.loki.chart' state.yaml)"
+alloy_version="$(yq -r '.alloy.chart' state.yaml)"
+if [[ -n ${LOKI_CHART:-} ]]; then
+  helm template loki "$LOKI_CHART" \
+    --api-versions monitoring.coreos.com/v1/ServiceMonitor \
+    --namespace loki \
+    --values argocd/platform/loki/values.yaml >"$loki_chart"
+else
+  helm template loki loki \
+    --repo https://grafana.github.io/helm-charts \
+    --version "$loki_version" \
+    --api-versions monitoring.coreos.com/v1/ServiceMonitor \
+    --namespace loki \
+    --values argocd/platform/loki/values.yaml >"$loki_chart"
+fi
+if [[ -n ${ALLOY_CHART:-} ]]; then
+  helm template alloy "$ALLOY_CHART" \
+    --namespace alloy \
+    --values argocd/platform/alloy/values.yaml >"$alloy_chart"
+else
+  helm template alloy alloy \
+    --repo https://grafana.github.io/helm-charts \
+    --version "$alloy_version" \
+    --namespace alloy \
+    --values argocd/platform/alloy/values.yaml >"$alloy_chart"
+fi
+
 [[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .metadata.labels.chart | sub("^kube-prometheus-stack-"; "")' "$monitoring_chart") == "$monitoring_version" ]]
 [[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.replicas' "$monitoring_chart") == 1 ]]
 [[ $(yq eval-all -rN 'select(.kind == "Prometheus") | .spec.scrapeInterval' "$monitoring_chart") == 60s ]]
@@ -86,8 +119,45 @@ done
 [[ $(yq eval-all '[select(.kind == "Namespace" and .metadata.name == "monitoring" and .metadata.labels."pod-security.kubernetes.io/enforce" == "privileged" and .metadata.labels."pod-security.kubernetes.io/audit" == "restricted" and .metadata.labels."pod-security.kubernetes.io/warn" == "restricted")] | length' "$monitoring_manifests") == 1 ]]
 [[ $(yq eval-all '[select(.kind == "HTTPRoute" and .metadata.name == "grafana" and .spec.hostnames[] == "grafana.platform.scg.sh" and .spec.rules[].backendRefs[].name == "monitoring-grafana")] | length' "$monitoring_manifests") == 1 ]]
 [[ $(yq eval-all '[select((.kind == "HTTPRoute" or .kind == "Ingress") and (.metadata.name | test("prometheus|alertmanager")))] | length' "$monitoring_chart" "$monitoring_manifests") == 0 ]]
-if grep -Eiq 'loki|alloy|podlogs' "$monitoring_chart" "$monitoring_manifests"; then
-  echo "Log collection resources are outside the metrics-first monitoring scope" >&2
+[[ $(yq eval-all -rN 'select(.kind == "StatefulSet" and .metadata.name == "loki") | .metadata.labels."helm.sh/chart" | sub("^loki-"; "")' "$loki_chart") == "$loki_version" ]]
+[[ $(yq eval-all -rN 'select(.kind == "StatefulSet" and .metadata.name == "loki") | .spec.replicas' "$loki_chart") == 1 ]]
+[[ $(yq -r '.singleBinary.persistence.enableStatefulSetAutoDeletePVC' argocd/platform/loki/values.yaml) == false ]]
+[[ $(yq -r '.singleBinary.persistence.whenDeleted' argocd/platform/loki/values.yaml) == Retain ]]
+[[ $(yq -r '.singleBinary.persistence.whenScaled' argocd/platform/loki/values.yaml) == Retain ]]
+[[ $(yq eval-all -rN 'select(.kind == "StatefulSet" and .metadata.name == "loki") | .spec.persistentVolumeClaimRetentionPolicy // "retained-by-kubernetes-default"' "$loki_chart") == retained-by-kubernetes-default ]]
+[[ $(yq eval-all -rN 'select(.kind == "StatefulSet" and .metadata.name == "loki") | .spec.volumeClaimTemplates[0].spec.storageClassName' "$loki_chart") == local-data ]]
+[[ $(yq eval-all -rN 'select(.kind == "StatefulSet" and .metadata.name == "loki") | .spec.volumeClaimTemplates[0].spec.resources.requests.storage' "$loki_chart") == 50Gi ]]
+[[ $(yq eval-all '[select(.kind == "StatefulSet")] | length' "$loki_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" or .kind == "DaemonSet")] | length' "$loki_chart") == 0 ]]
+[[ $(yq eval-all '[select(.kind == "Service" and .metadata.name == "loki" and .spec.type == "ClusterIP")] | length' "$loki_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Ingress" or .kind == "HTTPRoute")] | length' "$loki_chart" "$loki_manifests") == 0 ]]
+[[ $(yq eval-all '[select(.kind == "ServiceMonitor" and .metadata.name == "loki" and .metadata.labels.release == "monitoring")] | length' "$loki_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "NetworkPolicy" and .metadata.name == "loki-ingress") | .spec.ingress[].from[].namespaceSelector.matchLabels."kubernetes.io/metadata.name" | select(. == "loki" or . == "alloy" or . == "monitoring")] | length' "$loki_manifests") == 3 ]]
+loki_config="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "loki") | .data."config.yaml"' "$loki_chart")"
+[[ $(yq -r '.auth_enabled' <<<"$loki_config") == false ]]
+[[ $(yq -r '.common.replication_factor' <<<"$loki_config") == 1 ]]
+[[ $(yq -r '.schema_config.configs[0].store' <<<"$loki_config") == tsdb ]]
+[[ $(yq -r '.schema_config.configs[0].object_store' <<<"$loki_config") == filesystem ]]
+[[ $(yq -r '.schema_config.configs[0].schema' <<<"$loki_config") == v13 ]]
+[[ $(yq -r '.schema_config.configs[0].index.period' <<<"$loki_config") == 24h ]]
+[[ $(yq -r '.limits_config.retention_period' <<<"$loki_config") == 168h ]]
+[[ $(yq -r '.compactor.retention_enabled' <<<"$loki_config") == true ]]
+[[ $(yq -r '.compactor.delete_request_store' <<<"$loki_config") == filesystem ]]
+
+[[ $(yq eval-all -rN 'select(.kind == "DaemonSet" and .metadata.name == "alloy") | .metadata.labels."helm.sh/chart" | sub("^alloy-"; "")' "$alloy_chart") == "$alloy_version" ]]
+[[ $(yq eval-all '[select(.kind == "Deployment" or .kind == "StatefulSet")] | length' "$alloy_chart") == 0 ]]
+[[ $(yq eval-all '[select(.kind == "Service" and .metadata.name == "alloy" and .spec.type == "ClusterIP")] | length' "$alloy_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "ServiceMonitor" and .metadata.name == "alloy" and .metadata.labels.release == "monitoring")] | length' "$alloy_chart") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "ClusterRole" or .kind == "ClusterRoleBinding")] | length' "$alloy_chart") == 0 ]]
+[[ $(yq eval-all '[select(.kind == "ClusterRole" and .metadata.name == "alloy-application-logs") | .rules[] | select((.resources | sort | join(",")) == "namespaces,pods,pods/log" and (.verbs | sort | join(",")) == "get,list,watch")] | length' "$alloy_manifests") == 1 ]]
+alloy_config="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "alloy") | .data."config.alloy"' "$alloy_chart")"
+grep -qF 'field = "spec.nodeName="' <<<"$alloy_config"
+grep -qF '__meta_kubernetes_pod_label_app_kubernetes_io_part_of' <<<"$alloy_config"
+grep -qF '__meta_kubernetes_pod_label_platform_scg_sh_instance_type' <<<"$alloy_config"
+grep -qF 'regex         = "[^;]+;(production|testing|preview|custom)"' <<<"$alloy_config"
+grep -qF 'url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"' <<<"$alloy_config"
+if grep -Eq '(^|[^a-z])(secret|configmap)s?([^a-z]|$)' <<<"$(yq eval-all -rN 'select(.kind == "ClusterRole" and .metadata.name == "alloy-application-logs") | .rules[].resources[]' "$alloy_manifests")"; then
+  echo "Alloy application-log RBAC must not read Secrets or ConfigMaps" >&2
   exit 1
 fi
 
@@ -116,6 +186,17 @@ grep -qF 'default_home_dashboard_path = /tmp/dashboards/node-overview.json' <<<"
 node_dashboard="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana-node-overview") | .data."node-overview.json"' "$monitoring_manifests")"
 [[ $(yq -r '.title' <<<"$node_dashboard") == "Node Overview" ]]
 [[ $(yq -r '[.panels[] | select(.title == "Node readiness" or .title == "CPU usage by node" or .title == "Memory usage by node" or .title == "Network throughput by node" or .title == "Data filesystem usage by node")] | length' <<<"$node_dashboard") == 5 ]]
+[[ $(yq -r '[.panels[] | select(.title == "Node readiness" and .fieldConfig.defaults.unit == "none")] | length' <<<"$node_dashboard") == 1 ]]
+[[ $(yq -r '[.panels[] | select(.title == "Cluster CPU" or .title == "Cluster memory" or .title == "Data filesystem" or .title == "CPU usage by node" or .title == "Memory usage by node" or .title == "Data filesystem usage by node") | select(.fieldConfig.defaults.unit == "percentunit" and .fieldConfig.defaults.min == 0 and .fieldConfig.defaults.max == 1)] | length' <<<"$node_dashboard") == 6 ]]
+[[ $(yq -r '[.panels[] | select(.fieldConfig.defaults.unit == "percentunit") | .targets[].expr | select(test("^100 \\*"))] | length' <<<"$node_dashboard") == 0 ]]
+[[ $(yq -r '[.panels[] | select(.title == "Network throughput by node" and .fieldConfig.defaults.unit == "bps") | .targets[].expr | select(test("^8 \\* sum by \\(instance\\) \\(rate\\(node_network_(receive|transmit)_bytes_total"))] | length' <<<"$node_dashboard") == 2 ]]
+[[ $(yq eval-all '[select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana-application-logs" and .metadata.namespace == "monitoring" and .metadata.labels.grafana_dashboard == "1" and (.data | has("application-logs.json")))] | length' "$monitoring_manifests") == 1 ]]
+application_logs_dashboard="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-grafana-application-logs") | .data."application-logs.json"' "$monitoring_manifests")"
+[[ $(yq -r '.title' <<<"$application_logs_dashboard") == "Application Logs" ]]
+[[ $(yq -r '[.panels[] | select(.title == "Log volume by workload" or .title == "Application logs")] | length' <<<"$application_logs_dashboard") == 2 ]]
+[[ $(yq -r '[.templating.list[].name | select(. == "application" or . == "instance_type" or . == "workload" or . == "pod" or . == "container" or . == "search")] | length' <<<"$application_logs_dashboard") == 6 ]]
+grafana_datasources="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "monitoring-kube-prometheus-grafana-datasource") | .data."datasource.yaml"' "$monitoring_chart")"
+[[ $(yq '[.datasources[] | select(.name == "Loki" and .uid == "loki" and .type == "loki" and .access == "proxy" and .url == "http://loki.loki.svc.cluster.local:3100" and .isDefault == false and .editable == false)] | length' <<<"$grafana_datasources") == 1 ]]
 if grep -qF 'client_secret =' <<<"$grafana_ini"; then
   echo "Grafana OAuth client secret was rendered into grafana.ini" >&2
   exit 1
@@ -133,7 +214,9 @@ grep -q 'read_bootstrap_secret GRAFANA_OIDC_CLIENT_SECRET' scripts/k
 grep -q 'materialize_grafana_secrets' scripts/k.commands/install/argocd.sh
 grep -q 'materialize_grafana_secrets' scripts/k.commands/initialize/monitoring.sh
 [[ $(yq eval-all '[select(.kind == "AppProject" and .metadata.name == "platform") | .spec.sourceRepos[] | select(. == "https://prometheus-community.github.io/helm-charts")] | length' argocd/projects/platform.yaml) == 1 ]]
+[[ $(yq eval-all '[select(.kind == "AppProject" and .metadata.name == "platform") | .spec.sourceRepos[] | select(. == "https://grafana.github.io/helm-charts")] | length' argocd/projects/platform.yaml) == 1 ]]
 [[ $(yq eval-all '[select(.kind == "Application" and .metadata.name == "monitoring" and .spec.syncPolicy.syncOptions[] == "ServerSideApply=true")] | length' "$TEMPORARY_DIRECTORY/argocd.yaml") == 1 ]]
+[[ $(yq eval-all '[select(.kind == "Application" and (.metadata.name == "loki" or .metadata.name == "alloy") and .spec.syncPolicy.automated.prune == true and .spec.syncPolicy.automated.selfHeal == true)] | length' "$TEMPORARY_DIRECTORY/argocd.yaml") == 2 ]]
 
 validate_custom_render() {
   local output="$1" application="$2" resource_kind resource_namespace resource_name

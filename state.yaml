@@ -39,5 +39,9 @@ reloader:
   chart: "2.2.16"
 kube-prometheus-stack:
   chart: "90.0.0"
+loki:
+  chart: "7.3.0"
+alloy:
+  chart: "1.12.1"
 vault:
   chart: "0.34.1"

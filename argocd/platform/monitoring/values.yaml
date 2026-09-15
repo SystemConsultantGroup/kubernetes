@@ -111,6 +111,16 @@ grafana:
       memory: 512Mi
   service:
     type: ClusterIP
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.loki.svc.cluster.local:3100
+      isDefault: false
+      editable: false
+      jsonData:
+        maxLines: 1000
   envValueFrom:
     GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
       secretKeyRef:

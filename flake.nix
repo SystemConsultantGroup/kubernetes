@@ -70,6 +70,14 @@
                   url = "https://github.com/prometheus-community/helm-charts/releases/download/kube-prometheus-stack-90.0.0/kube-prometheus-stack-90.0.0.tgz";
                   hash = "sha256-BLkKP0qrS0BXJYUJUzElm8jwAyjkD57FiOVM25qmpV8=";
                 };
+                LOKI_CHART = pkgs.fetchurl {
+                  url = "https://github.com/grafana/helm-charts/releases/download/helm-loki-7.3.0/loki-7.3.0.tgz";
+                  hash = "sha256-BKM59xLXcKH1mfBfwKWjzeGOQ5FOSa5qSfcXG+hrzAk=";
+                };
+                ALLOY_CHART = pkgs.fetchurl {
+                  url = "https://github.com/grafana/helm-charts/releases/download/alloy-1.12.1/alloy-1.12.1.tgz";
+                  hash = "sha256-zdHsOfmcPFBtW1IRVtciNuoUPAifUNprZDmPgxc0gpw=";
+                };
               }
               ''
                 export HOME="$TMPDIR/home"

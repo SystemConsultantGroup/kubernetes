@@ -14,6 +14,7 @@ nix flake check
 | State | Repeated platform pins match `state.yaml` |
 | Applications | One layout, exact lock fields, workload consistency, preview paths, identity limits, and namespace boundaries |
 | Rendering | Root and platform Kustomizations, every managed instance, synthetic long-name collision cases, and production CIDR policy/schema regressions |
+| Observability | Prometheus, Grafana, Loki, and Alloy versions, local renders, storage, exposure, dashboards, and application-only log collection |
 | Worker | Vault KMS compatibility tests |
 
 CIDR regressions cover open defaults, production-only rule targets, local Service

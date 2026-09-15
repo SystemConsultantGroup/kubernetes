@@ -269,6 +269,29 @@ path is allowed. Testing credentials must be safe for preview code. Members
 responsible for secret values should follow the
 [Vault application-value workflow](../argocd/platform/vault/README.md#managing-application-values).
 
+## Application logs
+
+Grafana at <https://grafana.platform.scg.sh> provides the Git-managed
+`Application Logs` dashboard. The platform collects container stdout and stderr
+only from Pods carrying both of these labels:
+
+```yaml
+app.kubernetes.io/part-of: <application>
+platform.scg.sh/instance-type: production|testing|preview|custom
+```
+
+The managed chart adds these labels automatically. A custom Kustomize
+application opts in by adding them to its Pod template; use the application
+directory name and `custom` instance type. Unlabeled application Pods and all
+platform or system Pods are excluded.
+
+Logs are shared with the same Grafana users who can view cluster metrics and are
+retained for seven days on unreplicated node-local storage. They are an
+operational convenience rather than an audit archive. Write logs to stdout or
+stderr, prefer structured JSON when useful, and keep request IDs in the log body
+rather than Kubernetes labels. Never log credentials, tokens, session values,
+personal data, or other secrets.
+
 ## Custom Kustomize application
 
 A custom application has a standard Kustomize entrypoint at its root:

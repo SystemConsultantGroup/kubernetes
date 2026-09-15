@@ -19,4 +19,6 @@ resources:
   - platform/mysql/application.yaml
   - platform/reloader/application.yaml
   - platform/monitoring/application.yaml
+  - platform/loki/application.yaml
+  - platform/alloy/application.yaml
   - platform/vault/application.yaml
