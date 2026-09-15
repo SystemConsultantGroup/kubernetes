@@ -38,9 +38,9 @@ Prometheus runs as one replica with these storage bounds:
 | Setting | Value |
 | --- | --- |
 | StorageClass | `local-data` |
-| PVC request | `50Gi` |
+| PVC request | `40Gi` |
 | Time retention | `7d` |
-| Size retention | `40GB` |
+| Size retention | `30GB` |
 
 The PVC is node-local, unreplicated, and retained after claim deletion. A
 Prometheus Pod cannot attach that volume from the other node, so node loss can
