@@ -416,9 +416,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))",
+          "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))) * on (instance) group_left (nodename) node_uname_info",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{nodename}}",
           "range": true,
           "refId": "A"
         }
@@ -521,9 +521,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes",
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * on (instance) group_left (nodename) node_uname_info",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{nodename}}",
           "range": true,
           "refId": "A"
         }
@@ -607,9 +607,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "8 * sum by (instance) (rate(node_network_receive_bytes_total{device=\"eno1\"}[$__rate_interval]))",
+          "expr": "8 * sum by (instance) (rate(node_network_receive_bytes_total{device=\"eno1\"}[$__rate_interval])) * on (instance) group_left (nodename) node_uname_info",
           "format": "time_series",
-          "legendFormat": "{{instance}} receive",
+          "legendFormat": "{{nodename}} receive",
           "range": true,
           "refId": "A"
         },
@@ -619,9 +619,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "8 * sum by (instance) (rate(node_network_transmit_bytes_total{device=\"eno1\"}[$__rate_interval]))",
+          "expr": "8 * sum by (instance) (rate(node_network_transmit_bytes_total{device=\"eno1\"}[$__rate_interval])) * on (instance) group_left (nodename) node_uname_info",
           "format": "time_series",
-          "legendFormat": "{{instance}} transmit",
+          "legendFormat": "{{nodename}} transmit",
           "range": true,
           "refId": "B"
         }
@@ -724,9 +724,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "1 - max by (instance) (node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / max by (instance) (node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"})",
+          "expr": "(1 - max by (instance) (node_filesystem_avail_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"}) / max by (instance) (node_filesystem_size_bytes{mountpoint=\"/var/mnt/data\",fstype!=\"\"})) * on (instance) group_left (nodename) node_uname_info",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{nodename}}",
           "range": true,
           "refId": "A"
         }
