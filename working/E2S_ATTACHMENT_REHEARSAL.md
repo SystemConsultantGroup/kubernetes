@@ -322,10 +322,10 @@ both echo pods and access to the Kubernetes ClusterIP. This functionally
 validated bidirectional VXLAN UDP 8472 across both pod CIDRs. Every temporary
 Cilium namespace and resource was removed afterward.
 
-The broader upstream suite still reports E2S-to-SCC ICMP echo failure and
-external `1.1.1.1` timeouts. Those checks are not required for the internal
-cluster acceptance boundary. TCP 4240 health works, and Cilium documents ICMP
-echo as optional when HTTP health is available.
+The broader upstream suite still reports E2S-to-SCC ICMP echo failure. That
+check is not required for the internal cluster acceptance boundary. TCP 4240
+health works, and Cilium documents ICMP echo as optional when HTTP health is
+available.
 
 ## Kubernetes and etcd effect
 
