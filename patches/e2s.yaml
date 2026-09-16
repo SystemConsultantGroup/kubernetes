@@ -4,6 +4,12 @@ kind: HostnameConfig
 hostname: e2s.k8s
 auto: off
 ---
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 8.8.8.8
+  - address: 8.8.4.4
+---
 machine:
   nodeLabels:
     gateway.scg.sh/listener: "true"

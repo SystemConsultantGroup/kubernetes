@@ -29,6 +29,19 @@ assert_value() {
   }
 }
 
+expected_node_nameservers=$'8.8.8.8\n8.8.4.4'
+for patch in patches/*.yaml; do
+  case "$(basename "$patch")" in
+  cilium.yaml | worker.yaml) continue ;;
+  esac
+
+  actual_node_nameservers="$(yq eval-all -rN 'select(.kind == "ResolverConfig") | .nameservers[].address' "$patch")"
+  [[ $actual_node_nameservers == "$expected_node_nameservers" ]] || {
+    echo "$patch must configure only 8.8.8.8 and 8.8.4.4 as nameservers" >&2
+    exit 1
+  }
+done
+
 assert_value '.argocd.version' argocd/platform/argocd/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cilium.version' argocd/platform/cilium/application.yaml '.spec.sources[0].targetRevision'
 assert_value '."envoy-gateway".version' argocd/platform/envoy-gateway/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'

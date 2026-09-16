@@ -10,7 +10,7 @@ Cilium patches before generating a control-plane machine configuration.
 | --- | --- |
 | `worker.yaml` | Shared worker settings, including scheduling workloads on control-plane nodes |
 | `cilium.yaml` | Shared Cilium prerequisites: no Talos CNI and no kube-proxy |
-| `<node>.yaml` | Node-specific hostname, disk selectors, and user volumes |
+| `<node>.yaml` | Node-specific hostname, DNS resolvers, disk selectors, and user volumes |
 
 The node-specific files present are `scc.yaml`, `e1s.yaml`, and `e2s.yaml`.
 Every node listed in [`../state.yaml`](../state.yaml) needs a matching file;
@@ -28,6 +28,16 @@ The `scc` and `e2s` patches also declare partition-based Talos user volumes
 named `data` from their selected disks, mounted at `/var/mnt/data`. The selectors
 use stable WWIDs and request growth into each disk's available space. Verify live
 Talos volume and mount status before assigning workloads to either path.
+
+## DNS resolvers
+
+Each node patch contains a Talos `ResolverConfig` that sets `8.8.8.8` and
+`8.8.4.4` as the only nameservers. Talos 1.13 uses this configuration instead
+of its defaults or nameservers received from DHCP or the platform, and also
+propagates the nameservers to Kubernetes DNS.
+
+Keep the same two entries in every node patch so newly enabled nodes use the
+same resolver policy.
 
 Do not put credentials here.
 Talos secrets remain in encrypted
