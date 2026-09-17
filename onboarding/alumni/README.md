@@ -8,7 +8,8 @@ digests or source revisions just to activate the application.
 ## Order of operations
 
 1. Review the frontend/backend PRs and merge their platform workflow and Dockerfile
-   changes to main. Keep the Actions variable `PLATFORM_DEPLOY_ENABLED` unset.
+   changes to main. Every main push attempts platform delivery; until production
+   locks and GitHub App credentials exist, the initial delivery can fail.
    Existing legacy CD still runs according to its unchanged triggers.
 1. In the frontend repository set the Actions repository variable
    `PLATFORM_NEXT_PUBLIC_API_BASE_URL`. For internal-only startup verification,
@@ -39,10 +40,10 @@ digests or source revisions just to activate the application.
    blocked with a missing-secret/key configuration status. Argo CD will not be
    fully Healthy during this deliberate wait; do not disable Flyway to bypass it.
 1. Configure `KUBERNETES_APP_ID` and `KUBERNETES_APP_PRIVATE_KEY` in both app
-   repositories as described in the shared workflow guide. Set
-   `PLATFORM_DEPLOY_ENABLED=true` only after the production locks are on main.
-   Future app-main pushes use the shared delivery workflow; previews/testing
-   are deliberately not enabled.
+   repositories as described in the shared workflow guide. Once production locks
+   are on main, rerun any failed initial Actions delivery. Future app-main pushes
+   always use the shared delivery workflow; previews/testing are deliberately
+   not enabled. Backend tests must still pass before image publication.
 
 ## Backend Vault values
 
@@ -71,6 +72,8 @@ Verify there are no public routes and no changes to alumni-proxy or MySQL.
 Check source/image matches, non-root execution, required-secret behavior, and
 health after the real credentials are registered.
 
-Disable `PLATFORM_DEPLOY_ENABLED` to stop future automatic updates. Roll back
-application image locks in Git. Removing an app causes Argo CD pruning; preserve
+Image build or lock-update failures must be retried in GitHub Actions: Argo CD
+Sync cannot publish an image or update Git locks. Once locks are committed, retry
+cluster reconciliation using Sync after resolving the underlying problem.
+Roll back application image locks in Git. Removing an app causes Argo CD pruning; preserve
 storage claims and do not treat application rollback as a DB migration rollback.
