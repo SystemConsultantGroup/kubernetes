@@ -10,7 +10,7 @@ digests or source revisions just to activate the application.
 1. Review the frontend/backend PRs and merge their platform workflow and Dockerfile
    changes to main. Keep the Actions variable `PLATFORM_DEPLOY_ENABLED` unset.
    Existing legacy CD still runs according to its unchanged triggers.
-2. In the frontend repository set the Actions Secret
+2. In the frontend repository set the Actions repository variable
    `PLATFORM_NEXT_PUBLIC_API_BASE_URL`. For internal-only startup verification,
    `http://alumni-be.alumni-production.svc.cluster.local` is the new API address
    (the Service port is 80). This address is NOT browser-accessible. Later browser

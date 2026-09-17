@@ -83,12 +83,6 @@ they can be retained in build metadata or image history. Configure runtime
 environment variables and sensitive values through the application's
 Kubernetes configuration and managed Secrets instead.
 
-Existing application repositories that keep public build configuration in
-Actions Secrets can forward newline-separated arguments through the optional
-`PUBLIC_BUILD_ARGS` workflow secret. These are appended to `build_args`; do not
-specify the same key in both. This does not make the resulting values private:
-only pass public values such as `NEXT_PUBLIC_API_BASE_URL`, never credentials.
-
 ## Dispatch authorization
 
 Application repositories need `KUBERNETES_APP_ID` and `KUBERNETES_APP_PRIVATE_KEY`. The corresponding GitHub App must be installed only on this repository and needs `Actions: write`. Its token can dispatch `apply.yaml` but cannot modify repository contents.
