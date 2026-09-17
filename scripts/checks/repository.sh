@@ -276,6 +276,27 @@ validate_render() {
   done < <(yq eval-all -rN 'select(.kind == "HTTPRoute") | .spec.hostnames[]?' "$output")
 }
 
+# Exercise multiple Vault-backed workloads; separators must survive whitespace trimming.
+alumni_args=(
+  --values onboarding/alumni/meta.yaml
+  --set-string _context.application=alumni
+  --set-string _context.instance.type=production
+  --set _context.secrets.enabled=true
+  --set-string _context.secrets.server=https://vault.platform.scg.sh
+)
+for workload in user admin be; do
+  alumni_args+=(
+    --set-string "$workload.source.repository=$(yq -r '.fe.source.repository' applications/example/instances/production.yaml)"
+    --set-string "$workload.source.revision=$(yq -r '.fe.source.revision' applications/example/instances/production.yaml)"
+    --set-string "$workload.image=$(yq -r '.fe.image' applications/example/instances/production.yaml)"
+  )
+done
+alumni_render="$TEMPORARY_DIRECTORY/alumni-onboarding.yaml"
+validate_render "$alumni_render" alumni-production "${alumni_args[@]}"
+[[ $(yq eval-all '[select(.kind == "ExternalSecret")] | length' "$alumni_render") == 3 ]]
+[[ $(yq eval-all '[select(.kind == "Deployment")] | length' "$alumni_render") == 3 ]]
+[[ $(yq eval-all '[select(.kind == "HTTPRoute" or .kind == "Ingress")] | length' "$alumni_render") == 0 ]]
+
 for application_directory in applications/*; do
   [[ -d $application_directory ]] || continue
   application="${application_directory##*/}"

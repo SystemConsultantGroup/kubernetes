@@ -20,6 +20,9 @@ on:
         default: ''
         type: string
     secrets:
+      PUBLIC_BUILD_ARGS:
+        description: Public build arguments stored in caller Secrets; never pass credentials
+        required: false
       KUBERNETES_APP_ID:
         description: ID of the GitHub App that can dispatch the Kubernetes apply workflow
         required: true
@@ -135,7 +138,9 @@ jobs:
         with:
           cache-from: type=gha,scope=${{ inputs.application }}-${{ inputs.workload }}
           cache-to: type=gha,mode=max,scope=${{ inputs.application }}-${{ inputs.workload }}
-          build-args: ${{ inputs.build_args }}
+          build-args: |
+            ${{ inputs.build_args }}
+            ${{ secrets.PUBLIC_BUILD_ARGS }}
           context: .
           labels: |
             org.opencontainers.image.revision=${{ needs.resolve.outputs.source_revision }}

@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+automountServiceAccountToken: false
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: vault
+spec:
+  provider:
+    vault:
+      server: https://vault.platform.scg.sh
+      path: kv
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: applications
+          serviceAccountRef:
+            name: vault-auth
+            audiences:
+              - vault
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: minio-environment
+spec:
+  refreshInterval: 15s
+  secretStoreRef:
+    name: vault
+    kind: SecretStore
+  target:
+    name: minio-environment
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: applications/alumni-storage/production/minio
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: redis-environment
+spec:
+  refreshInterval: 15s
+  secretStoreRef:
+    name: vault
+    kind: SecretStore
+  target:
+    name: redis-environment
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: applications/alumni-storage/production/redis
