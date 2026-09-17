@@ -10,18 +10,18 @@ digests or source revisions just to activate the application.
 1. Review the frontend/backend PRs and merge their platform workflow and Dockerfile
    changes to main. Keep the Actions variable `PLATFORM_DEPLOY_ENABLED` unset.
    Existing legacy CD still runs according to its unchanged triggers.
-2. In the frontend repository set the Actions repository variable
+1. In the frontend repository set the Actions repository variable
    `PLATFORM_NEXT_PUBLIC_API_BASE_URL`. For internal-only startup verification,
    `http://alumni-be.alumni-production.svc.cluster.local` is the new API address
    (the Service port is 80). This address is NOT browser-accessible. Later browser
    testing needs an accessible API URL and a new frontend image build.
-3. Run the `Platform deployment` workflow manually on main in each app repository.
+1. Run the `Platform deployment` workflow manually on main in each app repository.
    Download `platform-lock-user`, `platform-lock-admin`, and `platform-lock-be`.
    These bootstrap runs only publish images; they do not dispatch deployment.
    Make all three GHCR packages publicly pullable before onboarding because the
    managed chart has no imagePullSecrets. No credentials or private source should
    be included in the images.
-4. From this repository root, register the downloaded locks:
+1. From this repository root, register the downloaded locks:
    ```sh
    python3 onboarding/alumni/register.py --user /path/user.json --admin /path/admin.json --be /path/be.json
    ```
@@ -29,16 +29,16 @@ digests or source revisions just to activate the application.
    its source SHAs and image digests against the successful builds, and run local
    repository validation. This step is required before the three-app onboarding
    PR is ready to merge. The script refuses to overwrite an existing application.
-5. Prepare the storage secrets described in
+1. Prepare the storage secrets described in
    [alumni-storage](../../applications/alumni-storage/README.md), then merge the
    reviewed infrastructure PR. Argo CD deploys storage and the managed app.
-6. Obtain an application database/account on `alumni-haproxy.mysql:3306` and grant
+1. Obtain an application database/account on `alumni-haproxy.mysql:3306` and grant
    schema-scoped permissions needed by Flyway. Do not use system/root accounts.
    Create the MinIO bucket/application account, then populate the backend Vault
    path below. Until every required key exists, the backend container stays
    blocked with a missing-secret/key configuration status. Argo CD will not be
    fully Healthy during this deliberate wait; do not disable Flyway to bypass it.
-7. Configure `KUBERNETES_APP_ID` and `KUBERNETES_APP_PRIVATE_KEY` in both app
+1. Configure `KUBERNETES_APP_ID` and `KUBERNETES_APP_PRIVATE_KEY` in both app
    repositories as described in the shared workflow guide. Set
    `PLATFORM_DEPLOY_ENABLED=true` only after the production locks are on main.
    Future app-main pushes use the shared delivery workflow; previews/testing

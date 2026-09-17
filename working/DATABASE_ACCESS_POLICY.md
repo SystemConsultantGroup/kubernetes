@@ -17,14 +17,14 @@ procedures into `argocd/platform/mysql/README.md`.
 ## Design principles
 
 1. Removing an object from Git must never delete database data.
-2. Absence from Git is not a valid database or account decommissioning signal.
-3. Service lifecycle, stored data, account policy, and credentials have
+1. Absence from Git is not a valid database or account decommissioning signal.
+1. Service lifecycle, stored data, account policy, and credentials have
    independent lifecycles.
-4. Git contains identities and privileges, but never passwords or private keys.
-5. Destructive transitions require explicit desired state and review.
-6. Routine administration must use an attributable identity rather than a
+1. Git contains identities and privileges, but never passwords or private keys.
+1. Destructive transitions require explicit desired state and review.
+1. Routine administration must use an attributable identity rather than a
    shared, permanently privileged password.
-7. `root` is a break-glass identity, not a routine application or operator
+1. `root` is a break-glass identity, not a routine application or operator
    account.
 
 ## Cluster and data lifecycle
@@ -191,7 +191,7 @@ The underscore must be escaped because `_` is itself a MySQL wildcard. This
 form is not the selected design for two reasons:
 
 1. wildcard use in database-level grants is deprecated as of MySQL 8.0.35; and
-2. Percona Operator 1.20 cannot safely represent this value in
+1. Percona Operator 1.20 cannot safely represent this value in
    `spec.users[].dbs`.
 
 For every `spec.users[].dbs` entry, the Operator first generates
@@ -370,9 +370,9 @@ credential must not be copied into application secrets or routinely distributed
 to people. Root access should require a platform-controlled path such as:
 
 1. valid Kubernetes cluster credentials;
-2. platform RBAC permitting the approved MySQL administrative command;
-3. an ephemeral in-cluster MySQL client; and
-4. direct Secret injection without printing the root password.
+1. platform RBAC permitting the approved MySQL administrative command;
+1. an ephemeral in-cluster MySQL client; and
+1. direct Secret injection without printing the root password.
 
 A future `k mysql shell <cluster> --admin` command could implement this flow for
 platform engineers. The command must be auditable and must delete the ephemeral
@@ -405,20 +405,20 @@ rotation, revocation, and attribution without changing the database catalog.
 ## Proposed implementation order
 
 1. Add a reviewed database catalog with exact cluster and environment fields.
-2. Add repository checks for suffix consistency, cluster retention protections,
+1. Add repository checks for suffix consistency, cluster retention protections,
    prohibited PVC finalizers, and forbidden account privileges.
-3. Create Vault paths and dedicated ExternalSecrets for `scg_prod` and
+1. Create Vault paths and dedicated ExternalSecrets for `scg_prod` and
    `scg_dev` without exposing credential values.
-4. Generate exact `spec.users[].dbs` lists from the catalog.
-5. Validate user creation, effective grants, TLS, and password rotation on a
+1. Generate exact `spec.users[].dbs` lists from the catalog.
+1. Validate user creation, effective grants, TLS, and password rotation on a
    disposable database before production use.
-6. Design and locally validate an external MySQL Service restricted to
+1. Design and locally validate an external MySQL Service restricted to
    `115.145.0.0/16`; do not expose it as part of ordinary validation.
-7. Add explicit account `present`, `locked`, and `absent` procedures.
-8. Add a platform-only, audited administrative workflow.
-9. Introduce Vault dynamic DBA credentials before treating the design as the
+1. Add explicit account `present`, `locked`, and `absent` procedures.
+1. Add a platform-only, audited administrative workflow.
+1. Introduce Vault dynamic DBA credentials before treating the design as the
    final routine-administration model.
-10. Test restoration of retained PVC data and independently stored backups.
+1. Test restoration of retained PVC data and independently stored backups.
 
 ## References
 
