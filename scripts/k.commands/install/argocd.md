@@ -16,6 +16,8 @@ The command:
    the ApplicationSet controller;
 1. creates the cert-manager and ExternalDNS namespaces and their Cloudflare
    Secrets, plus the ZeroSSL EAB Secret;
+1. retrieves the configured `kubernetes` tunnel token from Cloudflare and
+   creates `cloudflared/cloudflared-tunnel-token` without printing it;
 1. applies [`argocd/root-application.yaml`](../../../argocd/root-application.yaml);
    and
 1. removes `argocd-initial-admin-secret`.
@@ -39,7 +41,8 @@ k install argocd
   `GRAFANA_OIDC_CLIENT_SECRET`, `VAULT_OIDC_CLIENT_SECRET`, and
   `ZEROSSL_EAB_HMAC_KEY`.
 - Cilium is installed and the cluster is reachable.
-- The pinned Argo CD Helm repository is reachable.
+- The pinned Argo CD Helm repository and Cloudflare API are reachable. The
+  Cloudflare token can read the tunnel identified in `state.yaml`.
 - [`argocd/values.yaml`](../../../argocd/values.yaml) and
   [`argocd/root-application.yaml`](../../../argocd/root-application.yaml) exist.
 

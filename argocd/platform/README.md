@@ -12,6 +12,7 @@ AppProject.
 | [`argocd/`](argocd/README.md) | Argo CD chart, namespace resources, and public route |
 | [`gateway-api/`](gateway-api/README.md) | Upstream standard Gateway API definitions |
 | [`cilium/`](cilium/README.md) | CNI, kube-proxy replacement, eBPF, and network policy |
+| [`cloudflared/`](cloudflared/README.md) | Private Cloudflare Tunnel connector for selected cluster services |
 | [`envoy-gateway/`](envoy-gateway/README.md) | Envoy Gateway controller and Gateway-specific CRDs |
 | [`cert-manager/`](cert-manager/README.md) | ZeroSSL Cloudflare issuer and platform certificates |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/README.md) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
@@ -43,7 +44,7 @@ this reconciliation order:
 | --- | --- | --- |
 | 1 | Gateway API, Cilium, Envoy Gateway, External Secrets, local path provisioner | APIs, networking, Gateway controller, and storage foundations |
 | 2 | Gateway, cert-manager, Percona PXC Operator, Reloader | public Gateway, certificates, and application support controllers |
-| 3 | Argo CD, ExternalDNS, monitoring, Loki, Alloy, MySQL resources, Vault | externally routed, observability, and stateful services |
+| 3 | Argo CD, Cloudflare Tunnel, ExternalDNS, monitoring, Loki, Alloy, MySQL resources, Vault | externally routed, private access, observability, and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for
 one component's complete health before starting the next wave. Bootstrap

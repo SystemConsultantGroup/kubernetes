@@ -44,6 +44,7 @@ done
 
 assert_value '.argocd.version' argocd/platform/argocd/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cilium.version' argocd/platform/cilium/application.yaml '.spec.sources[0].targetRevision'
+assert_value '.cloudflared.version' argocd/platform/cloudflared/manifests/deployment.yaml '.spec.template.spec.containers[] | select(.name == "cloudflared") | .image | split("@")[0] | sub("^.*:"; "")'
 assert_value '."envoy-gateway".version' argocd/platform/envoy-gateway/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '."gateway-api".version' argocd/platform/gateway-api/application.yaml '.spec.source.targetRevision | sub("^v"; "")'
 assert_value '.external-secrets.version' argocd/platform/external-secrets/application.yaml '.spec.sources[0].targetRevision'
@@ -60,7 +61,7 @@ assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.source
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
+for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done

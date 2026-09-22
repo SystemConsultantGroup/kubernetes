@@ -24,6 +24,12 @@ cert-manager:
   version: "1.21.0"
 external-dns:
   version: "1.21.1" # chart version
+cloudflare:
+  account-id: "6c3929c273246f2321a61fae0c47623a"
+  tunnels:
+    kubernetes: "98a6bd7d-2e13-4919-b29e-1b33ecb48342"
+cloudflared:
+  version: "2026.8.2"
 external-secrets:
   version: "2.9.0"
 local-path-provisioner:

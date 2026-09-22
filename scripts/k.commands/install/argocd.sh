@@ -4,6 +4,8 @@ argocd_github_oauth_client_secret="$(read_bootstrap_secret ARGOCD_GITHUB_OAUTH_C
 argocd_github_webhook_secret="$(read_bootstrap_secret ARGOCD_GITHUB_WEBHOOK_SECRET)"
 vault_oidc_client_secret="$(read_bootstrap_secret VAULT_OIDC_CLIENT_SECRET)"
 cloudflare_api_token="$(read_bootstrap_secret CLOUDFLARE_API_TOKEN)"
+cloudflare_account_id="$(yq -er '.cloudflare."account-id"' "$STATE_FILE")"
+cloudflare_kubernetes_tunnel_id="$(yq -er '.cloudflare.tunnels.kubernetes' "$STATE_FILE")"
 zerossl_eab_hmac_key="$(read_bootstrap_secret ZEROSSL_EAB_HMAC_KEY)"
 
 argocd_dir="$ROOT_DIR/argocd"
@@ -47,7 +49,17 @@ for namespace in cert-manager external-dns; do
     kubectl -n "$namespace" create secret generic cloudflare-api-token \
       --from-file=api-token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
 done
-unset cloudflare_api_token namespace
+
+cloudflare_tunnel_response="$(curl --fail --silent --show-error \
+  -H "Authorization: Bearer $cloudflare_api_token" \
+  "https://api.cloudflare.com/client/v4/accounts/$cloudflare_account_id/cfd_tunnel/$cloudflare_kubernetes_tunnel_id/token")"
+cloudflare_tunnel_token="$(jq -er 'select(.success == true) | .result' <<<"$cloudflare_tunnel_response")"
+kubectl create namespace cloudflared --dry-run=client -o yaml | kubectl apply -f -
+printf '%s' "$cloudflare_tunnel_token" |
+  kubectl -n cloudflared create secret generic cloudflared-tunnel-token \
+    --from-file=token=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+unset cloudflare_account_id cloudflare_api_token cloudflare_kubernetes_tunnel_id
+unset cloudflare_tunnel_response cloudflare_tunnel_token namespace
 printf '%s' "$zerossl_eab_hmac_key" |
   kubectl -n cert-manager create secret generic zerossl-eab \
     --from-file=hmac-key=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -

@@ -10,6 +10,7 @@ resources:
   - platform/envoy-gateway/namespace.yaml
   - platform/envoy-gateway/application.yaml
   - platform/cilium/application.yaml
+  - platform/cloudflared/application.yaml
   - platform/cert-manager/application.yaml
   - platform/external-dns-scg.sh/application.yaml
   - platform/external-secrets/application.yaml
