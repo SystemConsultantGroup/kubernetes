@@ -16,13 +16,17 @@ alloy:
           role  = "pod"
           field = "spec.nodeName=" + coalesce(sys.env("HOSTNAME"), constants.hostname)
         }
+
+        attach_metadata {
+          namespace = true
+        }
       }
 
       discovery.relabel "application_pods" {
         targets = discovery.kubernetes.application_pods.targets
 
         rule {
-          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_part_of", "__meta_kubernetes_pod_label_platform_scg_sh_instance_type"]
+          source_labels = ["__meta_kubernetes_namespace_label_platform_scg_sh_application", "__meta_kubernetes_namespace_label_platform_scg_sh_instance_type"]
           separator     = ";"
           regex         = "[^;]+;(production|testing|preview|custom)"
           action        = "keep"
@@ -34,12 +38,12 @@ alloy:
         }
 
         rule {
-          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_part_of"]
+          source_labels = ["__meta_kubernetes_namespace_label_platform_scg_sh_application"]
           target_label  = "application"
         }
 
         rule {
-          source_labels = ["__meta_kubernetes_pod_label_platform_scg_sh_instance_type"]
+          source_labels = ["__meta_kubernetes_namespace_label_platform_scg_sh_instance_type"]
           target_label  = "instance_type"
         }
 

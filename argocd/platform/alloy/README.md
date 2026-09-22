@@ -5,21 +5,23 @@ stdout and stderr to the internal Loki service. Each Alloy Pod discovers only
 Pods assigned to its own node through the Kubernetes API; it does not mount host
 log directories or require privileged Pod Security.
 
-The collector keeps only Pods carrying both of these labels:
+The collector keeps every Pod in a Namespace carrying both of these labels:
 
 ```yaml
-app.kubernetes.io/part-of: <application>
+platform.scg.sh/application: <application>
 platform.scg.sh/instance-type: production|testing|preview|custom
 ```
 
-The managed application chart already supplies both labels. Custom Kustomize
-applications opt in by adding them to their Pod templates. Unlabeled platform
-and system Pods are excluded.
+The ApplicationSets that discover `applications/` attach these labels to every
+managed and custom application Namespace. Application Pods therefore require no
+logging-specific labels. Pods in unlabeled platform and system Namespaces are
+excluded.
 
 Loki streams receive bounded metadata labels: `cluster`, `namespace`,
-`application`, `instance_type`, `workload`, `pod`, `container`, and
-`container_runtime`. Do not promote request IDs, user IDs, image digests, or
-other unbounded values to Loki labels. Structured application logs remain in the
+`application`, `instance_type`, `pod`, `container`, and `container_runtime`.
+`workload` is also present when a Pod has the `app.kubernetes.io/name` label.
+Do not promote request IDs, user IDs, image digests, or other unbounded values
+to Loki labels. Structured application logs remain in the
 log line and can be parsed at query time.
 
 The chart's broad default RBAC is disabled. Git-managed RBAC grants only the

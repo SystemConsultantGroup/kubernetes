@@ -273,17 +273,11 @@ responsible for secret values should follow the
 
 Grafana at <https://grafana.platform.scg.sh> provides the Git-managed
 `Application Logs` dashboard. The platform collects container stdout and stderr
-only from Pods carrying both of these labels:
-
-```yaml
-app.kubernetes.io/part-of: <application>
-platform.scg.sh/instance-type: production|testing|preview|custom
-```
-
-The managed chart adds these labels automatically. A custom Kustomize
-application opts in by adding them to its Pod template; use the application
-directory name and `custom` instance type. Unlabeled application Pods and all
-platform or system Pods are excluded.
+from every Pod in the Namespaces generated for applications under this
+directory. The ApplicationSets mark those Namespaces with the application and
+instance type, so both managed and custom Kustomize applications are included
+without logging-specific Pod labels. Pods in platform, system, or other
+unmarked Namespaces are excluded.
 
 Logs are shared with the same Grafana users who can view cluster metrics and are
 retained for seven days on unreplicated node-local storage. They are an
@@ -313,9 +307,20 @@ Use `kustomization.yaml`, not `kustomize.yaml`. Do not add `meta.yaml` or an
 instances; define every desired resource in the Kustomization.
 
 Resources with an explicit namespace may target only the application's generated
-namespace, and a declared Namespace must use the application name. Platform
-review of merged Git changes is the authorization boundary; application
-developers receive no cluster or `k` credentials.
+namespace. Normally, let Argo CD create that Namespace. If the Kustomization
+must declare it, use the application name and preserve the labels that identify
+it for platform services such as log collection:
+
+```yaml
+metadata:
+  name: <application>
+  labels:
+    platform.scg.sh/application: <application>
+    platform.scg.sh/instance-type: custom
+```
+
+Platform review of merged Git changes is the authorization boundary;
+application developers receive no cluster or `k` credentials.
 
 ## Validation and detailed schema
 

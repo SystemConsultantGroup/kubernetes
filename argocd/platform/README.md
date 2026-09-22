@@ -24,7 +24,7 @@ AppProject.
 | [`reloader/`](reloader/README.md) | Rolls managed workloads when referenced Secrets change |
 | [`monitoring/`](monitoring/README.md) | Prometheus metrics and Dex-authenticated Grafana |
 | [`loki/`](loki/README.md) | Node-local, seven-day application log storage |
-| [`alloy/`](alloy/README.md) | Collects labeled application Pod logs from every node for Loki |
+| [`alloy/`](alloy/README.md) | Collects application-Namespace Pod logs from every node for Loki |
 | [`vault/`](vault/README.md) | Vault server with Raft storage and Cloudflare Worker auto-unseal |
 | [`external-dns-scg.skku.ac.kr/`](external-dns-scg.skku.ac.kr/README.md) | Inactive RFC2136 reference configuration |
 

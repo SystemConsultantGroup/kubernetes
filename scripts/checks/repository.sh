@@ -167,8 +167,9 @@ loki_config="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name =
 [[ $(yq eval-all '[select(.kind == "ClusterRole" and .metadata.name == "alloy-application-logs") | .rules[] | select((.resources | sort | join(",")) == "namespaces,pods,pods/log" and (.verbs | sort | join(",")) == "get,list,watch")] | length' "$alloy_manifests") == 1 ]]
 alloy_config="$(yq eval-all -rN 'select(.kind == "ConfigMap" and .metadata.name == "alloy") | .data."config.alloy"' "$alloy_chart")"
 grep -qF 'field = "spec.nodeName="' <<<"$alloy_config"
-grep -qF '__meta_kubernetes_pod_label_app_kubernetes_io_part_of' <<<"$alloy_config"
-grep -qF '__meta_kubernetes_pod_label_platform_scg_sh_instance_type' <<<"$alloy_config"
+grep -qF 'namespace = true' <<<"$alloy_config"
+grep -qF '__meta_kubernetes_namespace_label_platform_scg_sh_application' <<<"$alloy_config"
+grep -qF '__meta_kubernetes_namespace_label_platform_scg_sh_instance_type' <<<"$alloy_config"
 grep -qF 'regex         = "[^;]+;(production|testing|preview|custom)"' <<<"$alloy_config"
 grep -qF 'url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"' <<<"$alloy_config"
 if grep -Eq '(^|[^a-z])(secret|configmap)s?([^a-z]|$)' <<<"$(yq eval-all -rN 'select(.kind == "ClusterRole" and .metadata.name == "alloy-application-logs") | .rules[].resources[]' "$alloy_manifests")"; then
@@ -234,19 +235,26 @@ grep -q 'materialize_grafana_secrets' scripts/k.commands/initialize/monitoring.s
 [[ $(yq eval-all '[select(.kind == "AppProject" and .metadata.name == "platform") | .spec.sourceRepos[] | select(. == "https://grafana.github.io/helm-charts")] | length' argocd/projects/platform.yaml) == 1 ]]
 [[ $(yq eval-all '[select(.kind == "Application" and .metadata.name == "monitoring" and .spec.syncPolicy.syncOptions[] == "ServerSideApply=true")] | length' "$TEMPORARY_DIRECTORY/argocd.yaml") == 1 ]]
 [[ $(yq eval-all '[select(.kind == "Application" and (.metadata.name == "loki" or .metadata.name == "alloy") and .spec.syncPolicy.automated.prune == true and .spec.syncPolicy.automated.selfHeal == true)] | length' "$TEMPORARY_DIRECTORY/argocd.yaml") == 2 ]]
+[[ $(yq eval-all '[select(.kind == "ApplicationSet") | select(.spec.template.spec.syncPolicy.managedNamespaceMetadata.labels."platform.scg.sh/application" != null and .spec.template.spec.syncPolicy.managedNamespaceMetadata.labels."platform.scg.sh/instance-type" != null)] | length' argocd/application-sets/*.yaml) == 3 ]]
 
 validate_custom_render() {
-  local output="$1" application="$2" resource_kind resource_namespace resource_name
-  while IFS=$'\t' read -r resource_kind resource_namespace resource_name; do
-    if [[ $resource_kind == Namespace && $resource_name != "$application" ]]; then
-      echo "Custom application $application declares namespace $resource_name" >&2
-      return 1
+  local output="$1" application="$2" resource_kind resource_namespace resource_name namespace_application namespace_instance_type
+  while IFS=$'\t' read -r resource_kind resource_namespace resource_name namespace_application namespace_instance_type; do
+    if [[ $resource_kind == Namespace ]]; then
+      if [[ $resource_name != "$application" ]]; then
+        echo "Custom application $application declares namespace $resource_name" >&2
+        return 1
+      fi
+      if [[ $namespace_application != "$application" || $namespace_instance_type != custom ]]; then
+        echo "Custom application $application must preserve its application Namespace labels" >&2
+        return 1
+      fi
     fi
-    if [[ -n $resource_namespace && $resource_namespace != "$application" ]]; then
+    if [[ $resource_namespace != - && $resource_namespace != "$application" ]]; then
       echo "Custom application $application targets namespace $resource_namespace" >&2
       return 1
     fi
-  done < <(yq eval -r '[.kind // "", .metadata.namespace // "", .metadata.name // ""] | @tsv' "$output")
+  done < <(yq eval -r '[.kind // "-", .metadata.namespace // "-", .metadata.name // "-", .metadata.labels."platform.scg.sh/application" // "-", .metadata.labels."platform.scg.sh/instance-type" // "-"] | @tsv' "$output")
 }
 
 validate_render() {
