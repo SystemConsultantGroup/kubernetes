@@ -1,0 +1,4 @@
+source:
+  repository: https://github.com/SystemConsultantGroup/kubernetes-example.git
+  revision: 4e9f802080f26267a2aafe7eb2b909bf39834e58
+image: ghcr.io/systemconsultantgroup/kubernetes-example@sha256:f1b27ee38f06bf31c73ce11a1f14a6188d484186715892ff7844d7440bdd7af6
