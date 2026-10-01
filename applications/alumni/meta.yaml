@@ -1,0 +1,98 @@
+user:
+  http:
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  readinessProbe:
+    tcpSocket:
+      port: http
+admin:
+  http:
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  readinessProbe:
+    tcpSocket:
+      port: http
+be:
+  http:
+    port: 8000
+  env:
+    - name: DB_NAME
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: DB_NAME
+          optional: false
+    - name: DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: DB_USERNAME
+          optional: false
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: DB_PASSWORD
+          optional: false
+    - name: AUTH_JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: AUTH_JWT_SECRET
+          optional: false
+    - name: MINIO_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: MINIO_ACCESS_KEY
+          optional: false
+    - name: MINIO_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: MINIO_SECRET_KEY
+          optional: false
+    - name: SPRING_DATA_REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: SPRING_DATA_REDIS_PASSWORD
+          optional: false
+    - name: SPRING_PROFILES_ACTIVE
+      value: prod
+    - name: DB_HOST
+      value: alumni-haproxy.mysql
+    - name: DB_PORT
+      value: "3306"
+    - name: REDIS_HOST
+      value: redis.alumni-storage.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+    - name: MINIO_ENDPOINT
+      value: http://minio.alumni-storage.svc.cluster.local:9000
+    - name: MINIO_BUCKET
+      value: alumni
+    - name: FIREBASE_CREDENTIALS
+      value: ""
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  readinessProbe:
+    httpGet:
+      path: /actuator/health/readiness
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10

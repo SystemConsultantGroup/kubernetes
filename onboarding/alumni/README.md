@@ -1,9 +1,10 @@
 # Alumni onboarding
 
 Prepare a parallel deployment without changing legacy services, alumni-proxy,
-DNS, or public routing. This directory is intentionally not watched by Argo CD:
-the initial application images do not exist yet. Do not commit fabricated image
-digests or source revisions just to activate the application.
+DNS, or public routing. This directory contains bootstrap tooling and is not
+watched by Argo CD. The initial image locks are now registered under
+`applications/alumni/`; subsequent image updates use the delivery workflows.
+Do not rerun registration for an existing application or fabricate image digests.
 
 ## Order of operations
 
