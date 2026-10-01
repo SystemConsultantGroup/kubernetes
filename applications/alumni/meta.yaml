@@ -79,9 +79,13 @@ be:
     - name: REDIS_PORT
       value: "6379"
     - name: MINIO_ENDPOINT
-      value: http://minio.alumni-storage.svc.cluster.local:9000
+      valueFrom:
+        secretKeyRef:
+          name: alumni-be-environment
+          key: MINIO_ENDPOINT
+          optional: false
     - name: MINIO_BUCKET
-      value: alumni
+      value: skku-alumni-prod
     - name: FIREBASE_CREDENTIALS
       value: ""
   resources:

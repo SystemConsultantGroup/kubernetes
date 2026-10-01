@@ -36,7 +36,8 @@ Do not rerun registration for an existing application or fabricate image digests
    reviewed infrastructure PR. Argo CD deploys storage and the managed app.
 1. Obtain an application database/account on `alumni-haproxy.mysql:3306` and grant
    schema-scoped permissions needed by Flyway. Do not use system/root accounts.
-   Create the MinIO bucket/application account, then populate the backend Vault
+   Configure an application account for the existing MinIO bucket
+   `skku-alumni-prod`, then populate the backend Vault
    path below. Until every required key exists, the backend container stays
    blocked with a missing-secret/key configuration status. Argo CD will not be
    fully Healthy during this deliberate wait; do not disable Flyway to bypass it.
@@ -51,12 +52,17 @@ Do not rerun registration for an existing application or fabricate image digests
 Path: `kv/applications/alumni/production/be`.
 
 Required keys: `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `AUTH_JWT_SECRET`,
-`MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `SPRING_DATA_REDIS_PASSWORD`.
+`MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`,
+`SPRING_DATA_REDIS_PASSWORD`.
 The last value must match the storage Redis `REDIS_PASSWORD`.
 Do not create a partially populated path; the metadata requires each key.
 
-The metadata supplies the new internal DB/Redis/MinIO addresses and bucket
-`alumni`; explicit environment values take precedence over Vault values.
+The metadata supplies the internal DB/Redis addresses and bucket
+`skku-alumni-prod`; explicit environment values take precedence over Vault values.
+MinIO is an existing external service, not created by this repository. Set
+`MINIO_ENDPOINT` to its S3 API URL (not the console URL), reachable from the new
+cluster. The endpoint and dedicated application credentials are required Vault
+keys. No MinIO root credentials or new MinIO volume are needed.
 Firebase credentials are forced empty for this initial environment to avoid
 sending real production push notifications.
 

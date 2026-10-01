@@ -3,5 +3,4 @@ kind: Kustomization
 namespace: alumni-storage
 resources:
   - vault.yaml
-  - minio.yaml
   - redis.yaml
