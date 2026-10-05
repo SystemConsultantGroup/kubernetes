@@ -23,9 +23,12 @@ admin:
     tcpSocket:
       port: http
 be:
+  deploymentStrategy: Recreate
   http:
     port: 8000
   env:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-Xms128m -Xmx512m"
     - name: DB_NAME
       valueFrom:
         secretKeyRef:

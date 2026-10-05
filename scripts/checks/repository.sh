@@ -304,6 +304,16 @@ alumni_render="$TEMPORARY_DIRECTORY/alumni-onboarding.yaml"
 validate_render "$alumni_render" alumni-production "${alumni_args[@]}"
 [[ $(yq eval-all '[select(.kind == "ExternalSecret")] | length' "$alumni_render") == 3 ]]
 [[ $(yq eval-all '[select(.kind == "Deployment")] | length' "$alumni_render") == 3 ]]
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.strategy.type' "$alumni_render") == Recreate ]]
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.strategy | has("rollingUpdate")' "$alumni_render") == false ]]
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.template.spec.containers[0].env[] | select(.name == "JAVA_TOOL_OPTIONS") | .value' "$alumni_render") == '-Xms128m -Xmx512m' ]]
+for workload in user admin; do
+  [[ $(WORKLOAD="alumni-$workload" yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == strenv(WORKLOAD)) | .spec | has("strategy")' "$alumni_render") == false ]]
+done
+if helm template alumni-production argocd/charts/application "${alumni_args[@]}" --set-string be.deploymentStrategy=Invalid >/dev/null 2>&1; then
+  echo "Invalid deployment strategy was accepted" >&2
+  exit 1
+fi
 [[ $(yq eval-all '[select(.kind == "HTTPRoute" or .kind == "Ingress")] | length' "$alumni_render") == 0 ]]
 
 for application_directory in applications/*; do
