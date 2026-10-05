@@ -6,10 +6,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  ignoreApplicationDifferences:
-    - name: alumni-production
-      jsonPointers:
-        - /metadata/annotations/argocd.argoproj.io~1skip-reconcile
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
