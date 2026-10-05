@@ -33,33 +33,6 @@ The two controllers use separate webhook paths.
 Git polling remains enabled at 180 seconds as a fallback when a webhook is
 delayed or unavailable.
 
-## Alumni maintenance pause
-
-The static ApplicationSet preserves the `argocd.argoproj.io/skip-reconcile`
-annotation only on `alumni-production`. Authorized platform operators can pause
-reconciliation for database recovery without changing other applications or
-stopping shared controllers. This exception does not pause anything by itself.
-
-After this configuration has synced from `main`, use the intended cluster context:
-
-```bash
-kubectl --context admin@scg annotate application alumni-production -n argocd \
-  argocd.argoproj.io/skip-reconcile=true --overwrite
-```
-
-Confirm the annotation remains set before modifying workloads. Pausing
-reconciliation does not stop existing Pods or an already-running sync operation;
-verify workload shutdown separately before database maintenance. Application
-status is not refreshed while reconciliation is paused.
-
-Before resuming, reconcile any temporary workload changes with the desired Git
-configuration. Remove the annotation after recovery to restore reconciliation:
-
-```bash
-kubectl --context admin@scg annotate application alumni-production -n argocd \
-  argocd.argoproj.io/skip-reconcile-
-```
-
 ## Generated identities
 
 The application name is the first component of every generated identity.
