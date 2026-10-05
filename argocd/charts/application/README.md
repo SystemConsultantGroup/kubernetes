@@ -119,6 +119,7 @@ A workload may contain:
 | Field | Type | Behavior |
 | --- | --- | --- |
 | `replicas` | Integer, minimum `1` | Stable instance replica count; defaults to `1` and is forced to `1` for previews |
+| `deploymentStrategy` | `RollingUpdate` or `Recreate` | Optional Deployment strategy; omission keeps the Kubernetes default (`RollingUpdate`) |
 | `resources` | Kubernetes `ResourceRequirements` | Passed to the container |
 | `env` | List of Kubernetes `EnvVar` | Passed to the container |
 | `envFrom` | List of Kubernetes `EnvFromSource` | Passed to the container |
@@ -140,6 +141,13 @@ replicas: 3
 The value must be an integer greater than or equal to `1`.
 Production and testing Deployments use this value.
 Preview Deployments always use one replica.
+
+## `deploymentStrategy`
+
+Use `deploymentStrategy: Recreate` for workloads that must stop old Pods before
+starting replacement Pods during a rollout. This introduces deployment downtime;
+it does not replace database migration locking or enforce a single replica.
+Other workloads retain the default rolling-update behavior when the field is omitted.
 
 ## `resources`
 

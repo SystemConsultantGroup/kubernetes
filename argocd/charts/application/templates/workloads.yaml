@@ -40,6 +40,10 @@ metadata:
     {{- end }}
 spec:
   replicas: {{ ternary 1 ($workload.replicas | default 1) (eq $instanceType "preview") }}
+  {{- with $workload.deploymentStrategy }}
+  strategy:
+    type: {{ . | quote }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ $name | quote }}

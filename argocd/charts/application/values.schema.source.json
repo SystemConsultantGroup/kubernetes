@@ -122,6 +122,7 @@
       "additionalProperties": false,
       "properties": {
         "replicas": {"type": "integer", "minimum": 1},
+        "deploymentStrategy": {"enum": ["RollingUpdate", "Recreate"]},
         "resources": {"$ref": "#/$defs/kubernetesDefinitions/io.k8s.api.core.v1.ResourceRequirements"},
         "env": {
           "type": "array",
