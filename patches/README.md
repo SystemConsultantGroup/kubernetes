@@ -29,6 +29,18 @@ named `data` from their selected disks, mounted at `/var/mnt/data`. The selector
 use stable WWIDs and request growth into each disk's available space. Verify live
 Talos volume and mount status before assigning workloads to either path.
 
+## DNS server address on e2s
+
+`e2s.yaml` adds `115.145.172.17/24` to `eno1` using a Talos `LinkConfig`.
+This is a fixed secondary address for the DNS server, not a failover VIP.
+The existing platform-provided `115.145.172.19/24` remains the management
+address in `state.yaml`; the patch does not replace it or the default route.
+
+Before applying, confirm that `115.145.172.17` is reserved for e2s and is not
+in use elsewhere. Assigning the address alone does not expose a Kubernetes
+Service: the DNS server must also accept traffic to it on UDP and TCP port 53,
+with the appropriate workload networking and firewall rules.
+
 ## DNS resolvers
 
 Each node patch contains a Talos `ResolverConfig` that sets `8.8.8.8` and

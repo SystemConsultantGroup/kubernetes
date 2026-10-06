@@ -10,6 +10,12 @@ nameservers:
   - address: 8.8.8.8
   - address: 8.8.4.4
 ---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: eno1
+addresses:
+  - address: 115.145.172.17/24
+---
 machine:
   nodeLabels:
     gateway.scg.sh/listener: "true"
