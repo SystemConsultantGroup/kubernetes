@@ -1,0 +1,18 @@
+# Gives the bindizr-bind9 LoadBalancer Service the node address below. The
+# node already owns it, so no L2 or BGP announcement is needed: Cilium's
+# datapath matches <address>:53 as a service frontend and spreads the queries
+# over every BIND pod. The parent zone's NS glue points at this address.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: bindizr-dns
+spec:
+  blocks:
+    - start: 115.145.172.17
+      stop: 115.145.172.17
+  allowFirstLastIPs: "Yes"
+  # Only the bindizr BIND Service may take an address from this pool.
+  serviceSelector:
+    matchLabels:
+      app.kubernetes.io/instance: bindizr
+      app.kubernetes.io/component: bind9

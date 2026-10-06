@@ -15,6 +15,7 @@ spec:
     - https://helm.cilium.io/
     - https://github.com/envoyproxy/gateway.git
     - docker.io/envoyproxy
+    - docker.io/kweonminsung
     - quay.io/jetstack/charts
     - https://charts.external-secrets.io
     - https://helm.releases.hashicorp.com

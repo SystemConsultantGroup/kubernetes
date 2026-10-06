@@ -1,0 +1,41 @@
+# Overrides for the published chart docker.io/kweonminsung/bindizr-chart.
+# Resource names become bindizr, bindizr-api, bindizr-dns, bindizr-bind9, bindizr-ui.
+fullnameOverride: bindizr
+
+bindizr:
+  database:
+    type: mysql
+    # Written by the bindizr-db ExternalSecret from Vault kv/platform/bindizr.
+    existingSecret: bindizr-db
+    secretKey: DB_URL
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+
+# The web UI is the public entry (manifests/route.yaml); it relays to the API
+# in-cluster. Its settings live in the pod's own SQLite file with no volume.
+bindizrUi:
+  enabled: true
+  image:
+    tag: "0.1.0-rc.2"
+
+bind9:
+  # bind9.service.type stays LoadBalancer (chart default); Cilium LB IPAM
+  # assigns the address from manifests/lb-ip-pool.yaml.
+  persistence:
+    # The cluster's only StorageClass, and not the default.
+    storageClass: local-data
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  # A local-data volume pins its pod to one node for good, so the two
+  # replicas must start on different nodes.
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: bindizr-chart
+              app.kubernetes.io/instance: bindizr
+              app.kubernetes.io/component: bind9

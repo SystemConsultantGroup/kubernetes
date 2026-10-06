@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bindizr
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: docker.io/kweonminsung
+      chart: bindizr-chart
+      targetRevision: 0.1.0-rc.2
+      helm:
+        releaseName: bindizr
+        valueFiles:
+          - $values/argocd/platform/bindizr/values.yaml
+    - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/SystemConsultantGroup/kubernetes.git
+      targetRevision: main
+      path: argocd/platform/bindizr/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bindizr
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

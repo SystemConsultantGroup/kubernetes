@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bindizr-vault-auth
+  namespace: bindizr
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+automountServiceAccountToken: false
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: bindizr
+  namespace: bindizr
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  provider:
+    vault:
+      server: https://vault.platform.scg.sh
+      path: kv
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: bindizr
+          serviceAccountRef:
+            name: bindizr-vault-auth
+            audiences:
+              - vault
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: bindizr-db
+  namespace: bindizr
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  refreshPolicy: Periodic
+  refreshInterval: 15m
+  secretStoreRef:
+    kind: SecretStore
+    name: bindizr
+  target:
+    name: bindizr-db
+    creationPolicy: Owner
+    deletionPolicy: Delete
+  data:
+    - secretKey: DB_URL
+      remoteRef:
+        key: platform/bindizr
+        property: DB_URL
