@@ -11,7 +11,7 @@ load balancer address, and public route.
 
 | Workload | Role | Service |
 | --- | --- | --- |
-| `bindizr` Deployment (2) | HTTP API on 8000, DNS primary on 53, MySQL-backed | `bindizr-api`, `bindizr-dns` |
+| `bindizr` Deployment (2) | HTTP API on 8000, DNS primary on 53, MySQL-backed | `bindizr-api`, `bindizr-dns`, `bindizr` (LoadBalancer :5300) |
 | `bindizr-bind9` StatefulSet (2) | Authoritative secondaries fed by catalog zone AXFR/IXFR | `bindizr-bind9` (LoadBalancer), `bindizr-bind9-headless` |
 | `bindizr-ui` Deployment (1) | Web UI; relays API calls to `bindizr-api` in-cluster | `bindizr-ui` |
 
@@ -30,6 +30,42 @@ L2 or BGP announcement is involved: Cilium matches `<address>:53` as a service
 frontend and spreads queries over both BIND pods. Point the parent zone's NS
 glue at the Service's `EXTERNAL-IP`. When a node address changes, update the
 pool block here and the glue record together.
+
+## The primary's listener: dynamic updates and outside secondaries
+
+`manifests/bindizr-service.yaml` exposes the bindizr primary's own DNS
+listener on the same address as BIND, port 5300 (TCP and UDP), through Cilium
+LB IPAM address sharing. RFC 2136 dynamic updates and TSIG-signed AXFR/IXFR
+from secondaries outside the cluster (`bindizr.dns.extraSecondaries`) go
+there; BIND on port 53 is a secondary and refuses both. Inside the cluster the
+listener is `bindizr-dns.bindizr.svc.cluster.local:53` (ClusterIP
+`10.106.52.252`).
+
+bindizr is a hidden primary: it answers SOA queries only from registered
+secondaries or from a TSIG-signed query whose key's role holds `zone:transfer`
+for the zone. certbot's `dns-rfc2136` plugin finds the zone with SOA queries
+against the update server, so its key needs that grant and the queries must be
+signed (`dns_rfc2136_sign_query`, certbot 2.6.0 or later):
+
+```bash
+bindizr role create acme --description "certbot DNS-01"
+bindizr role grant acme --zone scg.skku.ac.kr --actions zone:transfer
+bindizr role grant acme --zone scg.skku.ac.kr \
+    --actions record:read,record:create,record:delete --pattern "_acme-challenge" --types TXT
+bindizr tsig-key create acme-key --role acme     # the secret is shown here; tsig-key get shows it again
+```
+
+```ini
+dns_rfc2136_server = 115.145.172.17
+dns_rfc2136_port = 5300
+dns_rfc2136_name = acme-key
+dns_rfc2136_secret = <base64 secret from tsig-key create>
+dns_rfc2136_algorithm = HMAC-SHA256
+dns_rfc2136_sign_query = true
+```
+
+certbot accepts only an IP address as the server. One `_acme-challenge.<name>`
+grant is needed per certificate name.
 
 ## Database
 

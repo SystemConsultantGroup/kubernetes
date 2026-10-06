@@ -21,7 +21,12 @@ bindizrUi:
 
 bind9:
   # bind9.service.type stays LoadBalancer (chart default); Cilium LB IPAM
-  # assigns the address from manifests/lb-ip-pool.yaml.
+  # assigns the address from manifests/lb-ip-pool.yaml, shared with the
+  # bindizr Service (manifests/bindizr-service.yaml) on port 5300.
+  service:
+    annotations:
+      lbipam.cilium.io/sharing-key: bindizr-dns
+      lbipam.cilium.io/ips: "115.145.172.17"
   persistence:
     # The cluster's only StorageClass, and not the default.
     storageClass: local-data

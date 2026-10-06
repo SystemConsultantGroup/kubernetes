@@ -4,4 +4,5 @@ resources:
   - namespace.yaml
   - vault-auth.yaml
   - lb-ip-pool.yaml
+  - bindizr-service.yaml
   - route.yaml
