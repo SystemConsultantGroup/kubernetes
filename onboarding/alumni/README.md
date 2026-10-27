@@ -1,7 +1,7 @@
 # Alumni onboarding
 
-Prepare a parallel deployment without changing legacy services, alumni-proxy,
-DNS, or public routing. This directory contains bootstrap tooling and is not
+Prepare a parallel deployment without changing legacy services, DNS, or public
+routing. This directory contains bootstrap tooling and is not
 watched by Argo CD. The initial image locks are now registered under
 `applications/alumni/`; subsequent image updates use the delivery workflows.
 Do not rerun registration for an existing application or fabricate image digests.
@@ -75,7 +75,7 @@ review those settings, Firebase, API build URLs, storage backup, and TLS togethe
 
 Run `nix fmt -- --ci .` and `nix flake check` in the supported Nix environment.
 Render the custom storage Kustomization and the generated managed application.
-Verify there are no public routes and no changes to alumni-proxy or MySQL.
+Verify the new deployment creates no public routes and makes no changes to MySQL.
 Check source/image matches, non-root execution, required-secret behavior, and
 health after the real credentials are registered.
 

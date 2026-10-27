@@ -12,7 +12,7 @@ Gateway owns the Gateway API controller and Envoy data plane.
 | `platform-https` | `*.platform.scg.sh` | `platform-wildcard-tls` |
 | `testing-https` | `*.testing.scg.sh` | `application-wildcards-tls` |
 | `preview-https` | `*.preview.scg.sh` | `application-wildcards-tls` |
-| `scg-skku-passthrough` | `*.scg.skku.ac.kr` | TLS passthrough; the legacy origin terminates TLS |
+| `scg-skku-passthrough` | `*.scg.skku.ac.kr` | TLS passthrough; no backend route is configured |
 
 cert-manager creates the referenced Secrets in `gateway-system`. Managed
 production domains attach through ListenerSets created by the application
@@ -40,10 +40,11 @@ E2S ingress is validated. The label controls where Envoy binds port 443; it does
 not change DNS publication. Remove the temporary DNS pin only in a separate
 reviewed change after the direct E2S test succeeds.
 
-The `scg-skku-passthrough` listener accepts HTTPS traffic only for hostnames
-whose DNS records are explicitly moved to the public Gateway. Its TLSRoute
-forwards the original TLS connection and SNI to the legacy cluster at
-`115.145.150.214:443`; it does not publish wildcard DNS or cover the zone apex.
+The `scg-skku-passthrough` listener has no configured TLSRoute after removal of
+the legacy forwarding application. Moving DNS to the public Gateway does not
+make these hostnames serve an application; configure the intended routing and
+TLS handling before directing traffic here. The listener does not publish
+wildcard DNS or cover the zone apex.
 
 ## Client network boundary
 
