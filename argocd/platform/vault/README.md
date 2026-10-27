@@ -155,6 +155,17 @@ initial root token has been revoked, changes to their live definitions require
 a platform operator to authenticate through OIDC and apply them as an explicit
 planned operation.
 
+## Certificate DNS access
+
+The `cert-manager-dns` Kubernetes-auth role accepts only the
+`cert-manager/cert-manager-dns-vault-auth` ServiceAccount. Its policy reads only
+`kv/data/platform/cert-manager/bindizr`, containing `TSIG_SECRET` for the alumni
+DNS-01 key. It does not reuse the managed-application role or the Bindizr
+database role. The bootstrap script records the policy and role for a fresh
+Vault; the existing cluster requires a platform operator to apply them.
+See the [cert-manager procedure](../cert-manager/README.md#alumni-dns-01-through-bindizr)
+for key creation, Vault setup, and verification.
+
 ## Operations
 
 Use the public address for operator commands:

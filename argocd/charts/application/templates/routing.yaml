@@ -109,7 +109,7 @@ spec:
   secretName: {{ $resourceName }}-tls
   issuerRef:
     kind: ClusterIssuer
-    name: zerossl-cloudflare
+    name: {{ $http.certificateIssuer | default "zerossl-cloudflare" | quote }}
   dnsNames:
     - {{ $hostname | quote }}
   {{- end }}

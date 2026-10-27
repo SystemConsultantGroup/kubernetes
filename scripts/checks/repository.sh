@@ -66,6 +66,17 @@ for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/ga
   kubectl kustomize "$directory" >"$output"
 done
 
+cert_manager_manifests="$TEMPORARY_DIRECTORY/argocd-platform-cert-manager-manifests.yaml"
+bindizr_issuer='select(.kind == "ClusterIssuer" and .metadata.name == "zerossl-bindizr")'
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.solvers[0].dns01.rfc2136.nameserver" "$cert_manager_manifests") == bindizr-dns.bindizr.svc.cluster.local:53 ]]
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.solvers[0].dns01.rfc2136.protocol" "$cert_manager_manifests") == TCP ]]
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.solvers[0].dns01.rfc2136.tsigKeyName" "$cert_manager_manifests") == alumni-acme ]]
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.solvers[0].selector.dnsNames | length" "$cert_manager_manifests") == 3 ]]
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.disableAccountKeyGeneration" "$cert_manager_manifests") == true ]]
+[[ $(yq eval-all -rN "$bindizr_issuer | .spec.acme.privateKeySecretRef.name" "$cert_manager_manifests") == zerossl-cloudflare-account ]]
+[[ $(yq eval-all -rN 'select(.kind == "ExternalSecret" and .metadata.name == "bindizr-rfc2136") | .spec.data[0].remoteRef.key' "$cert_manager_manifests") == platform/cert-manager/bindizr ]]
+[[ $(yq eval-all -rN 'select(.kind == "SecretStore" and .metadata.name == "cert-manager-dns") | .spec.provider.vault.auth.kubernetes.role' "$cert_manager_manifests") == cert-manager-dns ]]
+
 monitoring_chart="$TEMPORARY_DIRECTORY/monitoring-chart.yaml"
 monitoring_manifests="$TEMPORARY_DIRECTORY/argocd-platform-monitoring-manifests.yaml"
 monitoring_version="$(yq -r '."kube-prometheus-stack".chart' state.yaml)"
@@ -327,6 +338,7 @@ validate_render "$alumni_public_render" alumni-production \
 for kind in HTTPRoute ListenerSet Certificate; do
   [[ $(KIND="$kind" yq eval-all '[select(.kind == strenv(KIND))] | length' "$alumni_public_render") == 3 ]]
 done
+[[ $(yq eval-all -rN 'select(.kind == "Certificate") | .spec.issuerRef.name' "$alumni_public_render" | sort -u) == zerossl-bindizr ]]
 for hostname in test.alumni.scg.skku.ac.kr admin.test.alumni.scg.skku.ac.kr api.test.alumni.scg.skku.ac.kr; do
   [[ $(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "HTTPRoute" and .spec.hostnames[0] == strenv(ALUMNI_DOMAIN)) | .spec.hostnames[0]' "$alumni_public_render") == "$hostname" ]]
 done
@@ -418,6 +430,8 @@ for application_directory in applications/*; do
     validate_render "$TEMPORARY_DIRECTORY/$identity.yaml" "$identity" --values "$metadata" --values "$preview_values"
   done < <(find "$application_directory/instances/preview" -mindepth 2 -maxdepth 2 -name '*.yaml' -type f 2>/dev/null | sort)
 done
+
+[[ $(yq eval-all -rN 'select(.kind == "Certificate") | .spec.issuerRef.name' "$TEMPORARY_DIRECTORY/example-production.yaml" | sort -u) == zerossl-cloudflare ]]
 
 synthetic_values="$TEMPORARY_DIRECTORY/long-names.yaml"
 cat >"$synthetic_values" <<'EOF'

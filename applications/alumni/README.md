@@ -43,12 +43,12 @@ ExternalDNS manages `scg.sh` only; it does not register these `scg.skku.ac.kr`
 records. DNS edits may replace an existing legacy development endpoint, so
 coordinate record ownership before changing them.
 
-Certificates use the existing `zerossl-cloudflare` ClusterIssuer, which performs
-DNS-01 validation through Cloudflare. A/AAAA records alone do not complete that
-validation. The DNS/platform owner must ensure the issuer can manage the required
-challenge records for all three names, or arrange an appropriate certificate
-issuer change separately. This PR does not provision DNS credentials, change the
-shared issuer, or assume an existing wildcard certificate covers the names.
+Certificates use the dedicated `zerossl-bindizr` ClusterIssuer and RFC2136 DNS-01
+updates to the Bindizr primary. The DNS/platform owner must prepare the narrowly
+scoped TSIG key, Vault secret, and Vault authentication role following the
+[cert-manager procedure](../../argocd/platform/cert-manager/README.md#alumni-dns-01-through-bindizr).
+A/AAAA records alone do not complete certificate validation. The shared
+Cloudflare issuer continues to serve its existing domains.
 
 Check readiness after reconciliation:
 

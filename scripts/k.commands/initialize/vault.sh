@@ -6,6 +6,7 @@ require_file "$ROOT_DIR/argocd/platform/vault/policies/active.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/applications.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/mysql-backups.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/bindizr.hcl"
+require_file "$ROOT_DIR/argocd/platform/vault/policies/cert-manager-dns.hcl"
 require_file "$ROOT_DIR/argocd/platform/vault/policies/platform.hcl"
 
 configure_vault_policy() {
@@ -74,6 +75,26 @@ configure_vault_bindizr() {
       bound_service_account_namespaces=bindizr \
       audience=vault \
       token_policies=bindizr \
+      token_no_default_policy=true \
+      token_ttl=1h \
+      token_max_ttl=8h >/dev/null
+  '
+}
+
+configure_vault_cert_manager_dns() {
+  local token="$1"
+
+  configure_vault_policy "$token" cert-manager-dns \
+    "$ROOT_DIR/argocd/platform/vault/policies/cert-manager-dns.hcl"
+
+  printf '%s\n' "$token" | kubectl -n vault exec -i vault-0 -- /bin/sh -ec '
+    IFS= read -r VAULT_TOKEN
+    export VAULT_TOKEN VAULT_SKIP_VERIFY=true
+    vault write auth/kubernetes/role/cert-manager-dns \
+      bound_service_account_names=cert-manager-dns-vault-auth \
+      bound_service_account_namespaces=cert-manager \
+      audience=vault \
+      token_policies=cert-manager-dns \
       token_no_default_policy=true \
       token_ttl=1h \
       token_max_ttl=8h >/dev/null
@@ -224,6 +245,7 @@ if [[ $(jq -r '.initialized' "$status_file") == true ]]; then
     configure_vault_applications "$root_token"
     configure_vault_mysql_backups "$root_token"
     configure_vault_bindizr "$root_token"
+    configure_vault_cert_manager_dns "$root_token"
     unset oidc_client_secret
     echo "Vault is already initialized; privileged configuration was reconciled"
   else
@@ -272,6 +294,7 @@ configure_vault_oidc "$root_token" "$oidc_client_secret"
 configure_vault_applications "$root_token"
 configure_vault_mysql_backups "$root_token"
 configure_vault_bindizr "$root_token"
+configure_vault_cert_manager_dns "$root_token"
 unset root_token oidc_client_secret
 
 public_ready=0

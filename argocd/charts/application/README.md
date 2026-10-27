@@ -528,6 +528,21 @@ A string domain is treated as `external: false`:
 - a cert-manager Certificate is created; and
 - the route is not marked for ExternalDNS exclusion.
 
+`http.certificateIssuer` optionally selects the platform-managed ClusterIssuer
+for all non-external domains on that workload. It defaults to
+`zerossl-cloudflare`. For the alumni Bindizr DNS zone, use:
+
+```yaml
+http:
+  port: 3000
+  domain: test.alumni.scg.skku.ac.kr
+  certificateIssuer: zerossl-bindizr
+```
+
+The issuer must already be configured with suitable DNS credentials. This field
+does not create an issuer or grant access to its DNS provider. It has no effect
+on external domains, testing, or previews, which do not issue these certificates.
+
 For each workload and hostname, the chart uses the first eight characters of
 `sha256(hostname)` as a suffix:
 
