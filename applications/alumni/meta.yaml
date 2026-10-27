@@ -2,6 +2,7 @@ user:
   http:
     port: 3000
     domain: test.alumni.scg.skku.ac.kr
+    certificateIssuer: zerossl-bindizr
   resources:
     requests:
       cpu: 100m
@@ -15,6 +16,7 @@ admin:
   http:
     port: 3000
     domain: admin.test.alumni.scg.skku.ac.kr
+    certificateIssuer: zerossl-bindizr
   resources:
     requests:
       cpu: 100m
@@ -29,6 +31,7 @@ be:
   http:
     port: 8000
     domain: api.test.alumni.scg.skku.ac.kr
+    certificateIssuer: zerossl-bindizr
   env:
     - name: JAVA_TOOL_OPTIONS
       value: "-Xms128m -Xmx512m"

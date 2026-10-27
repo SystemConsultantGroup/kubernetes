@@ -1946,6 +1946,9 @@
         "domain": {
           "$ref": "#/$defs/domainOrDomains"
         },
+        "certificateIssuer": {
+          "$ref": "#/$defs/hostname"
+        },
         "allowCIDRs": {
           "type": "array",
           "minItems": 1,
