@@ -1,11 +1,6 @@
 user:
   http:
     port: 3000
-  env:
-    - name: AUTH_MEMBER_ACCESS_COOKIE_NAME
-      value: platform_member_access_token
-    - name: AUTH_MEMBER_REFRESH_COOKIE_NAME
-      value: platform_member_refresh_token
   resources:
     requests:
       cpu: 100m

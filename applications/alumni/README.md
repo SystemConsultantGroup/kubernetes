@@ -15,12 +15,12 @@ test database or migrate legacy production data.
 1. Merge the backend platform-profile PR and wait for the backend image lock to
    update in `instances/production.yaml`.
 1. Set the frontend repository variable `PLATFORM_NEXT_PUBLIC_API_BASE_URL` to
-   `https://api.test.alumni.scg.skku.ac.kr`, merge the frontend cookie-forwarding
-   PR, and wait for both frontend image locks to update. Manual bootstrap builds
+   `https://api.test.alumni.scg.skku.ac.kr`, rebuild the frontend through a main
+   push, and wait for both frontend image locks to update. Manual bootstrap builds
    do not update an existing application's locks.
-1. Merge this infrastructure change. The backend uses `prod,platform` and the
-   user server forwards only the matching `platform_member_*` authentication
-   cookies. Existing `prod` and `dev` profiles remain available for legacy CD.
+1. Merge this infrastructure change. The backend uses `prod,platform` with the
+   existing authentication cookie names. Existing `prod` and `dev` profiles
+   remain available for legacy CD.
 1. Complete DNS and certificate validation, then test member/admin login, member
    lists rendered on the server, password reset links, and image uploads.
 

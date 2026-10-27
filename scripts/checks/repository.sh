@@ -331,7 +331,6 @@ for hostname in test.alumni.scg.skku.ac.kr admin.test.alumni.scg.skku.ac.kr api.
   [[ $(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "HTTPRoute" and .spec.hostnames[0] == strenv(ALUMNI_DOMAIN)) | .spec.hostnames[0]' "$alumni_public_render") == "$hostname" ]]
 done
 [[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.template.spec.containers[0].env[] | select(.name == "SPRING_PROFILES_ACTIVE") | .value' "$alumni_public_render") == prod,platform ]]
-[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-user") | .spec.template.spec.containers[0].env[] | select(.name == "AUTH_MEMBER_ACCESS_COOKIE_NAME") | .value' "$alumni_public_render") == platform_member_access_token ]]
 
 for application_directory in applications/*; do
   [[ -d $application_directory ]] || continue
