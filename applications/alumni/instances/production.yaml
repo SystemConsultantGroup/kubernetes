@@ -11,5 +11,5 @@ admin:
 be:
   source:
     repository: https://github.com/SystemConsultantGroup/skku-alumni-backend.git
-    revision: ca7fc4d4c9d5c9a032adb2ee0d574df81f25c123
-  image: ghcr.io/systemconsultantgroup/alumni-platform-be@sha256:e8713c191ea161fe09b8257cbb1d52dcfc6f82750300294942c8ae03e2bdd88d
+    revision: 3b74fe79d5b2989d4ad8482cdfc7456e5735606a
+  image: ghcr.io/systemconsultantgroup/alumni-platform-be@sha256:1a5fa4845f354410627b86237f8699b98bd11b373ff19b28276b6f9a7c266901
