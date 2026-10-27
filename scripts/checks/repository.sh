@@ -316,6 +316,22 @@ if helm template alumni-production argocd/charts/application "${alumni_args[@]}"
 fi
 [[ $(yq eval-all '[select(.kind == "HTTPRoute" or .kind == "Ingress")] | length' "$alumni_render") == 0 ]]
 
+alumni_public_render="$TEMPORARY_DIRECTORY/alumni-public.yaml"
+validate_render "$alumni_public_render" alumni-production \
+  --values applications/alumni/meta.yaml \
+  --values applications/alumni/instances/production.yaml \
+  --set-string _context.application=alumni \
+  --set-string _context.instance.type=production \
+  --set _context.secrets.enabled=true \
+  --set-string _context.secrets.server=https://vault.platform.scg.sh
+for kind in HTTPRoute ListenerSet Certificate; do
+  [[ $(KIND="$kind" yq eval-all '[select(.kind == strenv(KIND))] | length' "$alumni_public_render") == 3 ]]
+done
+for hostname in test.alumni.scg.skku.ac.kr admin.test.alumni.scg.skku.ac.kr api.test.alumni.scg.skku.ac.kr; do
+  [[ $(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "HTTPRoute" and .spec.hostnames[0] == strenv(ALUMNI_DOMAIN)) | .spec.hostnames[0]' "$alumni_public_render") == "$hostname" ]]
+done
+[[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.template.spec.containers[0].env[] | select(.name == "SPRING_PROFILES_ACTIVE") | .value' "$alumni_public_render") == prod,platform ]]
+
 for application_directory in applications/*; do
   [[ -d $application_directory ]] || continue
   application="${application_directory##*/}"

@@ -72,7 +72,7 @@ be:
           key: SPRING_DATA_REDIS_PASSWORD
           optional: false
     - name: SPRING_PROFILES_ACTIVE
-      value: prod
+      value: prod,platform
     - name: DB_HOST
       value: alumni-haproxy.mysql
     - name: DB_PORT
