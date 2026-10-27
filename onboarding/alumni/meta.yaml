@@ -1,6 +1,11 @@
 user:
   http:
     port: 3000
+  env:
+    - name: AUTH_MEMBER_ACCESS_COOKIE_NAME
+      value: platform_member_access_token
+    - name: AUTH_MEMBER_REFRESH_COOKIE_NAME
+      value: platform_member_refresh_token
   resources:
     requests:
       cpu: 100m
@@ -72,7 +77,7 @@ be:
           key: SPRING_DATA_REDIS_PASSWORD
           optional: false
     - name: SPRING_PROFILES_ACTIVE
-      value: prod
+      value: prod,platform
     - name: DB_HOST
       value: alumni-haproxy.mysql
     - name: DB_PORT

@@ -70,6 +70,9 @@ This phase checks startup, DB migrations, readiness, and internal connectivity.
 Existing production CORS, cookie-domain and member URL settings are not a working
 browser test configuration for the new environment. Before external access,
 review those settings, Firebase, API build URLs, storage backup, and TLS together.
+The registered instance's public domains and rollout procedure are documented in
+[Alumni platform access](../../applications/alumni/README.md). Bootstrap metadata
+deliberately omits public domains; registration alone must not expose a new app.
 
 ## Validation and rollback
 
