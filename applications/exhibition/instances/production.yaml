@@ -1,5 +1,5 @@
 manager:
   source:
     repository: https://github.com/SystemConsultantGroup/exhibition-manage.git
-    revision: "38b274be3baeca93700c1ae76f7c14c8f50c052f"
-  image: ghcr.io/systemconsultantgroup/exhibition-manage@sha256:e62625ed4fec15e7b72bb46d6bbf21bbdef2b3aeb552c14b23e2c80d21580469
+    revision: "d94f34800d88031ca471b29531082dd0e4325c3e"
+  image: ghcr.io/systemconsultantgroup/exhibition-manage@sha256:59fca7c7374d1cc21501983f59e2ad06c2c75a0ce9c92a1eed415b00f8e7b1c2
