@@ -1,0 +1,5 @@
+web:
+  source:
+    repository: https://github.com/SystemConsultantGroup/ICC-haedong-seminar-reservation.git
+    revision: ab44428f03e3f82c6541e9a382db5ae07a2733b2
+  image: docker.io/scgskku/icc-haedong-seminar-reservation@sha256:1fd47d2aa06c692690d45c415f0b6c6aa8064ad77ced9a18593b84ceea956bf7

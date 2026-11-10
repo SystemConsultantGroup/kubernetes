@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-backend.git
+    revision: 755d44ad0fb99c553a72bd6555ce8bdca30e02fc
+  image: docker.io/scgskku/scg-apply-be-prod@sha256:f1430c337c67cc6c8e7b9690e42e985ef8d5c0c34ddc83fcf07d983cde433fa4
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/scg-apply-frontend.git
+    revision: 1cdd161810456c6f061ae19f13b79435585dfa82
+  image: docker.io/scgskku/scg-apply-fe-prod@sha256:abe7300c97b9bad78e8828d8b444dfad04d115bdb13fa5182060031689e540d4

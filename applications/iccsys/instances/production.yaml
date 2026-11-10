@@ -1,0 +1,5 @@
+web:
+  source:
+    repository: https://github.com/SystemConsultantGroup/iccsys-new.git
+    revision: 525e6c3b199b043b0e6104a2f6e5c22e594d3cb6
+  image: docker.io/scgskku/iccsys-prod@sha256:c59f3b948e12911d2e8346e5dbc052e1bb44a5c6df0ab68c2b5b0d088a3dd5f7

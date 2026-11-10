@@ -1,0 +1,5 @@
+keycloak:
+  source:
+    repository: https://github.com/SystemConsultantGroup/SCG-SSO.git
+    revision: 567522ddc800596c983ee1332dea67ec10a35ee5
+  image: docker.io/scgskku/scg-sso@sha256:7a433478def56d551d83c808acdff715b5863bfb01313d0488ae3e2f037fbef1

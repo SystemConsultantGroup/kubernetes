@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/ICC-grad-dissertation-manage-backend.git
+    revision: ba44f08f5cbdf1433e64e205fe7e016f382abca6
+  image: docker.io/scgskku/icc-grad-dissertation-manage-backend@sha256:178665aaa7aed9e5962f69a9f5287fa9cea55155df355a536f75e13c9bd751d8
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/ICC-grad-dissertion-manage-frontend.git
+    revision: 24d96d802aa8abec75cf45e5212eaa13ea190f5f
+  image: docker.io/scgskku/ice-gs-thesis-fe-prod@sha256:7b1b7380166846e156341f093cfff2d50b22d3c180b4d6da229c466ee17cc438

@@ -1,0 +1,5 @@
+web:
+  source:
+    repository: https://github.com/SystemConsultantGroup/ICC-lecture-enrollment.git
+    revision: e878e0f51690d1bf96ad7f08bcfb16dcfd0c23de
+  image: docker.io/scgskku/icc-lecture-enrollment@sha256:94ff90ec15e6581338c4a59a025ac77b8326d0bcf403508d336c57063c06838a

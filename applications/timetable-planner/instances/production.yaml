@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/timetable-planner-backend.git
+    revision: 78c1a0d6e87ce0ec766dbb3e6f4cc4a5144a9ecb
+  image: docker.io/scgskku/timetable-planner-be-prod@sha256:e96a769168119a045b429c611e8001189d1c7b8324660d35030770830e747a60
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/timetable-planner-frontend.git
+    revision: 56116658af3d3b28488cd5b5ee19e4f649b72fc9
+  image: docker.io/scgskku/timetable-planner-fe-prod@sha256:bfe85aff8d794817ae91f44613740445cd4cf25c5fa6fb5db62d6f7d0a51e4d0

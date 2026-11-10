@@ -1,0 +1,10 @@
+api:
+  source:
+    repository: https://github.com/SystemConsultantGroup/scg-url-shortener-backend.git
+    revision: 0faefce792897571bdcd7944de9b42c1adcccd9d
+  image: docker.io/scgskku/shortener-api-prod@sha256:18fa427a2c0c4ec73e74fca2ace8a55a5d19ca3ee1a3c8c50980dbcf96f5cf02
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/scg-url-shortener-frontend.git
+    revision: d27fac3eff44424e5d2f16c99e07e834ee465c04
+  image: docker.io/scgskku/shortener-fe-prod@sha256:5d360b176f418ba0a2f68742163e1922ba3b970e9f885dddf8bc2cbc2917160a

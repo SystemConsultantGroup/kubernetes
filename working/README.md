@@ -15,3 +15,5 @@ account management, campus-network access, and privileged administration.
 `VAULT.md` now contains only activation status, migration follow-up, and links
 to the durable component contracts under `argocd/platform/vault/`,
 `argocd/charts/application/`, and `workers/kms/`.
+`LEGACY_CONFIG_PORT.md` tracks the port of the legacy `*-config` repositories
+and their remaining cutover blockers.

@@ -4,3 +4,9 @@ manager:
     domain: manage.exhibition.scg.sh
     allowCIDRs:
       - 115.145.150.0/24
+be:
+  http:
+    port: 8080
+fe:
+  http:
+    port: 3000

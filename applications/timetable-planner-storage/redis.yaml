@@ -1,0 +1,83 @@
+# Ephemeral cache: matches the legacy deployment, which disabled persistence.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: timetable-planner-redis
+  ports:
+    - name: api
+      port: 6379
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: timetable-planner-redis
+  template:
+    metadata:
+      labels:
+        app: timetable-planner-redis
+        app.kubernetes.io/part-of: timetable-planner-storage
+        platform.scg.sh/instance-type: custom
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: docker.io/library/redis@sha256:7aec734b2bb298a1d769fd8729f13b8514a41bf90fcdd1f38ec52267fbaa8ee6
+          command: ["sh", "-ec"]
+          args:
+            - ': "${REDIS_PASSWORD:?REDIS_PASSWORD must not be empty}"; exec redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru --requirepass "$REDIS_PASSWORD"'
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-environment
+                  key: REDIS_PASSWORD
+          ports:
+            - name: api
+              containerPort: 6379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command: ["sh", "-ec", 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep -qx PONG']
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-ec", 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep -qx PONG']
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 256Mi

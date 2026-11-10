@@ -3,3 +3,13 @@ manager:
     repository: https://github.com/SystemConsultantGroup/exhibition-manage.git
     revision: "5b8c4533369d4d99c48f8cebe775179676ecc3c7"
   image: ghcr.io/systemconsultantgroup/exhibition-manage@sha256:441370412dfa3a0f4ceb8674833de838c909e00af09c1b7c373fde3704a47da5
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/exhibition-backend.git
+    revision: 59afe73b4c618447be3c148aef936b584994f551
+  image: docker.io/scgskku/exhibition-be@sha256:e3179613c2c188a8f90fc239dcde0aa5a4c7119a93beaec31d0b39fa691c6e87
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/exhibition-frontend.git
+    revision: e3e7550f3bf2e5449a990fe212d79c75278d521c
+  image: docker.io/scgskku/exhibition-fe@sha256:6058fad81602a4ab1525011fd213bd2f3ddfe429206eff4b576f957c65ff89e9

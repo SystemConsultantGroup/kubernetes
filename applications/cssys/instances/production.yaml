@@ -1,0 +1,5 @@
+web:
+  source:
+    repository: https://github.com/SystemConsultantGroup/CSE-undergrad-gp-manage-v2.git
+    revision: 2f7ea25e90e671bb61d4a02a11c282bfb3018b01
+  image: docker.io/scgskku/cse-undergrad-gp-manage@sha256:a896ff82d98beed009d46863a73af1bf7aabe25a5214cb6e4667b107b59f8673

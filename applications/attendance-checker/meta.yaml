@@ -1,0 +1,6 @@
+be:
+  http:
+    port: 8080
+fe:
+  http:
+    port: 3000

@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/attendance-checker-backend.git
+    revision: 15fb1be1fe694ccb4547ec07c7caf1cfb90f81d9
+  image: docker.io/scgskku/attendance-checker-be-dev@sha256:7fc38bbe797ab63681e9b31a3f621e5158a040b1a861e0fb2c6ae03edae14f76
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/attendance-checker-frontend.git
+    revision: 418c0c9de76f44c06d1c9d2c9b0da04776425b17
+  image: docker.io/scgskku/attendance-checker-fe-dev@sha256:9c9b37bb0d0f045a7fe170086dfe834c7f98935493e39a8fc304b04f462aebc3

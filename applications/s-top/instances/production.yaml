@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/S-top-backend.git
+    revision: 08f100452e590985a193813816d4421b22d9d0e9
+  image: docker.io/jcy0308/stop-be-prod@sha256:48869e7ef7e8736906100ef69ab5c3b1bfc5504d2e3ffe21ccc78cf1a411750f
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/S-top-frontend.git
+    revision: 1f6105cdacd07f3c936a0e645bf244f7c72aafb7
+  image: docker.io/scgskku/stop-fe-prod@sha256:eef1a65f9dcef80640ee002ee8065654f895f081b96e268d16aa9202c96f538c

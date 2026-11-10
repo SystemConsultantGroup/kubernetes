@@ -1,0 +1,11 @@
+be:
+  env:
+    - name: REDIS_HOST
+      value: redis.timetable-planner-storage.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+  http:
+    port: 8080
+fe:
+  http:
+    port: 3000

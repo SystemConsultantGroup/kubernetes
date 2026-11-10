@@ -1,0 +1,6 @@
+api:
+  http:
+    port: 8000
+fe:
+  http:
+    port: 3000

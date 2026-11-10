@@ -1,0 +1,10 @@
+be:
+  source:
+    repository: https://github.com/SystemConsultantGroup/room-reservation-backend.git
+    revision: 5d1a1d18cf97a51558daf84e2c601490d206e472
+  image: docker.io/scgskku/reservation-be-prod@sha256:438856166a7a20edc3f5333d17070c6c8df56093fdfeaadad5c7610ed0b6d651
+fe:
+  source:
+    repository: https://github.com/SystemConsultantGroup/room-reservation-frontend.git
+    revision: 26e9a3fe1b47895de1f33f844ac1e029b2a9efdd
+  image: docker.io/scgskku/reservation-fe-prod@sha256:d6c687b796b0e5cbbd02ba292e54b2009cd93f85c2cc02721da23750a06a8915
