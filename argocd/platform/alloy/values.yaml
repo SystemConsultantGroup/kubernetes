@@ -26,9 +26,14 @@ alloy:
         targets = discovery.kubernetes.application_pods.targets
 
         rule {
-          source_labels = ["__meta_kubernetes_namespace_label_platform_scg_sh_application", "__meta_kubernetes_namespace_label_platform_scg_sh_instance_type"]
+          source_labels = [
+            "__meta_kubernetes_namespace",
+            "__meta_kubernetes_pod_container_name",
+            "__meta_kubernetes_namespace_label_platform_scg_sh_application",
+            "__meta_kubernetes_namespace_label_platform_scg_sh_instance_type",
+          ]
           separator     = ";"
-          regex         = "[^;]+;(production|testing|preview|custom)"
+          regex         = "[^;]*;[^;]*;[^;]+;(production|testing|preview|custom)|bunkerweb;bunkerweb;[^;]*;[^;]*"
           action        = "keep"
         }
 

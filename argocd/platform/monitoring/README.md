@@ -97,9 +97,10 @@ Git-managed `Application Logs` dashboard. Loki and Alloy remain separate
 platform Applications so a logging failure or upgrade does not own the
 Prometheus and Grafana lifecycle.
 
-Alloy collects only labeled application Pod stdout and stderr. Platform and
-system logs are excluded. The application-facing label contract, retention, and
-sensitive-data boundary are documented in the
+Alloy collects stdout and stderr from labeled application Pods and the
+`bunkerweb` proxy container. Query BunkerWeb in Explore using the Loki datasource
+and `{namespace="bunkerweb", container="bunkerweb"}`. The application-facing
+label contract, retention, and sensitive-data boundary are documented in the
 [application guide](../../../applications/README.md#application-logs); backend
 and collector operations are documented in the [Loki](../loki/README.md) and
 [Alloy](../alloy/README.md) guides. Loki has no public route, and browser clients
@@ -110,8 +111,8 @@ query it only through Grafana's server-side datasource proxy.
 Local repository checks render the pinned charts and enforce retention,
 storage, intervals, bandwidth annotations, internal Prometheus, Alertmanager,
 and Loki exposure, Grafana routing and datasources, OAuth role mapping, the
-provisioned Node Overview and Application Logs dashboards, application-only
-Alloy discovery, custom capacity alerts, and the expected node scrape
+provisioned Node Overview and Application Logs dashboards, Alloy's collection
+filter, custom capacity alerts, and the expected node scrape
 integrations. They do not contact or mutate the live cluster.
 
 Alerts are initially visible in Prometheus and Grafana only. Delivering them to

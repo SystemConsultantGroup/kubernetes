@@ -188,7 +188,7 @@ grep -qF 'field = "spec.nodeName="' <<<"$alloy_config"
 grep -qF 'namespace = true' <<<"$alloy_config"
 grep -qF '__meta_kubernetes_namespace_label_platform_scg_sh_application' <<<"$alloy_config"
 grep -qF '__meta_kubernetes_namespace_label_platform_scg_sh_instance_type' <<<"$alloy_config"
-grep -qF 'regex         = "[^;]+;(production|testing|preview|custom)"' <<<"$alloy_config"
+grep -qF 'regex         = "[^;]*;[^;]*;[^;]+;(production|testing|preview|custom)|bunkerweb;bunkerweb;[^;]*;[^;]*"' <<<"$alloy_config"
 grep -qF 'url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"' <<<"$alloy_config"
 if grep -Eq '(^|[^a-z])(secret|configmap)s?([^a-z]|$)' <<<"$(yq eval-all -rN 'select(.kind == "ClusterRole" and .metadata.name == "alloy-application-logs") | .rules[].resources[]' "$alloy_manifests")"; then
   echo "Alloy application-log RBAC must not read Secrets or ConfigMaps" >&2
