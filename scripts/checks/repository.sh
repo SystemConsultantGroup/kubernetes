@@ -62,15 +62,16 @@ assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.source
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/gateway argocd/platform/bunkerweb/manifests argocd/platform/bunkerweb/gateway-cutover argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
+for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/gateway argocd/platform/bunkerweb/manifests argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done
 
-bunkerweb_cutover="$TEMPORARY_DIRECTORY/argocd-platform-bunkerweb-gateway-cutover.yaml"
-[[ $(yq eval-all -rN 'select(.kind == "EnvoyProxy") | .spec.provider.kubernetes.envoyDaemonSet | has("patch")' "$bunkerweb_cutover") == false ]]
-[[ $(yq eval-all -rN 'select(.kind == "Service" and .metadata.namespace == "envoy-gateway-system" and .metadata.name == "bunkerweb-origin") | .spec.ports[] | select(.name == "https") | .targetPort' "$bunkerweb_cutover") == 10443 ]]
-[[ $(yq eval-all -rN 'select(.kind == "NetworkPolicy" and .metadata.name == "bunkerweb-origin") | .spec.ingress[0].from[0].namespaceSelector.matchLabels."kubernetes.io/metadata.name"' "$bunkerweb_cutover") == bunkerweb ]]
+gateway_manifests="$TEMPORARY_DIRECTORY/argocd-platform-gateway.yaml"
+[[ $(yq -r '.bunkerweb.hostPorts' argocd/platform/bunkerweb/values.yaml) == true ]]
+[[ $(yq eval-all -rN 'select(.kind == "EnvoyProxy") | .spec.provider.kubernetes.envoyDaemonSet | has("patch")' "$gateway_manifests") == false ]]
+[[ $(yq eval-all -rN 'select(.kind == "Service" and .metadata.namespace == "envoy-gateway-system" and .metadata.name == "bunkerweb-origin") | .spec.ports[] | select(.name == "https") | .targetPort' "$gateway_manifests") == 10443 ]]
+[[ $(yq eval-all -rN 'select(.kind == "NetworkPolicy" and .metadata.name == "bunkerweb-origin") | .spec.ingress[0].from[0].namespaceSelector.matchLabels."kubernetes.io/metadata.name"' "$gateway_manifests") == bunkerweb ]]
 
 cert_manager_manifests="$TEMPORARY_DIRECTORY/argocd-platform-cert-manager-manifests.yaml"
 bindizr_issuer='select(.kind == "ClusterIssuer" and .metadata.name == "zerossl-bindizr")'

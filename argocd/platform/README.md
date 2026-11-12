@@ -17,7 +17,7 @@ AppProject.
 | [`cert-manager/`](cert-manager/README.md) | ZeroSSL Cloudflare issuer and platform certificates |
 | [`external-dns-scg.sh/`](external-dns-scg.sh/README.md) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
 | [`external-secrets/`](external-secrets/README.md) | Synchronizes external values into namespaced Kubernetes Secrets |
-| [`gateway/`](gateway/README.md) | Envoy public Gateway, listener policies, and `gateway-system` namespace |
+| [`gateway/`](gateway/README.md) | Internal Envoy data plane, listener policies, and `gateway-system` namespace |
 | [`bunkerweb/`](bunkerweb/README.md) | HTTP WAF, private Envoy origin, and public cutover |
 | [`local-path-provisioner/`](local-path-provisioner/README.md) | Dynamic node-local volumes from Talos user storage |
 | [`mysql/`](mysql/README.md) | PXC cluster resources and namespaced Vault integration |

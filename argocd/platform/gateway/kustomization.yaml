@@ -8,4 +8,5 @@ resources:
   - security-policy.yaml
   - envoy-patch-policy.yaml
   - bunkerweb-origin.yaml
+  - bunkerweb-origin-policy.yaml
   - bunkerweb-platform-ingress.yaml

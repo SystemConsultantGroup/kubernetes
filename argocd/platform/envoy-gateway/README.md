@@ -12,7 +12,7 @@ Cilium remains installed as the cluster CNI, kube-proxy replacement, and
 network-policy engine. Disabling `gatewayAPI` in the Cilium values disables only
 Cilium's Gateway API controller; it does not remove Cilium networking.
 
-The public Envoy data plane is configured by the platform Gateway's
-`EnvoyProxy` resource. Keep its exposure, node placement, source-IP behavior,
-and Wasm cache settings aligned with the cluster's bare-metal networking before
-changing the public endpoint.
+The platform Gateway's `EnvoyProxy` resource configures the internal Envoy data
+plane. [BunkerWeb](../bunkerweb/README.md) receives public traffic and forwards it
+to Envoy. Keep the internal Service, source-IP policy, and Wasm cache settings
+aligned when changing the proxy.

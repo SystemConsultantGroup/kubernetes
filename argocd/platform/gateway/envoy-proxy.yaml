@@ -11,30 +11,8 @@ spec:
         pod:
           nodeSelector:
             gateway.scg.sh/listener: "true"
-        patch:
-          type: StrategicMerge
-          value:
-            spec:
-              template:
-                spec:
-                  hostNetwork: true
-                  dnsPolicy: ClusterFirstWithHostNet
-                  containers:
-                    - name: envoy
-                      securityContext:
-                        # The host-networked listener binds privileged public ports.
-                        allowPrivilegeEscalation: false
-                        capabilities:
-                          add:
-                            - NET_BIND_SERVICE
-                          drop:
-                            - ALL
-                        runAsGroup: 0
-                        runAsNonRoot: false
-                        runAsUser: 0
       envoyService:
         type: ClusterIP
-      useListenerPortAsContainerPort: true
   # Keep this proxy group separate from the former Cilium Envoy hot-restart ID.
   extraArgs:
     - --base-id 1

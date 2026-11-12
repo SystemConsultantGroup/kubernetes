@@ -14,8 +14,7 @@ service:
   type: ClusterIP
 bunkerweb:
   kind: DaemonSet
-  # Enable only after the private Envoy origin is ready. See README.md.
-  hostPorts: false
+  hostPorts: true
   nodeSelector:
     gateway.scg.sh/listener: "true"
   resources:

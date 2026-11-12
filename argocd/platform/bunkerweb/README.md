@@ -1,8 +1,8 @@
 # BunkerWeb edge
 
-BunkerWeb provides the public HTTP WAF in front of Envoy Gateway. The initial
-configuration exposes a ClusterIP Service for testing the proxy chain. Follow
-the cutover steps before assigning the node's public ports to BunkerWeb.
+BunkerWeb provides the public HTTP WAF in front of Envoy Gateway. BunkerWeb
+serves ports 80 and 443 on nodes labeled `gateway.scg.sh/listener: "true"`.
+Public DNS continues to point to SCC.
 
 ```text
 Client -> BunkerWeb -> internal Envoy Gateway -> application Service
@@ -32,26 +32,18 @@ Back up `bunkerweb-credentials` with the database before rebuilding the namespac
 
 ## Public cutover
 
-1. Reconcile the staging configuration. Port-forward `svc/bunkerweb-external`
-   in `bunkerweb` to test existing hostnames against BunkerWeb with TLS
-   verification enabled. Check that its DaemonSet is ready, certificates are
-   loaded, and representative public apps, including Alumni, reach the expected
-   Envoy backends. Use an unrestricted host first because Envoy still sees
-   BunkerWeb's connection address in this phase.
-1. In a planned maintenance window, change `spec.source.path` in
-   [`../gateway/application.yaml`](../gateway/application.yaml) to
-   `argocd/platform/bunkerweb/gateway-cutover`. The overlay moves Envoy off host
-   networking and restricts its internal listener ports to BunkerWeb Pods.
-   Confirm that both nodes have stopped serving Envoy on their public ports and
-   that the private proxy is ready. Leave BunkerWeb's `hostPorts` disabled until
-   the private origin and its client-IP policy are in place.
-1. Set `bunkerweb.hostPorts: true` in [`values.yaml`](values.yaml). Keep the SCC
-   DNS target. Verify HTTPS on SCC and check that forged forwarding headers
-   cannot pass the testing, preview, or production CIDR boundaries. Test from
-   allowed and denied networks and confirm direct access to Envoy is denied
-   from an unrelated Pod. Validate E2S separately before changing DNS.
+Merging the introduction of this configuration hands public ports 80 and 443
+from host-networked Envoy to BunkerWeb during reconciliation. Schedule the merge
+for a maintenance window. The Applications reconcile independently and requests
+may fail during the handoff.
 
-To roll back, disable `bunkerweb.hostPorts`, confirm the host-port mappings are
-gone, then restore the Gateway Application source path to
-`argocd/platform/gateway`. The base restores the host-networked Envoy and the
-prior client-IP behavior.
+After reconciliation, confirm that the BunkerWeb DaemonSet is ready and that
+representative public hosts, including Alumni, serve valid certificates and reach
+their Envoy backends. Verify the testing, preview, and production CIDR policies
+from allowed and denied networks and confirm that the internal Envoy listener
+rejects connections from unrelated Pods. Validate E2S separately before changing
+the DNS target.
+
+To roll back the initial cutover, revert the BunkerWeb change set in Git. Check
+that BunkerWeb's host-port mappings are removed and that Envoy is serving HTTPS
+on SCC again.

@@ -20,15 +20,12 @@ chart, with separate certificates where the platform owns TLS.
 
 ## Public endpoint placement
 
-The base Gateway remains on the node ports during BunkerWeb staging. See the
-[BunkerWeb cutover](../bunkerweb/README.md#public-cutover) to move Envoy to an
-internal origin while retaining the same Gateway, routes, and DNS target.
-
-The Envoy data plane runs as a host-networked DaemonSet only on nodes labeled
-`gateway.scg.sh/listener: "true"`. The Talos patches for SCC (`k8s`) and E2S
-(`e2s`) declare that label as desired state. Keep this opt-in label when adding
-nodes; do not expose a new node before its cross-node datapath and public ingress
-have been validated.
+[BunkerWeb](../bunkerweb/README.md) serves node ports 80 and 443 and forwards to
+Envoy through an internal Service. Both data planes run as DaemonSets on nodes
+labeled `gateway.scg.sh/listener: "true"`. The Talos patches for SCC (`k8s`) and
+E2S (`e2s`) declare that label as desired state. Keep this opt-in label when adding
+nodes and validate their cross-node datapath and public ingress before publishing
+their addresses.
 
 Talos patches are not reconciled by Argo CD, so merging a label change does not
 open the listener on a running node. During a separately authorized operation,
@@ -40,9 +37,9 @@ confirm the E2S label and test an HTTPS hostname directly against the E2S addres
 before considering DNS changes.
 
 The Gateway's target annotation intentionally keeps public DNS on SCC while
-E2S ingress is validated. The label controls where Envoy binds port 443; it does
-not change DNS publication. Remove the temporary DNS pin only in a separate
-reviewed change after the direct E2S test succeeds.
+E2S ingress is validated. The label controls where BunkerWeb serves port 443.
+Remove the temporary DNS pin in a separate reviewed change after the direct E2S
+test succeeds.
 
 The `scg-skku-passthrough` listener has no configured TLSRoute after removal of
 the legacy forwarding application. Moving DNS to the public Gateway does not
@@ -67,18 +64,12 @@ The testing and preview policies target the shared Gateway's listener sections
 rather than a Cilium identity. Preserve their default-deny behavior, allowed
 CIDRs, and listener targets.
 
-The base host-networked data plane has no client-IP detection override. Envoy
-Gateway uses the downstream connection's remote address, not a client-supplied
-`X-Forwarded-For` or `X-Real-IP` header. A proxy or load balancer that terminates
-connections or performs SNAT therefore appears as the client, including for
-`external: true` domains. Before allowing proxied client CIDRs, establish a
-platform-reviewed forwarding trust boundary (trusted proxy CIDRs or an explicitly
-secured PROXY-protocol path); never trust arbitrary forwarded headers. Allowing a
-proxy's egress CIDR alone allows all clients that can reach that proxy. After
-BunkerWeb cutover, the internal Envoy listener accepts traffic from the
-BunkerWeb Pods. BunkerWeb overwrites `X-Forwarded-For` with the address it saw
-on the client connection, and Envoy trusts the header from the cluster PodCIDR
-on that isolated path.
+The internal Envoy listener accepts traffic from BunkerWeb Pods. BunkerWeb
+overwrites `X-Forwarded-For` with the address it saw on the client connection,
+and Envoy trusts that header from the cluster PodCIDR on the isolated path.
+A proxy in front of BunkerWeb appears as the client, including for `external: true`
+domains. Establish a platform-reviewed forwarding trust boundary before allowing
+proxied client CIDRs.
 
 On an authorized production rollout, check that each generated policy is accepted
 for the expected route rule and test requests from both allowed and denied source
@@ -114,8 +105,8 @@ Wasm filters return HTTP 503 before the application route is reached.
 
 A route must have an accepted parent, a matching listener hostname, and a valid
 backend reference before it serves traffic. Check Gateway, ListenerSet, policy,
-and route conditions before inspecting DNS. The Envoy data-plane Service or
-host-networked DaemonSet must also have the expected public endpoint. DNS
-publication and certificate issuance are separate controllers documented under
+and route conditions before inspecting DNS. Verify the BunkerWeb node ports and
+the internal Envoy Service endpoints. DNS publication and certificate issuance
+are handled by the controllers documented under
 [`../external-dns-scg.sh/`](../external-dns-scg.sh/README.md) and
 [`../cert-manager/`](../cert-manager/README.md).
