@@ -1,0 +1,63 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bunkerweb-platform
+  namespace: gateway-system
+  annotations:
+    bunkerweb.io/REVERSE_PROXY_HEADERS_1: "X-Forwarded-For $remote_addr"
+    bunkerweb.io/REVERSE_PROXY_SSL_SNI: "yes"
+    bunkerweb.io/REVERSE_PROXY_SSL_SNI_NAME: "$host"
+    bunkerweb.io/REVERSE_PROXY_SSL_VERIFY: "yes"
+    bunkerweb.io/REVERSE_PROXY_SSL_TRUSTED_CERTIFICATE: /etc/ssl/certs/ca-certificates.crt
+    bunkerweb.io/REVERSE_PROXY_WS_1: "yes"
+    bunkerweb.io/SECURITY_MODE: detect
+spec:
+  ingressClassName: bunkerweb
+  tls:
+    - secretName: platform-wildcard-tls
+      hosts:
+        - argocd.platform.scg.sh
+        - dns.platform.scg.sh
+        - grafana.platform.scg.sh
+        - vault.platform.scg.sh
+  rules:
+    - host: argocd.platform.scg.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bunkerweb-origin
+                port:
+                  number: 443
+    - host: dns.platform.scg.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bunkerweb-origin
+                port:
+                  number: 443
+    - host: grafana.platform.scg.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bunkerweb-origin
+                port:
+                  number: 443
+    - host: vault.platform.scg.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bunkerweb-origin
+                port:
+                  number: 443

@@ -18,6 +18,7 @@ AppProject.
 | [`external-dns-scg.sh/`](external-dns-scg.sh/README.md) | Cloudflare records for `scg.sh` Gateway HTTPRoutes |
 | [`external-secrets/`](external-secrets/README.md) | Synchronizes external values into namespaced Kubernetes Secrets |
 | [`gateway/`](gateway/README.md) | Envoy public Gateway, listener policies, and `gateway-system` namespace |
+| [`bunkerweb/`](bunkerweb/README.md) | HTTP WAF, private Envoy origin, and public cutover |
 | [`local-path-provisioner/`](local-path-provisioner/README.md) | Dynamic node-local volumes from Talos user storage |
 | [`mysql/`](mysql/README.md) | PXC cluster resources and namespaced Vault integration |
 | [`percona-operator/`](percona-operator/README.md) | Reconciles Percona XtraDB Cluster resources in `mysql` |
@@ -45,7 +46,7 @@ this reconciliation order:
 | --- | --- | --- |
 | 1 | Gateway API, Cilium, Envoy Gateway, External Secrets, local path provisioner | APIs, networking, Gateway controller, and storage foundations |
 | 2 | Gateway, cert-manager, Percona PXC Operator, Reloader | public Gateway, certificates, and application support controllers |
-| 3 | Argo CD, Cloudflare Tunnel, ExternalDNS, monitoring, Loki, Alloy, MySQL resources, Vault, Bindizr | externally routed, private access, observability, and stateful services |
+| 3 | Argo CD, BunkerWeb, Cloudflare Tunnel, ExternalDNS, monitoring, Loki, Alloy, MySQL resources, Vault, Bindizr | externally routed, private access, observability, and stateful services |
 
 A wave starts child Application reconciliation in order; it does not wait for
 one component's complete health before starting the next wave. Bootstrap

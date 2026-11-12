@@ -46,6 +46,7 @@ assert_value '.argocd.version' argocd/platform/argocd/application.yaml '.spec.so
 assert_value '.cilium.version' argocd/platform/cilium/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.cloudflared.version' argocd/platform/cloudflared/manifests/deployment.yaml '.spec.template.spec.containers[] | select(.name == "cloudflared") | .image | split("@")[0] | sub("^.*:"; "")'
 assert_value '."envoy-gateway".version' argocd/platform/envoy-gateway/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
+assert_value '.bunkerweb.version' argocd/platform/bunkerweb/application.yaml '.spec.sources[0].targetRevision'
 assert_value '."gateway-api".version' argocd/platform/gateway-api/application.yaml '.spec.source.targetRevision | sub("^v"; "")'
 assert_value '.external-secrets.version' argocd/platform/external-secrets/application.yaml '.spec.sources[0].targetRevision'
 assert_value '.local-path-provisioner.revision' argocd/platform/local-path-provisioner/application.yaml '.spec.sources[0].targetRevision'
@@ -61,10 +62,15 @@ assert_value '.vault.chart' argocd/platform/vault/application.yaml '.spec.source
 assert_value '.cert-manager.version' argocd/platform/cert-manager/application.yaml '.spec.sources[0].targetRevision | sub("^v"; "")'
 assert_value '.external-dns.version' argocd/platform/external-dns-scg.sh/application.yaml '.spec.sources[0].targetRevision'
 
-for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/gateway argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
+for directory in argocd argocd/platform/cloudflared/manifests argocd/platform/gateway argocd/platform/bunkerweb/manifests argocd/platform/bunkerweb/gateway-cutover argocd/platform/mysql/manifests argocd/platform/vault/manifests argocd/platform/cert-manager/manifests argocd/platform/monitoring/manifests argocd/platform/loki/manifests argocd/platform/alloy/manifests; do
   output="$TEMPORARY_DIRECTORY/$(tr '/' '-' <<<"$directory").yaml"
   kubectl kustomize "$directory" >"$output"
 done
+
+bunkerweb_cutover="$TEMPORARY_DIRECTORY/argocd-platform-bunkerweb-gateway-cutover.yaml"
+[[ $(yq eval-all -rN 'select(.kind == "EnvoyProxy") | .spec.provider.kubernetes.envoyDaemonSet | has("patch")' "$bunkerweb_cutover") == false ]]
+[[ $(yq eval-all -rN 'select(.kind == "Service" and .metadata.namespace == "envoy-gateway-system" and .metadata.name == "bunkerweb-origin") | .spec.ports[] | select(.name == "https") | .targetPort' "$bunkerweb_cutover") == 10443 ]]
+[[ $(yq eval-all -rN 'select(.kind == "NetworkPolicy" and .metadata.name == "bunkerweb-origin") | .spec.ingress[0].from[0].namespaceSelector.matchLabels."kubernetes.io/metadata.name"' "$bunkerweb_cutover") == bunkerweb ]]
 
 cert_manager_manifests="$TEMPORARY_DIRECTORY/argocd-platform-cert-manager-manifests.yaml"
 bindizr_issuer='select(.kind == "ClusterIssuer" and .metadata.name == "zerossl-bindizr")'
@@ -335,12 +341,14 @@ validate_render "$alumni_public_render" alumni-production \
   --set-string _context.instance.type=production \
   --set _context.secrets.enabled=true \
   --set-string _context.secrets.server=https://vault.platform.scg.sh
-for kind in HTTPRoute ListenerSet Certificate; do
+for kind in HTTPRoute ListenerSet Certificate Ingress; do
   [[ $(KIND="$kind" yq eval-all '[select(.kind == strenv(KIND))] | length' "$alumni_public_render") == 3 ]]
 done
 [[ $(yq eval-all -rN 'select(.kind == "Certificate") | .spec.issuerRef.name' "$alumni_public_render" | sort -u) == zerossl-bindizr ]]
 for hostname in test.alumni.scg.skku.ac.kr admin.test.alumni.scg.skku.ac.kr api.test.alumni.scg.skku.ac.kr; do
   [[ $(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "HTTPRoute" and .spec.hostnames[0] == strenv(ALUMNI_DOMAIN)) | .spec.hostnames[0]' "$alumni_public_render") == "$hostname" ]]
+  certificate=$(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "Certificate" and .spec.dnsNames[0] == strenv(ALUMNI_DOMAIN)) | .spec.secretName' "$alumni_public_render")
+  [[ $(ALUMNI_DOMAIN="$hostname" yq eval-all -rN 'select(.kind == "Ingress" and .spec.rules[0].host == strenv(ALUMNI_DOMAIN)) | .spec.tls[0].secretName' "$alumni_public_render") == "$certificate" ]]
 done
 [[ $(yq eval-all -rN 'select(.kind == "Deployment" and .metadata.name == "alumni-be") | .spec.template.spec.containers[0].env[] | select(.name == "SPRING_PROFILES_ACTIVE") | .value' "$alumni_public_render") == prod,platform ]]
 

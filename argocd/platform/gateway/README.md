@@ -20,6 +20,10 @@ chart, with separate certificates where the platform owns TLS.
 
 ## Public endpoint placement
 
+The base Gateway remains on the node ports during BunkerWeb staging. See the
+[BunkerWeb cutover](../bunkerweb/README.md#public-cutover) to move Envoy to an
+internal origin while retaining the same Gateway, routes, and DNS target.
+
 The Envoy data plane runs as a host-networked DaemonSet only on nodes labeled
 `gateway.scg.sh/listener: "true"`. The Talos patches for SCC (`k8s`) and E2S
 (`e2s`) declare that label as desired state. Keep this opt-in label when adding
@@ -63,14 +67,18 @@ The testing and preview policies target the shared Gateway's listener sections
 rather than a Cilium identity. Preserve their default-deny behavior, allowed
 CIDRs, and listener targets.
 
-The current host-networked data plane has no client-IP detection override. Envoy
+The base host-networked data plane has no client-IP detection override. Envoy
 Gateway uses the downstream connection's remote address, not a client-supplied
 `X-Forwarded-For` or `X-Real-IP` header. A proxy or load balancer that terminates
 connections or performs SNAT therefore appears as the client, including for
 `external: true` domains. Before allowing proxied client CIDRs, establish a
 platform-reviewed forwarding trust boundary (trusted proxy CIDRs or an explicitly
 secured PROXY-protocol path); never trust arbitrary forwarded headers. Allowing a
-proxy's egress CIDR alone allows all clients that can reach that proxy.
+proxy's egress CIDR alone allows all clients that can reach that proxy. After
+BunkerWeb cutover, the internal Envoy listener accepts traffic from the
+BunkerWeb Pods. BunkerWeb overwrites `X-Forwarded-For` with the address it saw
+on the client connection, and Envoy trusts the header from the cluster PodCIDR
+on that isolated path.
 
 On an authorized production rollout, check that each generated policy is accepted
 for the expected route rule and test requests from both allowed and denied source

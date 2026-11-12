@@ -18,6 +18,8 @@ cilium:
   version: "1.20.0"
 envoy-gateway:
   version: "1.9.1"
+bunkerweb:
+  version: "1.3.0" # chart version
 argocd:
   version: "10.2.2" # chart version
 cert-manager:

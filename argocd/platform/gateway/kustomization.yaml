@@ -7,3 +7,5 @@ resources:
   - gateway.yaml
   - security-policy.yaml
   - envoy-patch-policy.yaml
+  - bunkerweb-origin.yaml
+  - bunkerweb-platform-ingress.yaml

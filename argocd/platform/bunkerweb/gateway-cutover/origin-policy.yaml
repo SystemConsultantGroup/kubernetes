@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bunkerweb-origin
+  namespace: envoy-gateway-system
+spec:
+  podSelector:
+    matchLabels:
+      gateway.envoyproxy.io/owning-gateway-name: public
+      gateway.envoyproxy.io/owning-gateway-namespace: gateway-system
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bunkerweb
+          podSelector:
+            matchLabels:
+              bunkerweb.io/component: bunkerweb
+      ports:
+        - port: 10080
+        - port: 10443
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: bunkerweb-client-ip
+  namespace: gateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+  clientIPDetection:
+    xForwardedFor:
+      # The origin NetworkPolicy restricts these listeners to BunkerWeb Pods.
+      trustedCIDRs:
+        - 10.244.0.0/23

@@ -1,0 +1,44 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bunkerweb-proxy
+  namespace: bunkerweb
+spec:
+  podSelector:
+    matchLabels:
+      bunkerweb.io/component: bunkerweb
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+        - port: 8443
+    - from:
+        - podSelector:
+            matchLabels:
+              bunkerweb.io/component: scheduler
+      ports:
+        - port: 5000
+        - port: 5443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bunkerweb-storage
+  namespace: bunkerweb
+spec:
+  podSelector:
+    matchExpressions:
+      - key: bunkerweb.io/component
+        operator: In
+        values:
+          - mariadb
+          - redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 3306
+        - port: 6379
