@@ -8,6 +8,19 @@ configs:
     webhook.maxPayloadSizeMB: "10"
     timeout.reconciliation: 120s
     timeout.reconciliation.jitter: 60s
+    resource.customizations.health.networking.k8s.io_Ingress: |
+      if obj.spec and obj.spec.ingressClassName == "bunkerweb" then
+        return {
+          status = "Healthy",
+          message = "HostPort Ingress configuration exists. Check the BunkerWeb DaemonSet and HTTPS endpoint for readiness."
+        }
+      end
+
+      local loadBalancer = obj.status and obj.status.loadBalancer
+      if loadBalancer and loadBalancer.ingress and #loadBalancer.ingress > 0 then
+        return { status = "Healthy" }
+      end
+      return { status = "Progressing" }
     admin.enabled: false
     dex.config: |
       connectors:

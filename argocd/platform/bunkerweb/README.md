@@ -30,6 +30,11 @@ because the controller stores TLS material in its configuration database.
 External Secrets Operator generates the API token and storage passwords once.
 Back up `bunkerweb-credentials` with the database before rebuilding the namespace.
 
+Argo CD considers a BunkerWeb-class Ingress healthy once the resource exists.
+The controller uses host ports and its ClusterIP Service does not publish a
+load-balancer address in Ingress status. Check the BunkerWeb DaemonSet and the
+HTTPS endpoint to confirm that the route is serving traffic.
+
 ## Public cutover
 
 Merging the introduction of this configuration hands public ports 80 and 443
