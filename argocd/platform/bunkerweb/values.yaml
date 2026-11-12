@@ -1,0 +1,37 @@
+fullnameOverride: bunkerweb
+settings:
+  existingSecret: bunkerweb-credentials
+  apiToken:
+    generate: false
+    fromExistingSecret: true
+  kubernetes:
+    ingressClass: bunkerweb
+    serviceProtocol: https
+    ignoreAnnotations: bunkerweb.io/CONFIG_TYPE
+  misc:
+    apiWhitelistIp: "127.0.0.0/8 10.244.0.0/23"
+service:
+  type: ClusterIP
+bunkerweb:
+  kind: DaemonSet
+  hostPorts: true
+  nodeSelector:
+    gateway.scg.sh/listener: "true"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+ui:
+  enabled: false
+scheduler:
+  features:
+    global:
+      disableDefaultServer: "yes"
+mariadb:
+  strategy: Recreate
+  persistence:
+    storageClass: local-data
+redis:
+  strategy: Recreate
+  persistence:
+    storageClass: local-data

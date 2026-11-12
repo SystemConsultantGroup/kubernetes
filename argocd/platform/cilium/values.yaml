@@ -31,7 +31,7 @@ k8sServiceHost: localhost
 k8sServicePort: 7445
 # Envoy Gateway owns the Gateway API data plane. Cilium remains the CNI,
 # kube-proxy replacement, and network-policy engine. Cilium's Envoy DaemonSet
-# is disabled so it cannot collide with Envoy Gateway's host-networked proxy.
+# is disabled because Envoy Gateway provides the Gateway API data plane.
 gatewayAPI:
   enabled: false
 envoy:

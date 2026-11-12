@@ -11,6 +11,22 @@
 {{- end -}}
 
 {{- if eq $instanceType "production" -}}
+  {{- $originService := printf "bunkerweb-origin-%s" (trunc 8 (sha256sum .Release.Namespace)) -}}
+  {{- if gt (len $allGroups) 0 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $originService }}
+spec:
+  type: ExternalName
+  externalName: bunkerweb-origin.envoy-gateway-system.svc.cluster.local
+  ports:
+    - name: http
+      port: 80
+    - name: https
+      port: 443
+  {{- end }}
   {{- range $group := $allGroups -}}
     {{- $owner := $group.owner -}}
     {{- $http := $group.http -}}
@@ -28,6 +44,8 @@
       {{- $suffix := trunc 8 (sha256sum $hostname) -}}
       {{- $resourceName := include "application.resourceName" (dict "name" (printf "%s-%s-%s" $application $owner $suffix) "limit" 59) -}}
       {{- $listenerName := $resourceName }}
+---
+{{ include "application.bunkerwebIngress" (dict "name" $resourceName "namespace" $.Release.Namespace "hostname" $hostname "backend" $originService "external" $external "tlsSecret" (printf "%s-tls" $resourceName) "protect" true) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: ListenerSet
@@ -118,6 +136,8 @@ spec:
 {{ else if eq $instanceType "testing" -}}
   {{- if gt (len $allGroups) 0 -}}
 ---
+{{ include "application.bunkerwebIngress" (dict "name" $.Release.Name "namespace" "gateway-system" "hostname" (include "application.testingHostname" $) "backend" "bunkerweb-origin" "tlsSecret" "application-wildcards-tls") }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -196,6 +216,8 @@ spec:
     {{- end -}}
   {{- end -}}
   {{- if gt (len $previewGroups) 0 -}}
+---
+{{ include "application.bunkerwebIngress" (dict "name" $.Release.Name "namespace" "gateway-system" "hostname" (include "application.previewHostname" $) "backend" "bunkerweb-origin" "tlsSecret" "application-wildcards-tls") }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

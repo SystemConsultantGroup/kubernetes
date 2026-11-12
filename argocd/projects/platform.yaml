@@ -23,6 +23,7 @@ spec:
     - https://prometheus-community.github.io/helm-charts
     - https://grafana.github.io/helm-charts
     - https://kubernetes-sigs.github.io/external-dns/
+    - https://repo.bunkerweb.io/charts
     - https://stakater.github.io/stakater-charts
   destinations:
     - namespace: "*"

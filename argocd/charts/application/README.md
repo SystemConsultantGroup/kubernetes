@@ -556,6 +556,10 @@ is limited to 59 characters so its `-tls` derivatives also remain within the
 A non-external domain also creates a Certificate and TLS Secret with `-tls`
 appended.
 
+The chart also renders a [BunkerWeb edge Ingress](../../platform/bunkerweb/README.md)
+for each routed hostname. It reuses the applicable TLS Secret and forwards to
+Envoy, where the app's routing rules and CIDR policies are evaluated.
+
 An external domain uses:
 
 - listener protocol: HTTP;

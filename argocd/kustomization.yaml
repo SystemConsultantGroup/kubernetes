@@ -15,6 +15,7 @@ resources:
   - platform/external-dns-scg.sh/application.yaml
   - platform/external-secrets/application.yaml
   - platform/gateway/application.yaml
+  - platform/bunkerweb/application.yaml
   - platform/local-path-provisioner/application.yaml
   - platform/percona-operator/application.yaml
   - platform/mysql/application.yaml
