@@ -11,6 +11,8 @@ metadata:
     bunkerweb.io/REVERSE_PROXY_SSL_TRUSTED_CERTIFICATE: /etc/ssl/certs/ca-certificates.crt
     bunkerweb.io/REVERSE_PROXY_WS_1: "yes"
     bunkerweb.io/SECURITY_MODE: detect
+    # External Secrets expects Vault API errors to retain their JSON body.
+    bunkerweb.io/vault.platform.scg.sh_REVERSE_PROXY_INTERCEPT_ERRORS: "no"
 spec:
   ingressClassName: bunkerweb
   tls:
