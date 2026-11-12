@@ -1,6 +1,6 @@
 # Loki
 
-This component stores application Pod logs for Grafana queries. It runs one
+This component stores application and BunkerWeb logs for Grafana queries. It runs one
 monolithic Loki replica with the TSDB v13 schema and filesystem storage. The
 service is ClusterIP-only; Grafana queries it from the `monitoring` Namespace and
 Alloy writes to it from the `alloy` Namespace.
@@ -18,8 +18,8 @@ container satisfies the Namespace's restricted Pod Security policy. Network poli
 accepts ingress only from Loki itself, Alloy, and monitoring. There is no public
 route or application-facing Loki API.
 
-Alloy's application-label filter is the data boundary: Loki authentication and
-multi-tenancy are disabled because this is one internal application-log tenant.
+Alloy's target filter is the data boundary: Loki authentication and multi-tenancy
+are disabled, and Grafana's Loki datasource serves both log sources.
 Do not broaden the collector without reviewing what Grafana's application users
 would be able to read. Applications must not write credentials, tokens, personal
 data, or other secrets to stdout or stderr.

@@ -1,7 +1,7 @@
 # Alloy
 
-This component runs Grafana Alloy as a DaemonSet and sends application container
-stdout and stderr to the internal Loki service. Each Alloy Pod discovers only
+This component runs Grafana Alloy as a DaemonSet and sends application and
+BunkerWeb container logs to the internal Loki service. Each Alloy Pod discovers only
 Pods assigned to its own node through the Kubernetes API; it does not mount host
 log directories or require privileged Pod Security.
 
@@ -14,8 +14,9 @@ platform.scg.sh/instance-type: production|testing|preview|custom
 
 The ApplicationSets that discover `applications/` attach these labels to every
 managed and custom application Namespace. Application Pods therefore require no
-logging-specific labels. Pods in unlabeled platform and system Namespaces are
-excluded.
+logging-specific labels. Alloy also collects the `bunkerweb` container in the
+`bunkerweb` Namespace. The other containers in that Namespace and Pods in other
+unlabeled Namespaces are excluded.
 
 Loki streams receive bounded metadata labels: `cluster`, `namespace`,
 `application`, `instance_type`, `pod`, `container`, and `container_runtime`.
@@ -30,4 +31,4 @@ service is ClusterIP-only and exists for Prometheus metrics; it has no public
 route.
 
 After an authorized rollout, verify one Alloy Pod per schedulable node, successful
-writes to Loki, and absence of platform namespace streams in Grafana.
+writes to Loki, and BunkerWeb streams in Grafana.
