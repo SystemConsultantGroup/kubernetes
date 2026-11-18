@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bunkerweb-ui-data
+  namespace: bunkerweb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-data
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-bunkerweb
+  namespace: bunkerweb
+  annotations:
+    secret.reloader.stakater.com/reload: bunkerweb-ui-credentials
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      bunkerweb.io/component: ui
+  template:
+    metadata:
+      labels:
+        bunkerweb.io/component: ui
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bunkerweb-ui
+          image: docker.io/bunkerity/bunkerweb-ui:1.6.17
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 7000
+          env:
+            - name: KUBERNETES_MODE
+              value: "yes"
+            - name: DATABASE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: bunkerweb-credentials
+                  key: database-uri
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bunkerweb-credentials
+                  key: api-token
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bunkerweb-ui-credentials
+                  key: admin-username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bunkerweb-ui-credentials
+                  key: admin-password
+            - name: OVERRIDE_ADMIN_CREDS
+              value: "no"
+            - name: USE_REDIS
+              value: "yes"
+            - name: REDIS_HOST
+              value: redis-bunkerweb.bunkerweb.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bunkerweb-credentials
+                  key: redis-password
+            - name: UI_ALLOWED_HOSTS
+              value: bunkerweb.platform.scg.sh
+            - name: UI_FORWARDED_ALLOW_IPS
+              value: 10.244.0.0/23
+            - name: PROXY_NUMBERS
+              value: "2"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command:
+                - /usr/share/bunkerweb/helpers/healthcheck-ui.sh
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command:
+                - /usr/share/bunkerweb/helpers/healthcheck-ui.sh
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: bunkerweb-ui-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-bunkerweb
+  namespace: bunkerweb
+spec:
+  type: ClusterIP
+  selector:
+    bunkerweb.io/component: ui
+  ports:
+    - name: http
+      port: 7000
+      targetPort: http
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: bunkerweb-ui-access
+  namespace: bunkerweb
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: bunkerweb-ui
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 115.145.0.0/16
