@@ -5,3 +5,6 @@ resources:
   - credentials.yaml
   - network-policy.yaml
   - controller-role.yaml
+  - ui.yaml
+  - ui-route.yaml
+  - ui-credentials.yaml

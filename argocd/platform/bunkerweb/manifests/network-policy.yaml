@@ -17,6 +17,9 @@ spec:
         - podSelector:
             matchLabels:
               bunkerweb.io/component: scheduler
+        - podSelector:
+            matchLabels:
+              bunkerweb.io/component: ui
       ports:
         - port: 5000
         - port: 5443
@@ -42,3 +45,26 @@ spec:
       ports:
         - port: 3306
         - port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bunkerweb-ui
+  namespace: bunkerweb
+spec:
+  podSelector:
+    matchLabels:
+      bunkerweb.io/component: ui
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+          podSelector:
+            matchLabels:
+              gateway.envoyproxy.io/owning-gateway-name: public
+              gateway.envoyproxy.io/owning-gateway-namespace: gateway-system
+      ports:
+        - port: 7000

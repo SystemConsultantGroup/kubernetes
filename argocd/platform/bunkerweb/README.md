@@ -40,6 +40,60 @@ The controller uses host ports and its ClusterIP Service does not publish a
 load-balancer address in Ingress status. Check the BunkerWeb DaemonSet and the
 HTTPS endpoint to confirm that the route is serving traffic.
 
+## Web UI
+
+The management UI is served at `https://bunkerweb.platform.scg.sh` through the
+platform BunkerWeb Ingress and the internal Envoy Gateway. The route's
+`bunkerweb-ui-access` SecurityPolicy limits access to `115.145.0.0/16`.
+The origin uses the client address forwarded by BunkerWeb through the existing
+trusted-proxy policy. The UI Pod accepts traffic only from the Envoy Pods.
+
+Create `platform/bunkerweb/ui` in Vault's `kv` engine with `admin-username` and
+`admin-password`. External Secrets copies those keys into the
+`bunkerweb-ui-credentials` Secret in the `bunkerweb` namespace. The account is
+seeded on first startup; later account changes use the UI and must also be
+recorded in Vault. Two-factor authentication is optional. Session signing and
+encryption keys persist in the
+`bunkerweb-ui-data` PVC mounted at `/data`.
+
+The UI Deployment and Service are managed in `manifests/ui.yaml`. The chart's
+bundled UI stays disabled because it requires UI keys in the shared immutable
+infrastructure Secret and does not mount persistent UI state. The UI reuses the
+existing database, Redis, and management API credentials through Secret
+references. Its API access is allowed by the proxy NetworkPolicy.
+
+Use the Bans page to remove a current IP ban. Settings managed through Ingress
+annotations remain controlled by Git and can be read-only in the UI.
+
+### Before merging
+
+A Vault platform operator must apply the dedicated read policy and Kubernetes
+authentication role. These allow only the
+`bunkerweb/bunkerweb-ui-vault-auth` ServiceAccount to read
+`kv/data/platform/bunkerweb/ui`.
+
+```bash
+export VAULT_ADDR=https://vault.platform.scg.sh
+vault login -method=oidc role=github
+vault policy write bunkerweb-ui argocd/platform/vault/policies/bunkerweb-ui.hcl
+vault write auth/kubernetes/role/bunkerweb-ui \
+  bound_service_account_names=bunkerweb-ui-vault-auth \
+  bound_service_account_namespaces=bunkerweb \
+  audience=vault token_policies=bunkerweb-ui \
+  token_no_default_policy=true token_ttl=1h token_max_ttl=8h
+```
+
+The bootstrap script records the same configuration for fresh clusters. The
+existing cluster's initial root token was revoked, so rerunning
+`k initialize vault` does not apply this policy or role.
+
+After merging, verify that the SecretStore and ExternalSecret are Ready, the UI
+Deployment is available, and the HTTPRoute and SecurityPolicy are accepted.
+From an allowed source, open the UI and sign in with the Vault credentials.
+From a source outside `115.145.0.0/16`, verify that access is denied. Confirm that
+the IP reported by the application is the original client address before
+depending on the UI session's IP binding.
+
 ## Public cutover
 
 Merging the introduction of this configuration hands public ports 80 and 443

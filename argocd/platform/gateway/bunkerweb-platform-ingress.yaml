@@ -19,10 +19,21 @@ spec:
     - secretName: platform-wildcard-tls
       hosts:
         - argocd.platform.scg.sh
+        - bunkerweb.platform.scg.sh
         - dns.platform.scg.sh
         - grafana.platform.scg.sh
         - vault.platform.scg.sh
   rules:
+    - host: bunkerweb.platform.scg.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bunkerweb-origin
+                port:
+                  number: 443
     - host: argocd.platform.scg.sh
       http:
         paths:

@@ -22,6 +22,7 @@ bunkerweb:
       cpu: 250m
       memory: 512Mi
 ui:
+  # The UI is managed in manifests/ui.yaml for separate credentials and persistent state.
   enabled: false
 scheduler:
   features:
