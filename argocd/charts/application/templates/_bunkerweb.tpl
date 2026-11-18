@@ -20,6 +20,7 @@ metadata:
     {{- if or (eq .hostname "test.alumni.scg.skku.ac.kr") (eq .hostname "api.test.alumni.scg.skku.ac.kr") }}
     # Interactive testing can accumulate rate-limit responses and trigger an IP ban.
     bunkerweb.io/USE_BAD_BEHAVIOR: "no"
+    bunkerweb.io/LIMIT_REQ_RATE: "100r/s"
     {{- end }}
 spec:
   ingressClassName: bunkerweb
