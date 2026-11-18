@@ -15,6 +15,10 @@ use blocking mode. The platform, testing, and preview hosts use detection mode.
 Register new platform hosts in the [platform Ingress](../gateway/bunkerweb-platform-ingress.yaml)
 when adding their HTTPRoutes.
 
+`test.alumni.scg.skku.ac.kr` disables Bad Behavior automatic IP bans for
+interactive testing. The application chart adds the service-specific Ingress
+annotation. Existing bans must be removed separately with `bwcli unban`.
+
 The Ingresses reuse the TLS Secrets issued by cert-manager. BunkerWeb watches
 TLS Secret changes and verifies the origin certificate using the request hostname
 as SNI. An `external: true` route continues to accept HTTP from its external
