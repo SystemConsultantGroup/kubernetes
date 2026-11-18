@@ -16,9 +16,9 @@ Register new platform hosts in the [platform Ingress](../gateway/bunkerweb-platf
 when adding their HTTPRoutes.
 
 `test.alumni.scg.skku.ac.kr` and `api.test.alumni.scg.skku.ac.kr` disable Bad
-Behavior automatic IP bans for interactive testing. The application chart adds
-the service-specific Ingress annotation. Existing bans must be removed separately
-with `bwcli unban`.
+Behavior automatic IP bans and use a request rate limit of `100r/s` for
+interactive testing. The application chart adds the service-specific Ingress
+annotations. Existing bans must be removed separately with `bwcli unban`.
 
 The Ingresses reuse the TLS Secrets issued by cert-manager. BunkerWeb watches
 TLS Secret changes and verifies the origin certificate using the request hostname
