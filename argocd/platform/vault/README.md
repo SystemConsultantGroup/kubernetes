@@ -166,15 +166,6 @@ Vault; the existing cluster requires a platform operator to apply them.
 See the [cert-manager procedure](../cert-manager/README.md#alumni-dns-01-through-bindizr)
 for key creation, Vault setup, and verification.
 
-## BunkerWeb UI access
-
-The `bunkerweb-ui` Kubernetes-auth role accepts only the
-`bunkerweb/bunkerweb-ui-vault-auth` ServiceAccount. Its policy reads only
-`kv/data/platform/bunkerweb/ui`, where `admin-username` and `admin-password` seed
-the UI account. A platform operator must apply the policy and role before the
-ExternalSecret can authenticate. Follow the
-[BunkerWeb UI procedure](../bunkerweb/README.md#before-merging).
-
 ## Operations
 
 Use the public address for operator commands:
