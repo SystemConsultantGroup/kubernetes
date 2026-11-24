@@ -31,6 +31,12 @@ scheduler:
   features:
     global:
       disableDefaultServer: "yes"
+    timeouts:
+      clientBodyTimeout: "300s"
+      sendTimeout: "300s"
+    reverseProxy:
+      reverseProxyReadTimeout: "1800s"
+      reverseProxySendTimeout: "300s"
     modsecurity:
       modsecuritySecRequestBodyLimit: "10m"
       modsecuritySecRequestBodyLimitAction: "ProcessPartial"
