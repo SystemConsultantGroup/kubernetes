@@ -25,9 +25,15 @@ ui:
   # The UI is managed in manifests/ui.yaml for separate credentials and persistent state.
   enabled: false
 scheduler:
+  extraEnvs:
+    - name: MAX_CLIENT_SIZE
+      value: "0"
   features:
     global:
       disableDefaultServer: "yes"
+    modsecurity:
+      modsecuritySecRequestBodyLimit: "10m"
+      modsecuritySecRequestBodyLimitAction: "ProcessPartial"
 mariadb:
   strategy: Recreate
   persistence:
